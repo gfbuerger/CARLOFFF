@@ -1,12 +1,18 @@
 
 global isoctave
 isoctave = @() exist('OCTAVE_VERSION','builtin') ~= 0 ;
-
-if isoctave() && OCTAVE_VERSION()(1) == '5', pkg load netcdf hdf5oct ; end
+if isoctave()
+    w = OCTAVE_VERSION() ;
+    if w(1) == '5', pkg load netcdf hdf5oct ; end
+    addpath /opt/caffe/matlab
+    addpath /opt/caffe/matlab/+caffe/private
+else
+    addpath /opt/caffeML/matlab
+end
 
 addpath ~/xds/fun ~/CARLOFFF/fun
 droot = '/opt/tmp/caffe' ;
-mkdir(droot, 'data/CARLOFFF')
+[~, ~] = mkdir(droot, 'data/CARLOFFF')
 cd ~/CARLOFFF
 scale = 0.00390625 ; % MNIST
 
@@ -97,7 +103,7 @@ images = permute(images, 3:-1:1) ;
 %%saveLabels(labels, sprintf('%s/data/CARLOFFF/train-Nord-labels-idx1-ubyte', droot)) ;
 %%saveImages(images, sprintf('%s/data/CARLOFFF/train-Nord-images-idx3-ubyte', droot)) ;
 %save('-hdf5', '/opt/src/caffe/data/CARLOFFF/train-Nord.h5', 'labels', 'images') ;
-of = sprintf('%s/data/CARLOFFF/train-Nord.h5', droot) ;
+of = sprintf('data/Nord_train.h5') ;
 delete(of) ;
 N = size(images) ;
 N = flip([N(1) 1 N(2:end)]) ; % channel dim
@@ -116,7 +122,7 @@ images = permute(images, 3:-1:1) ;
 %%saveLabels(labels, sprintf('%s/data/CARLOFFF/test-Nord-labels-idx1-ubyte', droot)) ;
 %%saveImages(images, sprintf('%s/data/CARLOFFF/test-Nord-images-idx3-ubyte', droot)) ;
 %save('-hdf5', '/opt/src/caffe/data/CARLOFFF/test-Nord.h5', 'labels', 'images') ;
-of = sprintf('%s/data/CARLOFFF/test-Nord.h5', droot) ;
+of = sprintf('data/Nord_test.h5', droot) ;
 delete(of) ;
 N = size(images) ;
 N = flip([N(1) 1 N(2:end)]) ; % channel dim
@@ -127,18 +133,18 @@ h5create(of,'/label', N, 'Datatype', 'double') ;
 h5write(of,'/label', labels) ;
 
 
-addpath /opt/caffe/matlab /opt/caffe/matlab/+caffe/private
-cd(droot) ;
-model = 'examples/CARLOFFF/deploy.prototxt' ;
-weights = 'examples/CARLOFFF/lenet/lenet_solver_iter_10000.caffemodel' ;
-
 caffe.set_mode_cpu();
 caffe.set_device(0);
 
+model = 'deploy.prototxt' ;
+weights = 'data/snapshots/lenet_solver_iter_1000.caffemodel' ;
 net = caffe.Net(model, weights, 'test');
 
 for i = 1 : size(cape, 3)
    image = cape(:,:,i) ;
    res = net.forward({image});
    prob(:,i) = res{1};
-endfor
+end
+
+solver = caffe.Solver('lenet_solver.prototxt') ;
+solver.solve() ;

@@ -1,30 +1,64 @@
 name: "LeNet"
 layer {
-  name: "data"
-  type: "HDF5Data"
+  name: "CARLOFFF"
+  type: "Data"
   top: "data"
   top: "label"
   include {
     phase: TRAIN
   }
-  hdf5_data_param {
-    source: "data/train-Nord.txt"
+  transform_param {
+    scale: 0.00390625
+  }
+  data_param {
+    source: "data/Nord_train_lmdb"
     batch_size: 64
+    backend: LMDB
   }
 }
 layer {
-  name: "data"
-  type: "HDF5Data"
+  name: "CARLOFFF"
+  type: "Data"
   top: "data"
   top: "label"
   include {
     phase: TEST
   }
-  hdf5_data_param {
-    source: "data/test-Nord.txt"
+  transform_param {
+    scale: 0.00390625
+  }
+  data_param {
+    source: "data/Nord_test_lmdb"
     batch_size: 100
+    backend: LMDB
   }
 }
+##layer {
+##  name: "data"
+##  type: "HDF5Data"
+##  top: "data"
+##  top: "label"
+##  include {
+##    phase: TRAIN
+##  }
+##  hdf5_data_param {
+##    source: "data/Nord_train.txt"
+##    batch_size: 64
+##  }
+##}
+##layer {
+##  name: "data"
+##  type: "HDF5Data"
+##  top: "data"
+##  top: "label"
+##  include {
+##    phase: TEST
+##  }
+##  hdf5_data_param {
+##    source: "data/Nord_test.txt"
+##    batch_size: 100
+##  }
+##}
 layer {
   name: "conv1"
   type: "Convolution"
@@ -167,7 +201,7 @@ layer {
   type: "InfogainLoss"
   infogain_loss_param {
     axis: 1
-    source: "examples/CARLOFFF/infogainH.binaryproto"
+    source: "data/infogainH.binaryproto"
   }
 }
 

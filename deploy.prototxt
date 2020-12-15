@@ -1,29 +1,9 @@
-name: "LeNet"
+name: "LeNetDeploy"
 layer {
-  name: "data"
-  type: "HDF5Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  hdf5_data_param {
-    source: "data/train-Nord.txt"
-    batch_size: 64
-  }
-}
-layer {
-  name: "data"
-  type: "HDF5Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  hdf5_data_param {
-    source: "data/test-Nord.txt"
-    batch_size: 100
-  }
+    name: "data"
+    type: "Input"
+    top: "data"
+    input_param { shape: { dim: 1 dim: 1 dim: 28 dim: 49 } }
 }
 layer {
   name: "conv1"
@@ -142,62 +122,8 @@ layer {
   }
 }
 layer {
-  name: "accuracy"
-  type: "Accuracy"
+  name: "loss"
+  type: "Softmax"
   bottom: "ip2"
-  bottom: "label"
-  top: "accuracy"
-  include {
-    phase: TEST
-  }
+  top: "loss"
 }
-##layer {
-##  name: "loss"
-##  type: "SoftmaxWithLoss"
-##  bottom: "ip2"
-##  bottom: "label"
-##  top: "loss"
-##}
-
-layer {
-  bottom: "ip2"
-  bottom: "label"
-  top: "infoGainLoss"
-  name: "infoGainLoss"
-  type: "InfogainLoss"
-  infogain_loss_param {
-    axis: 1
-    source: "examples/CARLOFFF/infogainH.binaryproto"
-  }
-}
-
-##layer {
-##    name: "computeH"
-##    bottom: "label"
-##    top: "H"
-##    type: "Python"
-##    python_param {
-##        module: "digits_python_layers"
-##        layer: "ComputeH"
-##        param_str: '{"n_classes": 10}'
-##    }
-##    exclude { stage: "deploy" }
-##}
-
-##layer {
-##  name: "loss"
-##  type: "InfogainLoss"
-##  bottom: "ip2"
-##  bottom: "label2"
-##  bottom: "infogain"
-##  top: "loss"
-##  infogain_loss_param {
-##    axis: 1  # compute loss and probability along axis
-##  }
-##  loss_param {
-##      normalization: 0
-##  }
-##  exclude {
-##    stage: "deploy"
-##  }
-##}
