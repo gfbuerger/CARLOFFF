@@ -1,0 +1,280 @@
+diff --git a/Makefile b/Makefile
+index b7660e85..d5f5d134 100644
+--- a/Makefile
++++ b/Makefile
+@@ -200,7 +200,7 @@ endif
+ ifeq ($(USE_OPENCV), 1)
+ 	LIBRARIES += opencv_core opencv_highgui opencv_imgproc
+ 
+-	ifeq ($(OPENCV_VERSION), 3)
++	ifeq ($(OPENCV_VERSION), 4)
+ 		LIBRARIES += opencv_imgcodecs
+ 	endif
+ 
+@@ -429,7 +429,7 @@ LINKFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
+ 
+ USE_PKG_CONFIG ?= 0
+ ifeq ($(USE_PKG_CONFIG), 1)
+-	PKG_CONFIG := $(shell pkg-config opencv --libs)
++	PKG_CONFIG := $(shell pkg-config opencv4 --libs)
+ else
+ 	PKG_CONFIG :=
+ endif
+@@ -534,6 +534,10 @@ $(MAT$(PROJECT)_SO): $(MAT$(PROJECT)_SRC) $(STATIC_NAME)
+ 			CXX="$(CXX)" \
+ 			CXXFLAGS="\$$CXXFLAGS $(MATLAB_CXXFLAGS)" \
+ 			CXXLIBS="\$$CXXLIBS $(STATIC_LINK_COMMAND) $(LDFLAGS)" -output $@
++#			CXX="$(CXX)" \
++#			CXXFLAGS="$(CXXFLAGS) $(MATLAB_CXXFLAGS)" \
++#			CXXLIBS="$(CXXLIBS) $(STATIC_LINK_COMMAND)" \
++#	mkoctfile --mex $(LDFLAGS) $(MAT$(PROJECT)_SRC) --output matlab/+caffe/private/caffe_
+ 	@ if [ -f "$(PROJECT)_.d" ]; then \
+ 		mv -f $(PROJECT)_.d $(BUILD_DIR)/${MAT$(PROJECT)_SO:.$(MAT_SO_EXT)=.d}; \
+ 	fi
+@@ -547,6 +551,7 @@ pytest: py
+ 
+ mattest: mat
+ 	cd matlab; $(MATLAB_DIR)/bin/matlab -nodisplay -r 'caffe.run_tests(), exit()'
++#	cd matlab; octave --eval 'addpath +caffe/private ; caffe.run_tests()'
+ 
+ warn: $(EMPTY_WARN_REPORT)
+ 
+diff --git a/cmake/Utils.cmake b/cmake/Utils.cmake
+index 653de5fd..51edadca 100644
+--- a/cmake/Utils.cmake
++++ b/cmake/Utils.cmake
+@@ -354,7 +354,7 @@ function(caffe_parse_linker_libs Caffe_LINKER_LIBS_variable folders_var flags_va
+       list(APPEND libflags -l${CMAKE_MATCH_1})
+       list(APPEND folders    ${folder})
+     else()
+-      message(FATAL_ERROR "Logic error. Need to update cmake script")
++      message(WARNING "Logic error. Need to update cmake script")
+     endif()
+   endforeach()
+ 
+diff --git a/matlab/+caffe/Layer.m b/matlab/+caffe/Layer.m
+index 4c202310..a4a738d5 100644
+--- a/matlab/+caffe/Layer.m
++++ b/matlab/+caffe/Layer.m
+@@ -20,9 +20,10 @@ classdef Layer < handle
+       self.attributes = caffe_('layer_get_attr', self.hLayer_self);
+       
+       % setup weights
+-      self.params = caffe.Blob.empty();
++%      self.params = caffe.Blob.empty();
++      self.params = {};
+       for n = 1:length(self.attributes.hBlob_blobs)
+-        self.params(n) = caffe.Blob(self.attributes.hBlob_blobs(n));
++        self.params{n} = caffe.Blob(self.attributes.hBlob_blobs(n));
+       end
+     end
+     function layer_type = type(self)
+diff --git a/matlab/+caffe/Net.m b/matlab/+caffe/Net.m
+index bb99ec89..2c200ed0 100644
+--- a/matlab/+caffe/Net.m
++++ b/matlab/+caffe/Net.m
+@@ -17,8 +17,8 @@ classdef Net < handle
+     blob_vec
+     inputs
+     outputs
+-    name2layer_index
+-    name2blob_index
++    name2layer_get_index
++    name2blob_get_index
+     layer_names
+     blob_names
+   end
+@@ -40,15 +40,17 @@ classdef Net < handle
+       self.attributes = caffe_('net_get_attr', self.hNet_self);
+       
+       % setup layer_vec
+-      self.layer_vec = caffe.Layer.empty();
++%      self.layer_vec = caffe.Layer.empty();
++      self.layer_vec = {};
+       for n = 1:length(self.attributes.hLayer_layers)
+-        self.layer_vec(n) = caffe.Layer(self.attributes.hLayer_layers(n));
++        self.layer_vec{n} = caffe.Layer(self.attributes.hLayer_layers(n));
+       end
+       
+       % setup blob_vec
+-      self.blob_vec = caffe.Blob.empty();
++%      self.blob_vec = caffe.Blob.empty();
++      self.blob_vec = {};
+       for n = 1:length(self.attributes.hBlob_blobs);
+-        self.blob_vec(n) = caffe.Blob(self.attributes.hBlob_blobs(n));
++        self.blob_vec{n} = caffe.Blob(self.attributes.hBlob_blobs(n));
+       end
+       
+       % setup input and output blob and their names
+@@ -59,10 +61,10 @@ classdef Net < handle
+         self.attributes.blob_names(self.attributes.output_blob_indices + 1);
+       
+       % create map objects to map from name to layers and blobs
+-      self.name2layer_index = containers.Map(self.attributes.layer_names, ...
+-        1:length(self.attributes.layer_names));
+-      self.name2blob_index = containers.Map(self.attributes.blob_names, ...
+-        1:length(self.attributes.blob_names));
++%%      self.name2layer_index = containers.Map(self.attributes.layer_names, ...
++%%        1:length(self.attributes.layer_names));
++%%      self.name2blob_index = containers.Map(self.attributes.blob_names, ...
++%%        1:length(self.attributes.blob_names));
+       
+       % expose layer_names and blob_names for public read access
+       self.layer_names = self.attributes.layer_names;
+@@ -70,16 +72,18 @@ classdef Net < handle
+     end
+     function delete (self)
+       if ~isempty(self.hNet_self)
+-        caffe_('delete_net', self.hNet_self);
++        if self.isvalid
++          caffe_('delete_net', self.hNet_self);
++        end
+       end
+     end
+     function layer = layers(self, layer_name)
+       CHECK(ischar(layer_name), 'layer_name must be a string');
+-      layer = self.layer_vec(self.name2layer_index(layer_name));
++      layer = self.layer_vec(self.name2layer_get_index(layer_name));
+     end
+     function blob = blobs(self, blob_name)
+       CHECK(ischar(blob_name), 'blob_name must be a string');
+-      blob = self.blob_vec(self.name2blob_index(blob_name));
++      blob = self.blob_vec(self.name2blob_get_index(blob_name));
+     end
+     function blob = params(self, layer_name, blob_index)
+       CHECK(ischar(layer_name), 'layer_name must be a string');
+@@ -134,5 +138,20 @@ classdef Net < handle
+       CHECK(ischar(weights_file), 'weights_file must be a string');
+       caffe_('net_save', self.hNet_self, weights_file);
+     end
++    function i=name2layer_get_index(self, layer_name)
++      for i = 1:length(self.attributes.layer_names)
++        if strcmp(self.attributes.layer_names{i},layer_name)
++          return
++        endif
++      end
++    end
++
++    function i=name2blob_get_index(self, blob_name)
++      for i = 1:length(self.attributes.blob_names)
++        if strcmp(self.attributes.blob_names{i},blob_name)
++          return
++        endif
++      end
++    end
+   end
+ end
+diff --git a/matlab/CMakeLists.txt b/matlab/CMakeLists.txt
+index 987730d9..f9583dbb 100644
+--- a/matlab/CMakeLists.txt
++++ b/matlab/CMakeLists.txt
+@@ -44,10 +44,9 @@ string(REPLACE ";" ":"  rpath_folders   "${folders}")
+ 
+ if(build_using MATCHES "Matlab")
+   set(libflags -lcaffe${Caffe_POSTFIX} ${libflags}) # Matlab R2014a complans for -Wl,--whole-archive
+-
+   caffe_fetch_and_set_proper_mexext(Matlab_caffe_mex)
+   add_custom_command(OUTPUT ${Matlab_caffe_mex} COMMAND ${Matlab_mex}
+-      ARGS -output ${Matlab_caffe_mex} ${Matlab_srcs} ${cflags} ${link_folders} ${libflags}
++      ARGS -output ${Matlab_caffe_mex} ${Matlab_srcs} -I/opt/cuda/include -I/opt/boost_1_74_0 -I/opt/caffe/include ${cflags} -L/opt/boost_1_74_0/stage/lib ${link_folders} ${libflags}
+       DEPENDS caffe COMMENT "Building Matlab interface: ${Matlab_caffe_mex}" VERBATIM)
+   add_custom_target(matlab ALL DEPENDS ${Matlab_caffe_mex} SOURCES ${Matlab_srcs})
+ 
+@@ -60,7 +59,7 @@ elseif(build_using MATCHES "Octave")
+   endif()
+ 
+   add_custom_command(OUTPUT ${Matlab_caffe_mex} COMMAND ${Octave_compiler}
+-      ARGS --mex -o ${Matlab_caffe_mex} ${Matlab_srcs} ${cflags} ${link_folders} ${libflags} -Wl,-rpath,${rpath_folders}
++      ARGS --mex -o ${Matlab_caffe_mex} ${Matlab_srcs} -I/opt/cuda/include -I${PROJECT_SOURCE_DIR}/include -I/opt/boost_1_74_0 -I/opt/caffe/include ${cflags} -L/opt/boost_1_74_0/stage/lib ${link_folders} ${libflags} -Wl,-rpath,${rpath_folders}
+       DEPENDS caffe COMMENT "Building Octave interface: ${Matlab_caffe_mex}" VERBATIM)
+ 
+   add_custom_target(octave ALL DEPENDS ${Matlab_caffe_mex} SOURCES ${Matlab_srcs})
+diff --git a/src/caffe/layers/window_data_layer.cpp b/src/caffe/layers/window_data_layer.cpp
+index 1bf3760e..f41169de 100644
+--- a/src/caffe/layers/window_data_layer.cpp
++++ b/src/caffe/layers/window_data_layer.cpp
+@@ -290,7 +290,7 @@ void WindowDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
+           image_database_cache_[window[WindowDataLayer<Dtype>::IMAGE_INDEX]];
+         cv_img = DecodeDatumToCVMat(image_cached.second, true);
+       } else {
+-        cv_img = cv::imread(image.first, CV_LOAD_IMAGE_COLOR);
++        cv_img = cv::imread(image.first, cv::IMREAD_COLOR);
+         if (!cv_img.data) {
+           LOG(ERROR) << "Could not open or find file " << image.first;
+           return;
+diff --git a/src/caffe/test/test_io.cpp b/src/caffe/test/test_io.cpp
+index c2c919e9..b80df287 100644
+--- a/src/caffe/test/test_io.cpp
++++ b/src/caffe/test/test_io.cpp
+@@ -20,8 +20,8 @@ class IOTest : public ::testing::Test {};
+ bool ReadImageToDatumReference(const string& filename, const int label,
+     const int height, const int width, const bool is_color, Datum* datum) {
+   cv::Mat cv_img;
+-  int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
+-    CV_LOAD_IMAGE_GRAYSCALE);
++  int cv_read_flag = (is_color ? cv::IMREAD_COLOR :
++    cv::IMREAD_GRAYSCALE);
+ 
+   cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
+   if (!cv_img_origin.data) {
+diff --git a/src/caffe/util/io.cpp b/src/caffe/util/io.cpp
+index 5295d9dd..1f9167a1 100644
+--- a/src/caffe/util/io.cpp
++++ b/src/caffe/util/io.cpp
+@@ -73,8 +73,8 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
+ cv::Mat ReadImageToCVMat(const string& filename,
+     const int height, const int width, const bool is_color) {
+   cv::Mat cv_img;
+-  int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
+-    CV_LOAD_IMAGE_GRAYSCALE);
++  int cv_read_flag = (is_color ? cv::IMREAD_COLOR :
++    cv::IMREAD_GRAYSCALE);
+   cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
+   if (!cv_img_origin.data) {
+     LOG(ERROR) << "Could not open or find file " << filename;
+@@ -179,8 +179,8 @@ cv::Mat DecodeDatumToCVMat(const Datum& datum, bool is_color) {
+   CHECK(datum.encoded()) << "Datum not encoded";
+   const string& data = datum.data();
+   std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
+-  int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
+-    CV_LOAD_IMAGE_GRAYSCALE);
++  int cv_read_flag = (is_color ? cv::IMREAD_COLOR :
++    cv::IMREAD_GRAYSCALE);
+   cv_img = cv::imdecode(vec_data, cv_read_flag);
+   if (!cv_img.data) {
+     LOG(ERROR) << "Could not decode datum ";
+diff --git a/tools/extra/extract_seconds.py b/tools/extra/extract_seconds.py
+index 68af69a2..bab500a0 100755
+--- a/tools/extra/extract_seconds.py
++++ b/tools/extra/extract_seconds.py
+@@ -7,7 +7,7 @@ def extract_datetime_from_line(line, year):
+     # Expected format: I0210 13:39:22.381027 25210 solver.cpp:204] Iteration 100, lr = 0.00992565
+     line = line.strip().split()
+     month = int(line[0][1:3])
+-    day = int(line[0][3:])
++    day = int(line[0][4:])
+     timestamp = line[1]
+     pos = timestamp.rfind('.')
+     ts = [int(x) for x in timestamp[:pos].split(':')]
+diff --git a/tools/extra/parse_log.py b/tools/extra/parse_log.py
+index 4248e2b8..f189ac88 100755
+--- a/tools/extra/parse_log.py
++++ b/tools/extra/parse_log.py
+@@ -160,7 +160,7 @@ def write_csv(output_filename, dict_list, delimiter, verbose=False):
+ 
+     if not dict_list:
+         if verbose:
+-            print('Not writing %s; no lines to write' % output_filename)
++            print('Not writing %s; no lines to write') % output_filename
+         return
+ 
+     dialect = csv.excel
+@@ -172,7 +172,7 @@ def write_csv(output_filename, dict_list, delimiter, verbose=False):
+         dict_writer.writeheader()
+         dict_writer.writerows(dict_list)
+     if verbose:
+-        print 'Wrote %s' % output_filename
++        print ('Wrote %s') % output_filename
+ 
+ 
+ def parse_args():
