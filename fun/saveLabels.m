@@ -2,7 +2,7 @@ function saveLabels(labels, filename)
 %saveLabels saves a [number of labels] matrix containing
 %the raw labels
 
-delete(filename) ;
+unlink(filename) ;
 fp = fopen(filename, 'wb');
 assert(fp ~= -1, ['Could not open ', filename, '']);
 

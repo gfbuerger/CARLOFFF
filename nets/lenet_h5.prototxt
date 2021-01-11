@@ -1,64 +1,30 @@
 name: "LeNet"
 layer {
-  name: "CARLOFFF"
-  type: "Data"
+  name: "RR"
+  type: "HDF5Data"
   top: "data"
   top: "label"
   include {
     phase: TRAIN
   }
-  transform_param {
-    scale: 0.00390625
-  }
-  data_param {
-    source: "data/Nord_train_lmdb"
+  hdf5_data_param {
+    source: "data/Nord_CAL.txt"
     batch_size: 64
-    backend: LMDB
   }
 }
 layer {
-  name: "CARLOFFF"
-  type: "Data"
+  name: "data"
+  type: "HDF5Data"
   top: "data"
   top: "label"
   include {
     phase: TEST
   }
-  transform_param {
-    scale: 0.00390625
-  }
-  data_param {
-    source: "data/Nord_test_lmdb"
+  hdf5_data_param {
+    source: "data/Nord_VAL.txt"
     batch_size: 100
-    backend: LMDB
   }
 }
-##layer {
-##  name: "data"
-##  type: "HDF5Data"
-##  top: "data"
-##  top: "label"
-##  include {
-##    phase: TRAIN
-##  }
-##  hdf5_data_param {
-##    source: "data/Nord_train.txt"
-##    batch_size: 64
-##  }
-##}
-##layer {
-##  name: "data"
-##  type: "HDF5Data"
-##  top: "data"
-##  top: "label"
-##  include {
-##    phase: TEST
-##  }
-##  hdf5_data_param {
-##    source: "data/Nord_test.txt"
-##    batch_size: 100
-##  }
-##}
 layer {
   name: "conv1"
   type: "Convolution"
