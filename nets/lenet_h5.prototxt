@@ -26,6 +26,30 @@ layer {
   }
 }
 layer {
+  name: "H"
+  type: "HDF5Data"
+  top: "H"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "data/Nord_H.txt"
+    batch_size: 1
+  }
+}
+layer {
+  name: "H"
+  type: "HDF5Data"
+  top: "H"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "data/Nord_H.txt"
+    batch_size: 1
+  }
+}
+layer {
   name: "conv1"
   type: "Convolution"
   bottom: "data"
@@ -162,13 +186,14 @@ layer {
 layer {
   bottom: "ip2"
   bottom: "label"
+  bottom: "H"
   top: "infoGainLoss"
   name: "infoGainLoss"
   type: "InfogainLoss"
-  infogain_loss_param {
-    axis: 1
-    source: "data/infogainH.binaryproto"
-  }
+##  infogain_loss_param {
+##    axis: 1
+##    source: "data/infogainH.binaryproto"
+##  }
 }
 
 ##layer {

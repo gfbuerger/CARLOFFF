@@ -2,6 +2,7 @@
 net: "nets/lenet_h5.prototxt"
 # test_iter specifies how many forward passes the test should carry out.
 # In the case of MNIST, we have test batch size 100 and 100 test iterations,
+# debug_info: true
 # covering the full 10,000 testing images.
 test_iter: 100
 # Carry out testing every 500 training iterations.

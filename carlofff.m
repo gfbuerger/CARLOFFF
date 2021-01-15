@@ -82,8 +82,10 @@ else
    f = 'nc/Staedte_DWDEreigniskatalog_ERGEBNISSE_und_BESCHREIBUNG.Nord.xlsx' ;
    RR = read_dwd(f) ;
 
-   RR.q = quantile(RR.x, 0.96:0.01:1) ;
+##   RR.q = quantile(RR.x, 0.96:0.01:1) ;
+   RR.q = quantile(RR.x, 0.975) ;
    RR.c = lookup(RR.q, RR.x) ;
+   write_H(RR.c, 'data/Nord_H.h5') ;
    if isoctave()
     save('-mat', dfile, 'RR') ;
    else
@@ -95,52 +97,13 @@ end
 cape.I = ind2log(cape.I, size(cape.id, 1))' ;
 RR.I = ind2log(RR.I, size(RR.id, 1))' ;
 
-%% train (CAL) & test (VAL)
+%% write train (CAL) & test (VAL) data
 cape.scale = 1e-3 ;
 CAL = [2001 4 26 ; 2012 9 30] ;
 VAL = [2013 4 26 ; 2019 8 31] ;
-for PHS = {"CAL" "VAL"}
-   PHS = PHS{:} ;
-   eval(sprintf("cape.%s = sdate(cape.id, %s) ;", PHS, PHS)) ;
-   eval(sprintf("RR.%s = sdate(RR.id, %s) ;", PHS, PHS)) ;
-   of = ['data/Nord_' PHS '.h5'] ;
-   if exist(of, "file") ~= 2 || 1
-      labels = RR.c(RR.I & RR.(PHS)) ;
-      images = cape.x(:, :, cape.I & cape.(PHS)) ;
-      saveLabels(labels, sprintf('data/Nord_%s-labels-idx1-ubyte', PHS)) ;
-      saveImages(images, sprintf('data/Nord_%s-images-idx3-ubyte', PHS)) ;
-      images = permute(images, 3:-1:1) ;
-      delete(of) ;
-      N = size(images) ;
-      N = flip([N(1) 1 N(2:end)]) ; % channel dim
-      h5create(of,'/data', N, 'Datatype', 'double') ;
-      h5write(of,'/data', scale * images) ;
-      N = flip(size(labels)) ;
-      h5create(of,'/label', N, 'Datatype', 'double') ;
-      h5write(of,'/label', labels) ;
-   end
-end
 
-system("./gen_lmdb.sh") ;
+## caffe
+prob = run_caffe(cape, RR, CAL, VAL) ;
 
-caffe.set_mode_gpu() ;
-caffe.set_device(0) ;
-
-weights = 'data/snapshots/lenet_solver_iter_1000.caffemodel' ;
-weights = 'data/snapshots/lenet_h5_solver_iter_1000.caffemodel' ;
-
-if exist(weights, "file") ~= 2
-   solver = caffe.Solver('solver/lenet_h5_solver.prototxt') ;
-##   solver.restore("data/snapshots/lenet_solver_iter_1000.solverstate");
-   solver.solve() ;
-end
-
-model = 'nets/deploy.prototxt' ;
-model = 'nets/lenet_h5.prototxt' ;
-net = caffe.Net(model, weights, 'test') ;
-
-for i = find(cape.I & cape.VAL)'
-   image = cape.scale * cape.x(:,:,i) ;
-   res = net.forward({image});
-   prob(:,i) = res{1};
-end
+## logistic regression
+prob = run_lreg(cape, RR, CAL, VAL, C, L) ;
