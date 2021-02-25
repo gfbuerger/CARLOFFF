@@ -13,9 +13,9 @@ numRows = fread(fp, 1, 'int32', 0, 'ieee-be');
 numCols = fread(fp, 1, 'int32', 0, 'ieee-be');
 
 images = fread(fp, inf, 'unsigned char');
-images = reshape(images, numImages, numRows, numCols);
-##images = permute(images,[2 1 3]);
-
 fclose(fp);
+
+images = reshape(images, numRows, numCols, numImages) ;
+images = permute(images, ndims(images):-1:1) ;
 
 end

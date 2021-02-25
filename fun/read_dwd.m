@@ -3,30 +3,45 @@
 %%
 function s = read_dwd (fin)
 
-   global isoctave
+   global isoctave LON LAT
 
    if isoctave(), pkg load io ; end
 
-   LATS = [] ;
+   jD = 5 ; ja = 7 ; jx = 10 ; je = 9 ; jd = 5 ;
+   Jx = 5 : 11 ;
+   
    MONS = 4:8 ;
    HRS = 11:21 ;
 
-   [NUMARR, TXTARR, RAWARR] = xlsread (fin) ;
+   D = dlmread(fin) ;
+   D = D(2:end,:) ;
 
-   dt = parfun(@(a) datestr(datenum(num2str(a), 'yyyymmddHHMM')), NUMARR(:,5), 'UniformOutput', false) ;
-   id = datevec(char(dt)) ; id(:,5) = 0 ; t = datenum(id) ;
-   [t, Is] = unique(t, 'sorted') ;
-   dt = dt(Is) ; NUMARR = NUMARR(Is,:) ;
+   if ~issorted(D(:,2))
+      [t, Is] = unique(D(:,2), 'sorted') ;
+      D = D(Is,:) ;
+   endif
 
-   tf = (floor(t(1)):1/24:ceil(t(end)))' ;
+   lon = D(:,3) ; lat = D(:,4) ;
+   I = lookup(LON, lon) == 1 & lookup(LAT, lat) == 1 ;
+   D(I,Jx) = NaN ;
+   
+   t = D(:,2) ; d = D(:,jd) ;
+   t = datenum(num2str(t, '%d'), 'yyyymmddHHMM') ;
+   t = t - d ./ 48 ; # center of event
 
-   [~, I, If] = intersect(t, tf) ;
-
+   id0 = datevec(t(1)) ; id0 = [id0(1) 1 1] ;
+   id1 = datevec(t(end)) ; id1 = [id1(1) 12 31] ;
+   tf = (datenum(id0):1/24:datenum(id1))' ;
    id = datevec(tf) ; id = id(:,1:4) ;
-   x = zeros(length(tf), 1) ;
-   x(If) = NUMARR(:,10) ;
+   x = nan(rows(id), 7) ;
+   
+   idx = lookup(tf, t) ;
+   x(idx,:) = D(:,Jx) ;
 
    [idy y] = dayavg(id, x, 0, @(x) nanmax(x, [])) ;
+
+   s.id = datevec(t)(:,1:5) ;
+   s.lon = D(:,3) ; s.lat = D(:,4) ;
    
 %%   I = ismember(idy(:,2), MONS) & ismember(idy(:,4), HRS) ;
    I = ismember(idy(:,2), MONS) ;
@@ -34,15 +49,6 @@ function s = read_dwd (fin)
    s.id = idy(I,:) ;
    s.x = y(I) ;
 
-   return ;
-   
-%%   idy = cellfun(@(a) strptime(a, '%d-%b-%Y %T').mon, dt, 'UniformOutput', ~false) ;
-%%   idh = cellfun(@(a) strptime(a, '%d-%b-%Y %T').hour, dt, 'UniformOutput', ~false) ;
-%%   idm = cellfun(@(a) strptime(a, '%d-%b-%Y %T').min, dt, 'UniformOutput', ~false) ;
-
-%%   hist(idy, 1:12)
-%%   [hn hx] = hist(idh, 1:24) ; hn(24) = hn(1) = hn(1)/2 ;
-%%   bar(hx, hn) ;
-%%   hist(idm)
+   s.p0 = sum(s.x < 0) / rows(s.x) ;
 
 endfunction

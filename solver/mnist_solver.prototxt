@@ -1,9 +1,8 @@
 # The train/test net protocol buffer definition
-net: "nets/mnist.prototxt"
+net: "nets/mnist_train_test.prototxt"
 # test_iter specifies how many forward passes the test should carry out.
 # In the case of MNIST, we have test batch size 100 and 100 test iterations,
 # covering the full 10,000 testing images.
-debug_info: false
 test_iter: 100
 # Carry out testing every 500 training iterations.
 test_interval: 500
@@ -23,4 +22,4 @@ max_iter: 10000
 snapshot: 5000
 snapshot_prefix: "data/snapshots/mnist"
 # solver mode: CPU or GPU
-solver_mode: CPU
+solver_mode: GPU

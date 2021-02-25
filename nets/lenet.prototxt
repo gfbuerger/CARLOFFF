@@ -159,25 +159,25 @@ layer {
     phase: TEST
   }
 }
-##layer {
-##  name: "loss"
-##  type: "SoftmaxWithLoss"
-##  bottom: "ip2"
-##  bottom: "label"
-##  top: "loss"
-##}
-
 layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
   bottom: "ip2"
   bottom: "label"
-  top: "infoGainLoss"
-  name: "infoGainLoss"
-  type: "InfogainLoss"
-  infogain_loss_param {
-    axis: 1
-    source: "data/infogainH.binaryproto"
-  }
+  top: "loss"
 }
+
+##layer {
+##  bottom: "ip2"
+##  bottom: "label"
+##  top: "infoGainLoss"
+##  name: "infoGainLoss"
+##  type: "InfogainLoss"
+##  infogain_loss_param {
+##    axis: 1
+##    source: "data/infogainH.binaryproto"
+##  }
+##}
 
 ##layer {
 ##    name: "computeH"

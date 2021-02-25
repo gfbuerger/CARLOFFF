@@ -1,0 +1,14 @@
+/DATA
+/foo.m
+/Demo.m
+/auto-mpg.data
+/data.m
+/dset.h5
+/dset.o.h5
+/examples
+/hello
+/hello.cpp
+/mlp.m
+/nets/*.prototxt
+/nohup.out
+/solver/*.prototxt

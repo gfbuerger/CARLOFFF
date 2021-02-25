@@ -1,6 +1,13 @@
 
-global isoctave
-isoctave = @() exist('OCTAVE_VERSION','builtin') ~= 0 ;
+global isoctave LON LAT REG
+
+GLON = [6 11] ; GLAT = [47 56] ;
+##   LON = [6 10] ; LAT = [51 54] ; Nordwest
+REG = "SW" ;
+LON = [7 9] ; LAT = [47.5 49] ; # Südwest
+LON = [8 8.5] ; LAT = [48.5 48.8] ; # point
+
+isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
 if isoctave()
    pkg load hdf5oct netcdf
    addpath /opt/caffe/matlab
@@ -10,100 +17,88 @@ else
 end
 
 addpath ~/CARLOFFF/fun
-droot = '/opt/tmp/caffe' ;
-[~, ~] = mkdir(droot, 'data/CARLOFFF')
+[~, ~] = mkdir("data/CARLOFFF")
 cd ~/CARLOFFF
 scale = 0.00390625 ; % MNIST
+Q0 = 0.8 ;
+VAR = {"cape" "cp"} ;
 
-afile = 'data/atm.mat' ;
-if exist(afile, 'file') == 2
+if exist(afile = "data/atm.ob", "file") == 2
    load(afile) ;
 else
-   ncf = 'data/wnd.nc' ;
-   t = ncread(ncf, 'time') ;
+   ncf = "data/wnd.nc" ;
+   t = ncread(ncf, "time") ;
    wnd.id = nctime(t, :, :) ;
-   wnd.u = ncread(ncf, 'u') ;
-   wnd.v = ncread(ncf, 'v') ;
-   ncf = 'data/ind.nc' ;
-   t = ncread(ncf, 'time') ;
-   lon = ncread(ncf, 'longitude') ;
-   lat = ncread(ncf, 'latitude') ;
+   wnd.u = permute(ncread(ncf, "u"), [4 1 2 3]) ;
+   wnd.v = permute(ncread(ncf, "v"), [4 1 2 3]) ;
+   ncf = "data/ind.nc" ;
+   t = ncread(ncf, "time") ;
+   lon = ncread(ncf, "longitude") ;
+   lat = ncread(ncf, "latitude") ;
    id = nctime(t, :, :) ;
-   cape.id = id ;
-   cp.id = id ;
-   cape.x = ncread(ncf, 'cape') ; cape.x = squeeze(cape.x(:,:,1,:)) ;
-   cp.x = ncread(ncf, 'cp') ; cp.x = squeeze(cp.x(:,:,1,:)) ;
-   LON = [] ; LAT = [49 56] ;
-   cape.x = cape.x(:,lookup(LAT, lat)==1,:) ;
-   cp.x = cp.x(:,lookup(LAT, lat)==1,:) ;
-   save('-mat', afile, 'cp', 'cape') ;
+   Ilon = find(lookup(LON, lon) > 0) ;
+   Ilat = find(lookup(LAT, lat) > 0) ;
+   lon = lon(Ilon) ; lat = lat(Ilat) ;
+   for v = VAR
+      x = squeeze(ncread(ncf, v{:}, [Ilon(1) Ilat(1) 1 1], [numel(Ilon) numel(Ilat) 1 Inf])) ;
+      x = permute(x, [3 1 2]) ; # all data are N x W x H
+      eval(sprintf("%s.id = id ;", v{:})) ;
+      eval(sprintf("%s.x = x ;", v{:})) ;
+      eval(sprintf("%s.lon = lon ;", v{:})) ;
+      eval(sprintf("%s.lat = lat ;", v{:})) ;
+   endfor
+   save(afile, VAR{:}, "GLON", "GLAT") ;
 end
 
-if 0
-   for s = {'train' 'test'}
-      s = s{:} ;
-      labels = loadMNISTLabels(sprintf('%s/data/mnist/%s-labels-idx1-ubyte', droot, s))' ;
-      images = loadMNISTImages(sprintf('%s/data/mnist/%s-images-idx3-ubyte', droot, s)) ;
-      labels = labels' ;
-      labels2 = (labels == 1) ;
-      saveMNISTLabels(labels, sprintf('%s/data/mnist/%s-labels', droot, s)) ;
-      saveMNISTLabels(labels2, sprintf('%s/data/mnist/%s-labels2', droot, s)) ;
-      saveMNISTImages(images, sprintf('%s/data/mnist/%s-images', droot, s)) ;
-%%      continue ;
-      of = sprintf('%s/data/mnist/%s-mnist.h5', droot, s) ;
-      delete(of) ;
-%      images = permute(images, [3 2 1]) ;
-%      h5create(of,'/data', size(images), 'Datatype', 'int8') ;
-      N = size(images) ;
-      N = [N(1) 1 N(2:end)] ; % channel dim
-      h5create(of,'/data', flip(N), 'Datatype', 'double') ;
-      h5write(of,'/data', scale * images) ;
-      N = size(labels) ;
-      h5create(of,'/label', flip(N), 'Datatype', 'double') ;
-      h5write(of,'/label', labels) ;
-      N = size(labels2) ;
-      h5create(of,'/label2', flip(N), 'Datatype', 'double') ;
-      h5write(of,'/label2', labels2) ;
-      ig = infogain(labels2) ;
-      N = size(ig) ;
-      h5create(of,'/infogain', flip(N), 'Datatype', 'double') ;
-      h5write(of,'/infogain', ig) ;
-      hf = sprintf('%s/examples/mnist/%s-mnist.txt', droot, s) ;
-      fid = fopen(hf, 'wt') ;
-      fprintf(fid, '%s', of) ;
-      fclose(fid) ;
-   end
-endif
+PDD = {"RR" "cape" "cp" "regnie"}{2} ;
+switch PDD
+   case "RR"
+      if exist(dfile = sprintf("data/dwd.%s.ob", REG), "file") == 2
+	 load(dfile) ;
+      else
+	 pdd = read_dwd("nc/StaedteDWD/klamex_with_coords.csv") ;
+	 save(dfile, "pdd") ;
+      endif
+   case {"cape" "cp"}
+      if exist(dfile = sprintf("data/%s.%s.ob", REG, PDD), "file") == 2
+	 load(dfile) ;
+      else
+	 eval(sprintf("pdd = sel_ptr(%s, LON, LAT) ;", PDD)) ;
+	 save(dfile, "pdd") ;
+      endif
+   case "regnie"
+      if isnewer(dfile = sprintf("data/%s/%s.%s.ob", PDD, REG, PDD), "fun/regnie.m")
+	 load(dfile) ;
+      else
+	 pdd = regnie("https://opendata.dwd.de/climate_environment/CDC/grids_germany/daily/regnie") ;
+	 save(dfile, "pdd") ;
+	 exit ;
+      endif
+endswitch
+pdd.name = PDD ;
+pdd.q = quantile(pdd.x, Q0) ;
+pdd.c = lookup(pdd.q, pdd.x) ;
+write_H(pdd.c, 0.01, sprintf("data/%s.%s.H.h5", REG, pdd.name)) ;
 
-dfile = 'data/dwd.Nord.mat' ;
-if exist(dfile, 'file') == 2
-   load(dfile) ;
-else
-   f = 'nc/Staedte_DWDEreigniskatalog_ERGEBNISSE_und_BESCHREIBUNG.Nord.xlsx' ;
-   RR = read_dwd(f) ;
+eval(sprintf("ptr = %s ;", VAR{1})) ;
+[~, ptr.I, pdd.I] = intersect(datenum(ptr.id(:,1:3)), datenum(pdd.id(:,1:3))) ;
+ptr.I = ind2log(ptr.I, size(ptr.id, 1))' ;
 
-##   RR.q = quantile(RR.x, 0.96:0.01:1) ;
-   RR.q = quantile(RR.x, 0.975) ;
-   RR.c = lookup(RR.q, RR.x) ;
-   write_H(RR.c, 'data/Nord_H.h5') ;
-   if isoctave()
-    save('-mat', dfile, 'RR') ;
-   else
-    save(dfile, 'RR') ;
-   end
-end
-
-[~, cape.I, RR.I] = intersect(datenum(cape.id(:,1:3)), datenum(RR.id(:,1:3))) ;
-cape.I = ind2log(cape.I, size(cape.id, 1))' ;
-RR.I = ind2log(RR.I, size(RR.id, 1))' ;
+pdd.I = ind2log(pdd.I, size(pdd.id, 1))' ;
+ptr.x = cape.x ;
+# ptr.x = cat(2, ptr.x, cp.x) ;
+##ptr.scale = 1e-3 ;
+ptr.scale = scale ;
 
 %% write train (CAL) & test (VAL) data
-cape.scale = 1e-3 ;
-CAL = [2001 4 26 ; 2012 9 30] ;
-VAL = [2013 4 26 ; 2019 8 31] ;
-
-## caffe
-prob = run_caffe(cape, RR, CAL, VAL) ;
+ptr.YCAL = [2001 4 26 ; 2010 9 30] ;
+ptr.YVAL = [2011 4 26 ; 2019 8 31] ;
 
 ## logistic regression
-prob = run_lreg(cape, RR, CAL, VAL, C, L) ;
+##lreg = run_lreg(ptr, pdd, "levfit", :, "nlambda", 1000, "lambdamax", 1000) ;
+##lreg = run_lreg(ptr, pdd, "levfit", :) ;
+##strucdisp(lreg) ;
+
+## caffe
+caffe = run_caffe(ptr, pdd, "cnn1") ;
+strucdisp(caffe) ;

@@ -76,7 +76,7 @@ function [E PC ev lmb D] = gpca(x, trunc="nEOF", lNaN=true)
    lmb = diag(D).'.^2 / (nt-1) ;
 
    if ischar(trunc)
-      np = feval(trunc, lmb) ; # North rule of thumb
+      np = feval(trunc, lmb) ;
    elseif 0 < trunc && trunc < 1
       I = lmb/sum(lmb) > eps ;
       PC = PC(:,I) ; lmb = lmb(I) ; E = E(:,I) ;
@@ -111,17 +111,20 @@ function n = levfit (x)
    warning("off", "Octave:divide-by-zero") ;
    for k=1:N-n0
       u = (k:N)' ; v = x(u) ;
-      [P, S] = polyfit (u, v, 1) ;
-      R(k) = S.normr / S.df ;
+##      [P(k,:), S{k}] = polyfit (u, v, 1) ;
+##      R(k) = S{k}.normr / S{k}.df ;
+      [~, ~, ~, ~, STATS(k,:)] = regress (v, [ones(rows(u), 1) u]) ;
    endfor
    warning(wrn) ;
 
-   if N > n0 && any(I = diff(R) > 0)
-      n = find(I)(1) ;
-   else
-      n = N ;
-   endif
-   ## n = N - find(R == min(R)) ;
+   n = find(STATS(:,4) < 0.1 * mean(STATS(:,4)))(1) ;
+
+##   if N > n0 && any(I = diff(R) > 0)
+##      n = find(I)(1) ;
+##   else
+##      n = N ;
+##   endif
+##   n = N - find(R == min(R)) ;
 
 endfunction
 

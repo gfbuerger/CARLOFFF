@@ -1,54 +1,103 @@
-## usage: prob = run_caffe (cape, RR, CAL, VAL)
+## usage: res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
 ##
 ## calibrate and apply caffe model
-function prob = run_caffe (cape, RR, CAL, VAL)
+function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
+
+   global REG
+   
+   if exist(sprintf("data/%s_CAL_lmdb", REG), "dir") ~= 7
+      str = fileread("tools/gen_lmdb.sh") ;
+      str = strrep(str, "REG_tpl", REG) ;
+      tt = tempname ;
+      fid  = fopen(tt, 'wt') ;
+      fprintf(fid, '%s', str) ;
+      fclose(fid) ;
+      system(sprintf("sh %s", tt)) ;
+      unlink(tt) ;
+   endif
+
+   h5f = @(pddn, PHS) sprintf("data/%s_%s.%s.txt", REG, pddn, PHS) ;
 
    for PHS = {"CAL" "VAL"}
       PHS = PHS{:} ;
-      eval(sprintf("cape.%s = sdate(cape.id, %s) ;", PHS, PHS)) ;
-      eval(sprintf("RR.%s = sdate(RR.id, %s) ;", PHS, PHS)) ;
-      of = ['data/Nord_' PHS '.h5'] ;
-      labels = RR.c(RR.I & RR.(PHS)) ;
-      images = cape.x(:, :, cape.I & cape.(PHS)) ;
-      saveLabels(labels, sprintf('data/Nord_%s-labels-idx1-ubyte', PHS)) ;
-      saveImages(images, sprintf('data/Nord_%s-images-idx3-ubyte', PHS)) ;
-      images = permute(images, 3:-1:1) ;
-      delete(of) ;
-      N = size(images) ;
-      N = flip([N(1) 1 N(2:end)]) ; % channel dim
-      h5create(of,'/data', N, 'Datatype', 'double') ;
-      h5write(of,'/data', cape.scale * images) ;
-      N = flip(size(labels)) ;
-      h5create(of,'/label', N, 'Datatype', 'double') ;
-      h5write(of,'/label', labels) ;      
-   end
+      eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
+      eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
+      if exist(of = h5f(pdd.name, PHS), "file") ~= 2
+	 labels = pdd.c(pdd.I & pdd.(PHS)) ;
+	 images = ptr.x(ptr.I & ptr.(PHS), :, :) ;
+	 ifile = sprintf('data/%s_%s-images-idx3-ubyte', REG, PHS) ;
+	 lfile = sprintf('data/%s_%s-labels-idx1-ubyte', REG, PHS) ;
+	 save_bin(images, ifile, labels, lfile) ;
+	 save_hdf5(of, ptr.scale * images, labels) ;
+      endif
+   endfor
 
-   if exist("data/Nord_CAL_lmdb", "dir") ~= 7
-      system("./gen_lmdb.sh") ;
-   end
-
+   [fss fsn fsd] = proto_upd(ptr, pdd, proto) ;
+   
    caffe.set_mode_gpu() ;
    caffe.set_device(0) ;
 
    ## train model
-   weights = 'data/snapshots/lenet_h5_solver_iter_1000.caffemodel' ;
-   if exist(weights, "file") ~= 2 || 1
-      solver = caffe.Solver('solver/lenet_h5_solver.prototxt') ;
-      ##   solver.restore("data/snapshots/lenet_solver_iter_1000.solverstate");
-      ##   caffe.io.write_mean(mean_data, 'data/infogainH.binaryproto')
+   solver = caffe.Solver(sprintf("solver/%s.%s_solver.prototxt", proto, pdd.name)) ;
+   pat = sprintf("data/snapshots/%s.%s_iter_*.solverstate", proto, pdd.name) ;
+   if isempty(glob(pat)) || ~isnewer(glob(pat){1}, fss, fsn, fsd)
       solver.solve() ;
-   end
+      state = ls("-1t", pat)(1,:) ;
+   else
+      state = ls("-1t", pat)(1,:) ;
+      solver.restore(state) ;
+      iter = solver.iter ;
+      solver.step(round(0.5 * iter)) ;
+   endif
 
    ## apply model
-   N = size(cape.x) ;
-   prob = nan(N(3), 2) ;
-   model = 'nets/deploy.prototxt' ;
+   weights = strrep(state, "solverstate", "caffemodel") ;
+   n = size(ptr.x) ;   
+   model = sprintf("nets/%s.%s_deploy.prototxt", proto, pdd.name) ;
+   if exist(model, "file") ~= 2
+      error("file not found: %s", model)
+   endif
+
    net = caffe.Net(model, weights, 'test') ;
-   for i = find(cape.I & cape.VAL)'
-      image = cape.scale * cape.x(:,:,i) ;
-      res = net.forward({image});
-      prob(i,:) = res{1};
-   end
+   for PHS = {"CAL" "VAL"}
+      PHS = PHS{:} ;
+
+      if 1
+
+	 [images labels] = load_hdf5(h5f(pdd.name, PHS)) ;
+	 n = size(labels, 1) ;
+	 prob.(PHS) = nan(n, 2) ;
+	 for i = 1 : n
+	    data = squeeze(images(i,1,:,:))' ;
+	    phat = net.forward({data}) ;
+	    prob.(PHS)(i,:) = phat{1} ;
+	 end
+
+      else
+
+	 labels = pdd.c(pdd.I & pdd.(PHS)) ;
+	 I = ptr.I & ptr.(PHS) ;
+	 prob.(PHS) = nan(sum(I), 2) ; ii = 0 ;
+	 for i = find(I)'
+	    data = ptr.scale * squeeze(ptr.x(:,:,i)) ;
+	    phat = net.forward({data}) ;
+	    prob.(PHS)(++ii,:) = phat{1} ;
+	 end
+
+      endif
+
+      ce.(PHS) = crossentropy(labels, prob.(PHS)) ;
+
+      for s = SKL
+	 s = s{:} ;
+	 [thx fval] = fminsearch(@(th) -MoC(s, labels, prob.(PHS)(:,end) > th), 0.1) ;
+	 th.(s).(PHS) = thx ;
+	 skl.(s).(PHS) = -fval ;
+      endfor
+
+   endfor
+
+   res = struct("prob", prob, "crossentropy", ce, "th", th, "skl", skl) ;
 
 ##   model = 'nets/lenet_h5.prototxt' ;
 ##   net = caffe.Net(model, weights, 'train') ;
