@@ -15,8 +15,9 @@ function write_H (c, q = 0, ofile)
 
 ##   caffe.io.write_mean(single(H), ofile) ;
    
-   H = ones(N(2), N(2), 1, 1) ;
-   H(1,2,1,1) = 1 - q + q * (1 ./ f(j)) ;
+   H = q * ones(N(2), N(2), 1, 1) ;
+##   H = ones(N(2), N(2), 1, 1) ;
+##   H(1,2,1,1) = 1 - q + q * (1 ./ f(j)) ;
 
    unlink(ofile) ;
    h5create(ofile,'/H', [2 2 1 1], 'Datatype', 'double') ;

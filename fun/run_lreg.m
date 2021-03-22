@@ -8,8 +8,11 @@ function res = run_lreg (ptr, pdd, PCA, SKL = {"GSS" "HSS"}, varargin)
 
    X = ptr.x ;
    N = size(X) ;
-   X = reshape(X, N(1), []) ;
-   X = (X - nanmean(X)) ./ nanstd(X) ;
+   X = reshape(X, N(1), N(2), prod(N(3:end))) ;
+   for j = 1 : size(X, 2)
+      X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
+   endfor
+   X = reshape(X, N(1), prod(N(2:end))) ;
    
    for PHS = {"CAL" "VAL"}
 
@@ -19,16 +22,18 @@ function res = run_lreg (ptr, pdd, PCA, SKL = {"GSS" "HSS"}, varargin)
 
       x = X(ptr.I & ptr.(PHS),:) ;
 
-      switch PCA
-	 case "forge"
-	    [EIGVAL, EIGVEC, TS] = pca(x) ;
-	 case "levfit"
-	    [E x ev lmb] = gpca(x, "levfit") ;
-	 case "N"
-	    [E x ev lmb] = gpca(x, 100) ;
-	 otherwise
-	    E = eye(columns(x)) ;
-      endswitch
+      if strcmp(PHS, "CAL")
+	 switch class(PCA)
+	    case "char"
+	       [~, E] = pca(x) ;
+	    case {"function_handle" "double"}
+	       E = gpca(x, PCA) ;
+	    otherwise
+	       E = eye(columns(x)) ;
+	 endswitch
+      endif
+
+      x = x * E ;
       
       c = unique(pdd.c(pdd.I & pdd.(PHS))) ;
       y = ismember(pdd.c(pdd.I & pdd.(PHS)), c(end)) ;

@@ -17,7 +17,6 @@ function save_hdf5 (of, images, labels)
    images = flipdim(images) ;
 
    N = size(images) ;
-   N = [N(1:2) 1 N(end)] ; % channel dim
    h5create(file, '/data', N, 'Datatype', 'double') ;
    h5write(file, '/data', images) ;
 

@@ -11,7 +11,10 @@ isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
 if isoctave()
    pkg load hdf5oct netcdf
    addpath /opt/caffe/matlab
-   addpath /opt/caffe/matlab/+caffe/private
+   addpath /opt/src/caffe/matlab
+   addpath /opt/src/caffe/matlab/+caffe/private
+   caffe.set_mode_gpu() ;
+   caffe.set_device(0) ;
 else
    addpath /opt/caffeML/matlab
 end
@@ -50,7 +53,7 @@ else
    save(afile, VAR{:}, "GLON", "GLAT") ;
 end
 
-PDD = {"RR" "cape" "cp" "regnie"}{2} ;
+PDD = {"cape" "cp" "regnie" "RR"}{2} ;
 switch PDD
    case "RR"
       if exist(dfile = sprintf("data/dwd.%s.ob", REG), "file") == 2
@@ -78,16 +81,24 @@ endswitch
 pdd.name = PDD ;
 pdd.q = quantile(pdd.x, Q0) ;
 pdd.c = lookup(pdd.q, pdd.x) ;
-write_H(pdd.c, 0.01, sprintf("data/%s.%s.H.h5", REG, pdd.name)) ;
+write_H(pdd.c, 1.0, sprintf("data/%s.%s.H.h5", REG, pdd.name)) ;
 
-eval(sprintf("ptr = %s ;", VAR{1})) ;
+## select predictors
+JVAR = [2] ;
+jVAR = JVAR(1) ; eval(sprintf("N = size(%s.x) ;", VAR{jVAR})) ;
+eval(sprintf("ptr = %s ;", VAR{jVAR})) ; ptr = rmfield(ptr, "x") ;
+j = 0 ;
+for jVAR = JVAR(1:end)
+   j++ ;
+   eval(sprintf("xm = nanmean(%s.x(:)) ;", VAR{jVAR})) ;
+   eval(sprintf("xs = nanstd(%s.x(:)) ;", VAR{jVAR})) ;
+   eval(sprintf("ptr.x(:,%d,:,:) = (%s.x - xm) ./ xs ;", j, VAR{jVAR})) ;
+endfor
+
 [~, ptr.I, pdd.I] = intersect(datenum(ptr.id(:,1:3)), datenum(pdd.id(:,1:3))) ;
 ptr.I = ind2log(ptr.I, size(ptr.id, 1))' ;
-
 pdd.I = ind2log(pdd.I, size(pdd.id, 1))' ;
-ptr.x = cape.x ;
-# ptr.x = cat(2, ptr.x, cp.x) ;
-##ptr.scale = 1e-3 ;
+
 ptr.scale = scale ;
 
 %% write train (CAL) & test (VAL) data
@@ -96,8 +107,8 @@ ptr.YVAL = [2011 4 26 ; 2019 8 31] ;
 
 ## logistic regression
 ##lreg = run_lreg(ptr, pdd, "levfit", :, "nlambda", 1000, "lambdamax", 1000) ;
-##lreg = run_lreg(ptr, pdd, "levfit", :) ;
-##strucdisp(lreg) ;
+lreg = run_lreg(ptr, pdd, 100, :) ;
+strucdisp(lreg) ;
 
 ## caffe
 caffe = run_caffe(ptr, pdd, "cnn1") ;

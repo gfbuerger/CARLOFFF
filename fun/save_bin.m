@@ -10,7 +10,7 @@ function save_bin (images, ifile, labels, lfile)
    assert(fp ~= -1, ['Could not open ', filename, '']);
 
    images = flipdim(images) ;
-   [numCols, numRows, numImages] = size(images) ;
+   [numCols numRows numColors numImages] = size(images) ;
 
    magic = 2051;
    fwrite(fp, magic, 'int32', 0, 'ieee-be');

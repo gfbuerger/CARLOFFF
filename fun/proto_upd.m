@@ -1,9 +1,13 @@
-## usage: [fss fsn fsd] = proto_upd (ptr, pdd, proto)
+## usage: [fss fsn fsd] = proto_upd (BLD = true, ptr, pdd, proto)
 ##
 ## update proto files
-function [fss fsn fsd] = proto_upd (ptr, pdd, proto)
+function [fss fsn fsd] = proto_upd (BLD = true, ptr, pdd, proto)
 
-   ss = fileread("solver/solver.tpl") ;
+   if exist(sfile = sprintf("solver/%s.solver.tpl", proto), "file") == 2
+      ss = fileread(sfile) ;
+   else
+      ss = fileread("solver/solver.tpl") ;
+   endif
    
    sn1 = fileread("nets/data.tpl") ;
    sn2 = fileread(["nets/" proto ".tpl"]) ;
@@ -19,13 +23,13 @@ function [fss fsn fsd] = proto_upd (ptr, pdd, proto)
    fsn = sprintf("nets/%s.%s.prototxt", proto, pdd.name) ;
    fsd = sprintf("nets/%s.%s_deploy.prototxt", proto, pdd.name) ;
 
-   if ~isnewer(fss, "solver/solver.tpl")
+   if BLD | ~isnewer(fss, "solver/solver.tpl")
       print_str(ptr, pdd, proto, ss, fss) ;
    endif
-   if ~isnewer(fsn, glob("nets/*.tpl"){:})
+   if BLD | ~isnewer(fsn, glob("nets/*.tpl"){:})
       print_str(ptr, pdd, proto, sn, fsn) ;
    endif
-   if ~isnewer(fsd, glob("nets/*.tpl"){:})
+   if BLD | ~isnewer(fsd, glob("nets/*.tpl"){:})
       print_str(ptr, pdd, proto, sd, fsd) ;
    endif
 
@@ -42,8 +46,9 @@ function print_str (ptr, pdd, proto, str, ofile)
    str = strrep(str, "PROTO_tpl", proto);
    str = strrep(str, "REG_tpl", REG);
    str = strrep(str, "PDD_tpl", pdd.name);
-   str = strrep(str, "WIDTH_tpl", num2str(size(ptr.x, 2)));
-   str = strrep(str, "HEIGHT_tpl", num2str(size(ptr.x, 3)));
+   str = strrep(str, "CHANNEL_tpl", num2str(size(ptr.x, 2)));
+   str = strrep(str, "WIDTH_tpl", num2str(size(ptr.x, 3)));
+   str = strrep(str, "HEIGHT_tpl", num2str(size(ptr.x, 4)));
 
    fid  = fopen(ofile, "wt") ;
    fprintf(fid, "%s", str) ;

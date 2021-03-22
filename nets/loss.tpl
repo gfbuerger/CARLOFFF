@@ -13,19 +13,19 @@ layer {
   top: "loss"
   loss_weight: 1
 }
-##layer {
-##  bottom: "ip2"
-##  bottom: "label"
-##  bottom: "H"
-##  top: "infoGainLoss"
-##  name: "infoGainLoss"
-##  type: "InfogainLoss"
-##  loss_weight: 0
-####  infogain_loss_param {
-####    axis: 1
-####    source: "data/infogainH.binaryproto"
-####  }
-##}
+layer {
+  bottom: "out"
+  bottom: "label"
+#  bottom: "H"
+  top: "infoGainLoss"
+  name: "infoGainLoss"
+  type: "InfogainLoss"
+  loss_weight: 0
+  infogain_loss_param {
+    axis: 1
+    source: "data/infogainH.binaryproto"
+  }
+}
 ##layer {
 ##    name: "computeH"
 ##    bottom: "label"
