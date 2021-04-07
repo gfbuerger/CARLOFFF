@@ -1,5 +1,5 @@
 # The train/test net protocol buffer definition
-net: "nets/PROTO_tpl.PDD_tpl.prototxt"
+net: "models/cnn1/regnie.prototxt"
 # test_iter specifies how many forward passes the test should carry out.
 # In the case of MNIST, we have test batch size 100 and 100 test iterations,
 # debug_info: true
@@ -22,7 +22,7 @@ display: 100
 max_iter: 10000
 # snapshot intermediate results
 snapshot: 5000
-snapshot_prefix: "data/snapshots/PROTO_tpl.PDD_tpl"
+snapshot_prefix: "models/cnn1/regnie"
 type: "Adam"
 # solver mode: CPU or GPU
 solver_mode: GPU

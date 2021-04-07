@@ -1,11 +1,14 @@
-## usage: res = run_lreg (ptr, pdd, PCA, SKL = {"GSS" "HSS"}, varargin)
+## usage: [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargin)
 ##
 ## calibrate and apply caffe logistic optimization
-function res = run_lreg (ptr, pdd, PCA, SKL = {"GSS" "HSS"}, varargin)
+function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargin)
 
+   global PENALIZED
    pkg load statistics
    source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
 
+   Lfun = @(beta, x) beta(1) + x * beta(2:end) ;
+   
    X = ptr.x ;
    N = size(X) ;
    X = reshape(X, N(1), N(2), prod(N(3:end))) ;
@@ -23,14 +26,21 @@ function res = run_lreg (ptr, pdd, PCA, SKL = {"GSS" "HSS"}, varargin)
       x = X(ptr.I & ptr.(PHS),:) ;
 
       if strcmp(PHS, "CAL")
-	 switch class(PCA)
-	    case "char"
-	       [~, E] = pca(x) ;
-	    case {"function_handle" "double"}
-	       E = gpca(x, PCA) ;
-	    otherwise
-	       E = eye(columns(x)) ;
-	 endswitch
+	 if exist(efile = sprintf("data/eof.%s.ob", ptr.ind), "file") == 2
+	    printf("<-- %s\n", efile) ;
+	    load(efile)
+	 else
+	    switch class(PCA)
+	       case "char"
+		  [~, E] = pca(x) ;
+	       case {"function_handle" "double"}
+		  E = gpca(x, PCA) ;
+	       otherwise
+		  E = eye(columns(x)) ;
+	    endswitch
+	    printf("--> %s\n", efile) ;
+	    save(efile, "E") ;
+	 endif
       endif
 
       x = x * E ;
@@ -40,34 +50,62 @@ function res = run_lreg (ptr, pdd, PCA, SKL = {"GSS" "HSS"}, varargin)
 
       model = glm_logistic(y,x) ;
       if strcmp(PHS, "CAL")
+
 	 fit = penalized(model, @p_lasso, varargin{:}) ;
-	 I = fit.beta(2:end,40) ~= 0 ; # check where sum(fit.beta ~= 0, 1) gets saturated
-	 XX = X(ptr.I,:) * E(:,I) ;
-	 yy = ismember(pdd.c(pdd.I), c(end)) ;
-	 save -mat data.mat XX yy
+	 switch TRC
+	    case "AIC"
+	       AIC = goodness_of_fit("aic", fit) ;
+	       [~, jLasso] = min(AIC) ;
+	    case "BIC"
+	       BIC = goodness_of_fit("bic", fit, model) ;
+	       [~, jLasso] = min(BIC) ;
+	    otherwise
+	       CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
+	       [~, jLasso] = min(CV.cve) ;
+	 endswitch
+	 beta = fit.beta(:,jLasso) ;
+	 ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(fit.beta ~= 0, 1) gets saturated
+	 printf("Lasso: using %d predictors\n", sum(ILasso)) ;
+
+	 if ~PENALIZED
+
+	    XX = x(:,ILasso) ;
+	    yy = double(ismember(pdd.c(pdd.I & pdd.(PHS)), c(end))) ;
+	    I = all(~isnan([XX yy]), 2) ;
+	    XX = XX(I,:) ; yy = yy(I,:) ;
+	    save -mat /tmp/data.mat XX yy
+	    pkg load optim
+	    modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
+	    beta0 = zeros(columns(XX)+1, 1) ;
+	    opt = optimset("Display", "iter") ;
+	    wbeta = nlinfit (XX, yy, modelfun, beta0, opt) ;
+	    beta = zeros(columns(x)+1, 1) ;
+	    beta(1) = wbeta(1) ; beta(find(ILasso)+1) = wbeta(2:end) ;
+	    
+	 endif
+	 
       endif
       
-      if 0
+      if PENALIZED & 0
 	 plot_penalized(fit) ;
-	 AIC = goodness_of_fit("aic", fit) ;
+	 subplot(3, 1, 1) ;
 	 semilogx(fit.lambda, AIC) ;
 	 xlabel({"\\lambda"}) ; ylabel({"AIC"}) ;
-	 BIC = goodness_of_fit("bic", fit, model) ;
+	 subplot(3, 1, 2) ;
 	 semilogx(fit.lambda, BIC) ;
 	 xlabel({"\\lambda"}) ; ylabel({"BIC"}) ;
+	 subplot(3, 1, 3) ;
+	 semilogx(CV.lambda', CV.cve) ;
+	 xlabel({"\\lambda"}) ; ylabel({"CVE"}) ;
 
-	 cv = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
-	 plot_cv_penalized(cv) ;
+##	 plot_cv_penalized(cv) ;
 
 	 bar(fit.beta(2:end,end)) ;
 	 xlabel("potential coefficients") ; ylabel("{\\beta}") ;
 
       endif
 
-      beta = fit.beta(:,end) ;
-      f = beta(1) + x * beta(2:end) ;
-
-      prob.(PHS) = logistic_cdf(f) ;
+      prob.(PHS) = logistic_cdf(Lfun(beta, x)) ;
       prob.(PHS) = [1 - prob.(PHS) prob.(PHS)] ;
 
       ce.(PHS) = crossentropy(pdd.c(pdd.I & pdd.(PHS)), prob.(PHS)) ;
@@ -83,6 +121,10 @@ function res = run_lreg (ptr, pdd, PCA, SKL = {"GSS" "HSS"}, varargin)
 
    res = struct("beta", beta, "prob", prob, "th", th, "skl", skl) ;
 
+   ptr1 = ptr ;
+   ptr1.x = X * E(:,ILasso) ;
+   ptr1.x = reshape(ptr1.x, [N(1) 1 1 sum(ILasso)]) ;
+   
 endfunction
 
 

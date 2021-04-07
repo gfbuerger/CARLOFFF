@@ -1,38 +1,47 @@
-name: "LeNet"
+name: "cnn1"
+state {
+  phase: TRAIN
+  level: 0
+  stage: ""
+}
 layer {
-  name: "RR"
-  type: "Data"
+  name: "CAL"
+  type: "HDF5Data"
   top: "data"
   top: "label"
   include {
     phase: TRAIN
   }
-  transform_param {
-    scale: 0.00390625
-  }
-  data_param {
-    source: "data/Nord_CAL_lmdb"
+  hdf5_data_param {
+    source: "data/SW_cape.CAL.txt"
     batch_size: 64
-    backend: LMDB
   }
 }
 layer {
-  name: "CARLOFFF"
-  type: "Data"
+  name: "VAL"
+  type: "HDF5Data"
   top: "data"
   top: "label"
   include {
     phase: TEST
   }
-  transform_param {
-    scale: 0.00390625
-  }
-  data_param {
-    source: "data/Nord_VAL_lmdb"
-    batch_size: 100
-    backend: LMDB
+  hdf5_data_param {
+    source: "data/SW_cape.VAL.txt"
+    batch_size: 64
   }
 }
+##layer {
+##  name: "H"
+##  type: "HDF5Data"
+##  top: "H"
+##  include {
+##    phase: TRAIN
+##  }
+##  hdf5_data_param {
+##    source: "data/SW_H.txt"
+##    batch_size: 1
+##  }
+##}
 layer {
   name: "conv1"
   type: "Convolution"
@@ -113,7 +122,7 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 500
+    num_output: 10
     weight_filler {
       type: "xavier"
     }
@@ -129,10 +138,10 @@ layer {
   top: "ip1"
 }
 layer {
-  name: "ip2"
+  name: "out"
   type: "InnerProduct"
   bottom: "ip1"
-  top: "ip2"
+  top: "out"
   param {
     lr_mult: 1
   }
@@ -152,33 +161,31 @@ layer {
 layer {
   name: "accuracy"
   type: "Accuracy"
-  bottom: "ip2"
+  bottom: "out"
   bottom: "label"
   top: "accuracy"
-  include {
-    phase: TEST
-  }
 }
 layer {
   name: "loss"
   type: "SoftmaxWithLoss"
-  bottom: "ip2"
+  bottom: "out"
   bottom: "label"
   top: "loss"
+  loss_weight: 1
 }
-
-##layer {
-##  bottom: "ip2"
-##  bottom: "label"
-##  top: "infoGainLoss"
-##  name: "infoGainLoss"
-##  type: "InfogainLoss"
-##  infogain_loss_param {
-##    axis: 1
-##    source: "data/infogainH.binaryproto"
-##  }
-##}
-
+layer {
+  bottom: "out"
+  bottom: "label"
+#  bottom: "H"
+  top: "infoGainLoss"
+  name: "infoGainLoss"
+  type: "InfogainLoss"
+  loss_weight: 0
+  infogain_loss_param {
+    axis: 1
+    source: "data/infogainH.binaryproto"
+  }
+}
 ##layer {
 ##    name: "computeH"
 ##    bottom: "label"

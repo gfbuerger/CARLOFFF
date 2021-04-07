@@ -14,7 +14,7 @@ layer {
   }
   hdf5_data_param {
     source: "data/REG_tpl_PDD_tpl.CAL.txt"
-    batch_size: 64
+    batch_size: 100
   }
 }
 layer {
@@ -27,18 +27,6 @@ layer {
   }
   hdf5_data_param {
     source: "data/REG_tpl_PDD_tpl.VAL.txt"
-    batch_size: 64
+    batch_size: 100
   }
 }
-##layer {
-##  name: "H"
-##  type: "HDF5Data"
-##  top: "H"
-##  include {
-##    phase: TRAIN
-##  }
-##  hdf5_data_param {
-##    source: "data/REG_tpl_H.txt"
-##    batch_size: 1
-##  }
-##}

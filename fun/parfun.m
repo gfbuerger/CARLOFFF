@@ -17,7 +17,6 @@ function varargout = parfun (varargin)
       ncpu = w ;
       varargin = varargin(2:end) ;
    endif
-
    fun = varargin{1} ; sfun = func2str(fun) ;
    if iscell(varargin{2})
       pfun = "cellfun" ;
@@ -70,9 +69,13 @@ function varargout = parfun (varargin)
 	       arrayfun(@(a) printf(" < %s", a.name), dbs) ;
 	       printf("\n") ;
 	    endif
-	    pkg load parallel
-	    [c{:}] = feval(["par" pfun], ncpu, varargin{:}, "VerboseLevel", 0, "ErrorHandler", @errfun) ;
-##	    [c{:}] = feval(["par" pfun], ncpu, varargin{:}, "VerboseLevel", 0) ;
+	    if numel(varargin{2}) > nproc
+	       pkg load parallel
+	       [c{:}] = feval(["par" pfun], ncpu, varargin{:}, "VerboseLevel", 0, "ErrorHandler", @errfun) ;
+##	       [c{:}] = feval(["par" pfun], ncpu, varargin{:}, "VerboseLevel", 0) ;
+	    else
+	       [c{:}] = feval(pfun, varargin{:}, "ErrorHandler", @errfun) ;	       
+	    endif
 	 endif
       endif
    endif

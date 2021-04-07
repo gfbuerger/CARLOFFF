@@ -1,7 +1,7 @@
 ## usage: plot_log (lfile, loss = "loss", plog = 0)
 ##
 ##
-function plot_log (lfile, loss = "loss", plog = 0)
+function plot_log (lfile, loss = "loss", pse = 5, plog = 0)
 
    Ipat = sprintf(" Iteration [0-9]+, Testing net") ;
    lpat = sprintf("Test net output #[0-9]+: %s = ", loss) ;
@@ -32,11 +32,11 @@ function plot_log (lfile, loss = "loss", plog = 0)
       if plog set(gca, "yscale", "log") ; endif
       h = line(Iter(1:n), x(1:n), "linestyle", "-", "color", "black") ;
       ylabel(loss) ;
-      pause(5) ;
+      pause(pse) ;
       if plog set(gca, "yscale", "linear") ; endif
       ##      drawnow ;
 
-      pause(5) ;
+      pause(pse) ;
 ##      delete(h) ;
       
    endwhile

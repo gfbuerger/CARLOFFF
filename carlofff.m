@@ -9,7 +9,7 @@ LON = [8 8.5] ; LAT = [48.5 48.8] ; # point
 
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
 if isoctave()
-   pkg load hdf5oct netcdf
+   pkg load hdf5oct netcdf statistics
    addpath /opt/caffe/matlab
    addpath /opt/src/caffe/matlab
    addpath /opt/src/caffe/matlab/+caffe/private
@@ -100,16 +100,23 @@ ptr.I = ind2log(ptr.I, size(ptr.id, 1))' ;
 pdd.I = ind2log(pdd.I, size(pdd.id, 1))' ;
 
 ptr.scale = scale ;
+ptr.ind = sprintf("%d%d", ind2log(JVAR, numel(VAR))) ;
 
 %% write train (CAL) & test (VAL) data
 ptr.YCAL = [2001 4 26 ; 2010 9 30] ;
 ptr.YVAL = [2011 4 26 ; 2019 8 31] ;
 
-## logistic regression
+##logistic regression
 ##lreg = run_lreg(ptr, pdd, "levfit", :, "nlambda", 1000, "lambdamax", 1000) ;
-lreg = run_lreg(ptr, pdd, 100, :) ;
+global PENALIZED
+PENALIZED = ~true ;
+[lreg ptr1] = run_lreg(ptr, pdd, 100, "AIC", :) ;
+save(sprintf("data/ptr1.%s.ob", ptr1.ind), "ptr1") ;
 strucdisp(lreg) ;
 
 ## caffe
-caffe = run_caffe(ptr, pdd, "cnn1") ;
+load(sprintf("data/ptr1.%d%d.ob", ind2log(JVAR, numel(VAR)))) ;
+caffe = run_caffe(ptr1, pdd, "cnn2") ;
+strucdisp(caffe) ;
+caffe = run_caffe(ptr1, pdd, "logreg") ;
 strucdisp(caffe) ;

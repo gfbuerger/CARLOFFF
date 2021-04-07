@@ -19,7 +19,7 @@ function L = ind2log (I, n)
 
    if !iscell(I), I = num2cell(I) ; endif
 
-   C = parfun(@(x) 1:n == x, I, "UniformOutput", false, "VerboseLevel", 0) ;
+   C = parfun(@(x) 1:n == x, I, "UniformOutput", false) ;
 
    if length(C) > 1
       L = or(C{:}) ;

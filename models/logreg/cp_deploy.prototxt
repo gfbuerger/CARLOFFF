@@ -1,0 +1,25 @@
+name: "logreg.cp_Deploy"
+layer {
+    name: "data"
+    type: "Input"
+    top: "data"
+    input_param { shape: { dim: 1 dim: 1 dim: 1 dim: 54 } }
+}
+################################
+# simple logistic regression classifier
+################################
+layer {
+       name: "fc"
+       type: "InnerProduct"
+       bottom: "data"
+       top: "out"
+       inner_product_param {
+			    num_output: 2
+	  }
+   }
+layer {
+  name: "loss"
+  type: "Softmax"
+  bottom: "out"
+  top: "loss"
+}
