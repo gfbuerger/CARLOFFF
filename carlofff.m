@@ -1,11 +1,14 @@
 
-global isoctave LON LAT REG
+global isoctave LON LAT REG PENALIZED
 
-GLON = [6 11] ; GLAT = [47 56] ;
+GLON = [6 11] ; GLAT = [56 47] ;
 ##   LON = [6 10] ; LAT = [51 54] ; Nordwest
 REG = "SW" ;
 LON = [7 9] ; LAT = [47.5 49] ; # Südwest
 LON = [8 8.5] ; LAT = [48.5 48.8] ; # point
+
+LON = [9.7 9.9] ; LAT = [49.0 49.3] ; # Braunsbach
+REG = "BB" ;
 
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
 if isoctave()
@@ -39,11 +42,11 @@ else
    lon = ncread(ncf, "longitude") ;
    lat = ncread(ncf, "latitude") ;
    id = nctime(t, :, :) ;
-   Ilon = find(lookup(LON, lon) > 0) ;
-   Ilat = find(lookup(LAT, lat) > 0) ;
-   lon = lon(Ilon) ; lat = lat(Ilat) ;
+   Ilon = lookup(lon, GLON) ;
+   Ilat = lookup(lat, GLAT) ;
+   lon = lon(Ilon(1):Ilon(2)) ; lat = lat(Ilat(1):Ilat(2)) ;
    for v = VAR
-      x = squeeze(ncread(ncf, v{:}, [Ilon(1) Ilat(1) 1 1], [numel(Ilon) numel(Ilat) 1 Inf])) ;
+      x = squeeze(ncread(ncf, v{:}, [Ilon(1) Ilat(1) 1], [numel(lon) numel(lat) Inf])) ;
       x = permute(x, [3 1 2]) ; # all data are N x W x H
       eval(sprintf("%s.id = id ;", v{:})) ;
       eval(sprintf("%s.x = x ;", v{:})) ;
@@ -53,17 +56,10 @@ else
    save(afile, VAR{:}, "GLON", "GLAT") ;
 end
 
-PDD = {"cape" "cp" "regnie" "RR"}{2} ;
+PDD = {"cape" "cp" "regnie" "RR"}{3} ;
 switch PDD
-   case "RR"
-      if exist(dfile = sprintf("data/dwd.%s.ob", REG), "file") == 2
-	 load(dfile) ;
-      else
-	 pdd = read_dwd("nc/StaedteDWD/klamex_with_coords.csv") ;
-	 save(dfile, "pdd") ;
-      endif
    case {"cape" "cp"}
-      if exist(dfile = sprintf("data/%s.%s.ob", REG, PDD), "file") == 2
+      if isnewer(dfile = sprintf("data/%s.%s.ob", REG, PDD), "data/atm.ob")
 	 load(dfile) ;
       else
 	 eval(sprintf("pdd = sel_ptr(%s, LON, LAT) ;", PDD)) ;
@@ -73,10 +69,21 @@ switch PDD
       if isnewer(dfile = sprintf("data/%s/%s.%s.ob", PDD, REG, PDD), "fun/regnie.m")
 	 load(dfile) ;
       else
-	 pdd = regnie("https://opendata.dwd.de/climate_environment/CDC/grids_germany/daily/regnie") ;
+	 rfile = "https://opendata.dwd.de/climate_environment/CDC/grids_germany/daily/regnie" ;
+	 pdd = regnie(rfile, 2001, 2020) ;
 	 save(dfile, "pdd") ;
-	 exit ;
       endif
+      Q0 = 0.9 ; x0 = quantile(pdd.x, Q0) ;
+      pdd.x(pdd.x <= x0,:) = NaN ;
+   case "RR"
+      if exist(dfile = sprintf("data/dwd.%s.ob", REG), "file") == 2
+	 load(dfile) ;
+      else
+	 pdd = read_dwd("nc/StaedteDWD/klamex_with_coords.csv") ;
+	 save(dfile, "pdd") ;
+      endif
+      pdd.x = pdd.x(:,3) ; # use RRmean
+      pdd.x = pdd.x(:,6) ; # use RRmax
 endswitch
 pdd.name = PDD ;
 pdd.q = quantile(pdd.x, Q0) ;
@@ -84,7 +91,7 @@ pdd.c = lookup(pdd.q, pdd.x) ;
 write_H(pdd.c, 1.0, sprintf("data/%s.%s.H.h5", REG, pdd.name)) ;
 
 ## select predictors
-JVAR = [2] ;
+JVAR = [1 2] ;
 jVAR = JVAR(1) ; eval(sprintf("N = size(%s.x) ;", VAR{jVAR})) ;
 eval(sprintf("ptr = %s ;", VAR{jVAR})) ; ptr = rmfield(ptr, "x") ;
 j = 0 ;
@@ -107,16 +114,16 @@ ptr.YCAL = [2001 4 26 ; 2010 9 30] ;
 ptr.YVAL = [2011 4 26 ; 2019 8 31] ;
 
 ##logistic regression
-##lreg = run_lreg(ptr, pdd, "levfit", :, "nlambda", 1000, "lambdamax", 1000) ;
-global PENALIZED
-PENALIZED = ~true ;
+PENALIZED = true ;
 [lreg ptr1] = run_lreg(ptr, pdd, 100, "AIC", :) ;
-save(sprintf("data/ptr1.%s.ob", ptr1.ind), "ptr1") ;
+save(sprintf("data/lreg.%s.%s.ob", ptr.ind, pdd.name), "lreg", "ptr1") ;
 strucdisp(lreg) ;
 
 ## caffe
-load(sprintf("data/ptr1.%d%d.ob", ind2log(JVAR, numel(VAR)))) ;
-caffe = run_caffe(ptr1, pdd, "cnn2") ;
+##load(sprintf("data/lreg.%s.%s.ob", ptr.ind, pdd.name)) ;
+caffe = run_caffe(ptr, pdd, "cnn1") ;
 strucdisp(caffe) ;
-caffe = run_caffe(ptr1, pdd, "logreg") ;
+save(sprintf("data/caffe.%s.%s.ob", ptr.ind, pdd.name), "caffe") ;
+
+caffe = run_caffe(ptr, pdd, "logreg") ;
 strucdisp(caffe) ;

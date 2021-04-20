@@ -26,7 +26,7 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
       x = X(ptr.I & ptr.(PHS),:) ;
 
       if strcmp(PHS, "CAL")
-	 if exist(efile = sprintf("data/eof.%s.ob", ptr.ind), "file") == 2
+	 if isnewer(efile = sprintf("data/eof.%s.ob", ptr.ind), "data/atm.ob")
 	    printf("<-- %s\n", efile) ;
 	    load(efile)
 	 else
@@ -48,58 +48,69 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
       c = unique(pdd.c(pdd.I & pdd.(PHS))) ;
       y = ismember(pdd.c(pdd.I & pdd.(PHS)), c(end)) ;
 
-      model = glm_logistic(y,x) ;
       if strcmp(PHS, "CAL")
 
-	 fit = penalized(model, @p_lasso, varargin{:}) ;
-	 switch TRC
-	    case "AIC"
-	       AIC = goodness_of_fit("aic", fit) ;
-	       [~, jLasso] = min(AIC) ;
-	    case "BIC"
-	       BIC = goodness_of_fit("bic", fit, model) ;
-	       [~, jLasso] = min(BIC) ;
-	    otherwise
-	       CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
-	       [~, jLasso] = min(CV.cve) ;
-	 endswitch
-	 beta = fit.beta(:,jLasso) ;
-	 ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(fit.beta ~= 0, 1) gets saturated
-	 printf("Lasso: using %d predictors\n", sum(ILasso)) ;
+	 if PENALIZED
 
-	 if ~PENALIZED
+	    model = glm_logistic(y,x) ;
+	    fit = penalized(model, @p_lasso, varargin{:}) ;
+	    AIC = goodness_of_fit("aic", fit) ;
+	    BIC = goodness_of_fit("bic", fit, model) ;
+	    CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
+	    switch TRC
+	       case "AIC"
+		  [~, jLasso] = min(AIC) ;
+	       case "BIC"
+		  [~, jLasso] = min(BIC) ;
+	       case "CVE"
+		  [~, jLasso] = min(CV.cve) ;
+	       case "PCA/2"
+		  jLasso = find(sum(fit.beta(2:end,:) ~= 0, 1) >= PCA / 2)(1) ;
+	       otherwise
+		  jLasso = size(fit.beta, 2) ;
+	    endswitch
 
-	    XX = x(:,ILasso) ;
+	    beta = fit.beta(:,jLasso) ;
+	    ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(fit.beta ~= 0, 1) gets saturated
+	    printf("Lasso: using %d predictors\n", sum(ILasso)) ;
+
+	 else
+
+	    XX = x ;
 	    yy = double(ismember(pdd.c(pdd.I & pdd.(PHS)), c(end))) ;
 	    I = all(~isnan([XX yy]), 2) ;
 	    XX = XX(I,:) ; yy = yy(I,:) ;
-	    save -mat /tmp/data.mat XX yy
+##	    save -mat /tmp/data.mat XX yy
+
 	    pkg load optim
 	    modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	    beta0 = zeros(columns(XX)+1, 1) ;
 	    opt = optimset("Display", "iter") ;
-	    wbeta = nlinfit (XX, yy, modelfun, beta0, opt) ;
-	    beta = zeros(columns(x)+1, 1) ;
-	    beta(1) = wbeta(1) ; beta(find(ILasso)+1) = wbeta(2:end) ;
+	    beta = nlinfit (XX, yy, modelfun, beta0, opt) ;
+	    ILasso = true(1, columns(E)) ;
 	    
 	 endif
 	 
       endif
       
       if PENALIZED & 0
+	 clf ;
+	 ax(1) = subplot(3, 2, [1 3]) ;
 	 plot_penalized(fit) ;
-	 subplot(3, 1, 1) ;
+	 ax(2) = subplot(3, 2, [5]) ;
+	 semilogx(fit.lambda, sum(fit.beta(2:end,:) ~= 0, 1)) ;
+	 ax(3) = subplot(3, 2, 2) ;
 	 semilogx(fit.lambda, AIC) ;
 	 xlabel({"\\lambda"}) ; ylabel({"AIC"}) ;
-	 subplot(3, 1, 2) ;
+	 ax(4) = subplot(3, 2, 4) ;
 	 semilogx(fit.lambda, BIC) ;
 	 xlabel({"\\lambda"}) ; ylabel({"BIC"}) ;
-	 subplot(3, 1, 3) ;
+	 ax(5) = subplot(3, 2, 6) ;
 	 semilogx(CV.lambda', CV.cve) ;
 	 xlabel({"\\lambda"}) ; ylabel({"CVE"}) ;
-
-##	 plot_cv_penalized(cv) ;
-
+	 set(ax(2:5), "xdir", "reverse") ;
+	 set(ax, "xlim", xlim(ax(1))) ;
+	 
 	 bar(fit.beta(2:end,end)) ;
 	 xlabel("potential coefficients") ; ylabel("{\\beta}") ;
 

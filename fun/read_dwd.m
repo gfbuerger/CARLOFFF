@@ -47,8 +47,8 @@ function s = read_dwd (fin)
    I = ismember(idy(:,2), MONS) ;
 
    s.id = idy(I,:) ;
-   s.x = y(I) ;
+   s.x = y(I,:) ;
 
-   s.p0 = sum(s.x < 0) / rows(s.x) ;
+   s.p0 = sum(s.x < 0) ./ rows(s.x) ;
 
 endfunction

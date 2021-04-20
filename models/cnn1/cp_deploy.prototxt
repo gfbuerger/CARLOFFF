@@ -3,7 +3,7 @@ layer {
     name: "data"
     type: "Input"
     top: "data"
-    input_param { shape: { dim: 1 dim: 1 dim: 33 dim: 31 } }
+    input_param { shape: { dim: 1 dim: 2 dim: 33 dim: 31 } }
 }
 layer {
   name: "conv1"
@@ -71,18 +71,6 @@ layer {
     pool: MAX
     kernel_size: 2
     stride: 2
-  }
-}
-layer {
-  name: "norm1"
-  type: "LRN"
-  bottom: "pool2"
-  top: "pool2"
-  lrn_param {
-    local_size: 3
-    alpha: 5e-05
-    beta: 0.75
-    norm_region: WITHIN_CHANNEL
   }
 }
 layer {

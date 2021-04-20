@@ -12,3 +12,5 @@
 /nets/*.prototxt
 /nohup.out
 /solver/*.prototxt
+/models/*/*.caffemode*
+/models/*/*.solverstat*

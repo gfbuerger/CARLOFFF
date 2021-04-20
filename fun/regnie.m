@@ -1,10 +1,9 @@
-## usage: pdd = regnie (rfile)
+## usage: pdd = regnie (rfile, Y0, Y1)
 ##
 ## read DWD REGNIE
-function pdd = regnie (rfile)
+function pdd = regnie (rfile, Y0, Y1)
 
    global LON LAT REG
-   xth = 20 ;
 
    nr = 971 ; nc = 611 ;
    xdelta = 1/60 ; ydelta = 1/120 ;
@@ -19,13 +18,13 @@ function pdd = regnie (rfile)
 
    mkdir(tt = tempname) ;
    mkdir("data/regnie") ;
-   t0 = datenum(2001,1,1) ; t1 = datenum(2019,12,31) ; n = t1 - t0 + 1 ;
+   t0 = datenum(Y0,1,1) ; t1 = datenum(Y1,12,31) ; n = t1 - t0 + 1 ;
    id = datevec(t0:t1)(:,1:3) ;
    c = false(n, 1) ;
 
    hw = waitbar(0) ;
    i = 0 ;
-   for y = 2001 : 2019
+   for y = Y0 : Y1
 
       if exist(ofile = sprintf("data/regnie/%s.%4d.ob", REG, y), "file") == 2
 	 load(ofile) ; continue ;
@@ -33,7 +32,7 @@ function pdd = regnie (rfile)
 
       tfile = sprintf("%s/ra%4dm.tar", rfile, y) ;
       lfile = sprintf("%s/tarfile", tt) ;
-      while web("opendata.dwd.dd")
+      while web("opendata.dwd.de")
 	 pause(10) ;
       endwhile
       urlwrite(tfile, lfile)
