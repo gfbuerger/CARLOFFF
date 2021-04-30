@@ -3,7 +3,7 @@
 ## read DWD REGNIE
 function pdd = regnie (rfile, Y0, Y1)
 
-   global LON LAT REG
+   global LON LAT REG MON
 
    nr = 971 ; nc = 611 ;
    xdelta = 1/60 ; ydelta = 1/120 ;
@@ -74,7 +74,7 @@ function pdd = regnie (rfile, Y0, Y1)
 
    endfor
 
-   II = ismember(id(:,2), 4:8) ;
+   II = ismember(id(:,2), MON) ;
 
    pdd.id = id(II,:) ;
    pdd.x = x(II)' ;

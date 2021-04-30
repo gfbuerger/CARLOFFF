@@ -7,9 +7,7 @@ c.retrieve(
     {
         'product_type': 'reanalysis',
         'variable': [
-            'angle_of_sub_gridscale_orography', 'anisotropy_of_sub_gridscale_orography', 'convective_available_potential_energy',
-            'convective_inhibition', 'k_index', 'orography',
-            'slope_of_sub_gridscale_orography', 'standard_deviation_of_orography', 'total_totals_index',
+            'mean_convective_precipitation_rate', 'mean_vertically_integrated_moisture_divergence', 'total_column_cloud_liquid_water',
         ],
         'year': [
             '2000', '2001', '2002',
@@ -21,7 +19,8 @@ c.retrieve(
             '2018', '2019', '2020',
         ],
         'month': [
-            '05', '06', '07', '08',
+            '05', '06', '07',
+            '08',
         ],
         'day': [
             '01', '02', '03',
@@ -46,4 +45,4 @@ c.retrieve(
         ],
         'format': 'netcdf',
     },
-    'data/ind.nc')
+    'data/cloud.nc')

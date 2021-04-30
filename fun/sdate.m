@@ -44,12 +44,12 @@ function res = sdate (id, varargin)
       if datenum(id1(1:3)) < datenum(id(1,1:3))
 	 cid = num2cell(id(1,1:3)) ;
 	 cid1 = num2cell(id1) ;
-	 warning('xds:xds', 'incompatible dates: [%04d %02d %02d] < [%04d %02d %02d]', cid1{1:3}, cid{:}) ;
+	 warning('xds:xds', 'incompatible dates: [%04d %02d %02d] < [%04d %02d %02d]\n', cid1{1:3}, cid{:}) ;
       end
       if datenum(id(end,1:3)) < datenum(id2(1:3))	 
 	 cid = num2cell(id(end,1:3)) ;
 	 cid2 = num2cell(id2) ;
-	 warning('xds:xds', 'incompatible dates: [%04d %02d %02d] < [%04d %02d %02d]', cid{:}, cid2{1:3})
+	 warning('xds:xds', 'incompatible dates: [%04d %02d %02d] < [%04d %02d %02d]\n', cid{:}, cid2{1:3})
       end
       res = date_cmp(id1, id) & date_cmp(id, id2) ;
    end

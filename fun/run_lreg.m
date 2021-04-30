@@ -8,25 +8,25 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
    source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
 
    Lfun = @(beta, x) beta(1) + x * beta(2:end) ;
-   
-   X = ptr.x ;
-   N = size(X) ;
-   X = reshape(X, N(1), N(2), prod(N(3:end))) ;
-   for j = 1 : size(X, 2)
-      X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
-   endfor
-   X = reshape(X, N(1), prod(N(2:end))) ;
-   
-   for PHS = {"CAL" "VAL"}
 
+   for PHS = {"CAL" "VAL"}
       PHS = PHS{:} ;
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
+   endfor
+   
+   X = ptr.x ;
+   N = size(X) ;
 
-      x = X(ptr.I & ptr.(PHS),:) ;
+   if ndims(X) > 2
 
-      if strcmp(PHS, "CAL")
-	 if isnewer(efile = sprintf("data/eof.%s.ob", ptr.ind), "data/atm.ob")
+      X = reshape(X, N(1), N(2), prod(N(3:end))) ;
+      PC = [] ;
+      for j = 1 : size(X, 2)
+	 X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
+	 x = squeeze(X(ptr.CAL,j,:)) ;
+
+	 if isnewer(efile = sprintf("data/eof.%s.ob", ptr.var{j}), "data/atm.ob")
 	    printf("<-- %s\n", efile) ;
 	    load(efile)
 	 else
@@ -41,12 +41,28 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
 	    printf("--> %s\n", efile) ;
 	    save(efile, "E") ;
 	 endif
-      endif
 
-      x = x * E ;
-      
-      c = unique(pdd.c(pdd.I & pdd.(PHS))) ;
-      y = ismember(pdd.c(pdd.I & pdd.(PHS)), c(end)) ;
+	 PC = [PC, nanmult(X(:,j,:), E(:,1:PCA))] ;
+      endfor
+
+   else
+
+      PC = X ;
+
+   endif
+
+   if PCA > size(PC, 2)
+      error(sprintf("PCA = %d > %d = size(PC, 2)", PCA, size(PC, 2))) ;
+   endif
+   
+   for PHS = {"CAL" "VAL"}
+
+      PHS = PHS{:} ;
+
+      x = PC(ptr.(PHS),:) ;
+
+      c = unique(pdd.c(pdd.(PHS))) ;
+      y = ismember(pdd.c(pdd.(PHS)), c(end)) ;
 
       if strcmp(PHS, "CAL")
 
@@ -77,7 +93,7 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
 	 else
 
 	    XX = x ;
-	    yy = double(ismember(pdd.c(pdd.I & pdd.(PHS)), c(end))) ;
+	    yy = double(ismember(pdd.c(pdd.(PHS)), c(end))) ;
 	    I = all(~isnan([XX yy]), 2) ;
 	    XX = XX(I,:) ; yy = yy(I,:) ;
 ##	    save -mat /tmp/data.mat XX yy
@@ -119,11 +135,11 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
       prob.(PHS) = logistic_cdf(Lfun(beta, x)) ;
       prob.(PHS) = [1 - prob.(PHS) prob.(PHS)] ;
 
-      ce.(PHS) = crossentropy(pdd.c(pdd.I & pdd.(PHS)), prob.(PHS)) ;
+      ce.(PHS) = crossentropy(pdd.c(pdd.(PHS)), prob.(PHS)) ;
 
       for s = SKL
 	 s = s{:} ;
-	 [thx fval] = fminsearch(@(th) -MoC(s, pdd.c(pdd.I & pdd.(PHS)), prob.(PHS)(:,end) > th), 0.1) ;
+	 [thx fval] = fminsearch(@(th) -MoC(s, pdd.c(pdd.(PHS)), prob.(PHS)(:,end) > th), 0.1) ;
 	 th.(s).(PHS) = thx ;
 	 skl.(s).(PHS) = -fval ;
       endfor
@@ -133,8 +149,7 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
    res = struct("beta", beta, "prob", prob, "th", th, "skl", skl) ;
 
    ptr1 = ptr ;
-   ptr1.x = X * E(:,ILasso) ;
-   ptr1.x = reshape(ptr1.x, [N(1) 1 1 sum(ILasso)]) ;
+   ptr1.x = PC ;
    
 endfunction
 

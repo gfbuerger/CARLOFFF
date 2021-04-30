@@ -7,9 +7,7 @@ c.retrieve(
     {
         'product_type': 'reanalysis',
         'variable': [
-            'angle_of_sub_gridscale_orography', 'anisotropy_of_sub_gridscale_orography', 'convective_available_potential_energy',
-            'convective_inhibition', 'k_index', 'orography',
-            'slope_of_sub_gridscale_orography', 'standard_deviation_of_orography', 'total_totals_index',
+            'convective_precipitation',
         ],
         'year': [
             '2000', '2001', '2002',
@@ -37,8 +35,14 @@ c.retrieve(
             '31',
         ],
         'time': [
-            '00:00', '06:00', '12:00',
-            '18:00',
+            '00:00', '01:00', '02:00',
+            '03:00', '04:00', '05:00',
+            '06:00', '07:00', '08:00',
+            '09:00', '10:00', '11:00',
+            '12:00', '13:00', '14:00',
+            '15:00', '16:00', '17:00',
+            '18:00', '19:00', '20:00',
+            '21:00', '22:00', '23:00',
         ],
         'area': [
             55.25, 5.75, 47.25,
@@ -46,4 +50,4 @@ c.retrieve(
         ],
         'format': 'netcdf',
     },
-    'data/ind.nc')
+    'data/cp.nc')

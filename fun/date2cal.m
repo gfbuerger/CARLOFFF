@@ -31,7 +31,7 @@ function res = date2cal (id, cal)
 
    if (nargin < 2), cal = "gregorian" ; endif 
 
-   if (strfind(cal, "gregorian") || strcmp(cal, "standard") || strcmp(cal, "days")) # FIXME: "days" should not be here
+   if (strcmpi(cal, "gregorian") || strcmpi(cal, "standard") || strcmpi(cal, "days")) # FIXME: "days" should not be here
       res = datenum(y, m, d, hh, mm, ss) ;
       return ;
    endif 

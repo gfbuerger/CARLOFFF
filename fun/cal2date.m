@@ -8,12 +8,12 @@ function [y, m, d, hh, mm, ss] = cal2date (j, cal)
 
    if (nargin < 2), cal = "gregorian" ; endif 
 
-   if (strfind(cal, "gregorian") || strcmp(cal, "standard") || strcmp(cal, "days")) # FIXME: "days" should not be here
+   if (strcmpi(cal, "gregorian") || strcmpi(cal, "standard") || strcmpi(cal, "days")) # FIXME: "days" should not be here
       [y m d hh mm ss] = datevec(j) ;
       return ;
    endif
 
-   if strcmp(cal, "360_day") || strfind(cal, "360") # some calendars are inaccurate
+   if strcmpi(cal, "360_day") || strcmpi(cal, "360") # some calendars are inaccurate
       per = 360 ;
       mon = repmat(30, 1, 12) ;
    else

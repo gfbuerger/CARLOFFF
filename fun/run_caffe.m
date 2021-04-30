@@ -25,8 +25,8 @@ function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
       if exist(of = h5f(pdd.name, PHS), "file") ~= 2 | 1
-	 labels = pdd.c(pdd.I & pdd.(PHS)) ;
-	 images = ptr.x(ptr.I & ptr.(PHS), :, :, :) ;
+	 labels = pdd.c(pdd.(PHS)) ;
+	 images = ptr.x(ptr.(PHS), :, :, :) ;
 	 if 0
 	    ifile = sprintf('data/%s_%s-images-idx3-ubyte', REG, PHS) ;
 	    lfile = sprintf('data/%s_%s-labels-idx1-ubyte', REG, PHS) ;
@@ -83,10 +83,9 @@ function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
 
       else
 
-	 labels = pdd.c(pdd.I & pdd.(PHS)) ;
-	 I = ptr.I & ptr.(PHS) ;
-	 prob.(PHS) = nan(sum(I), 2) ; ii = 0 ;
-	 for i = find(I)'
+	 labels = pdd.c(pdd.(PHS)) ;
+	 prob.(PHS) = nan(sum(ptr.(PHS)), 2) ; ii = 0 ;
+	 for i = find(ptr.(PHS))'
 	    data = ptr.scale * squeeze(flipdim(ptr.x(i,:,:,:))) ;
 	    phat = net.forward({data}) ;
 	    prob.(PHS)(++ii,:) = phat{1} ;
