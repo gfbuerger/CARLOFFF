@@ -97,14 +97,15 @@ switch PDD
 endswitch
 pdd.name = PDD ;
 
-if isnewer(pfile = sprintf("data/%s.%s.%s.ob", REG, ptr.ind, pdd.name), afile, dfile)
+JVAR = [2 3 4 5 6 10 12] ;
+ind = sprintf("%d%d", ind2log(JVAR, numel(VAR))) ;
+if isnewer(pfile = sprintf("data/%s.%s.%s.ob", REG, ind, pdd.name), afile, dfile)
 
    load(pfile) ;
 
 else
    
    ## select predictors
-   JVAR = [2 3 4 5 6 10 12] ;
    if isempty(JVAR) JVAR = [1 : length(VAR)] ; endif
    jVAR = JVAR(1) ; eval(sprintf("N = size(%s.x) ;", VAR{jVAR})) ;
    eval(sprintf("ptr = %s ;", VAR{jVAR})) ; ptr = rmfield(ptr, "x") ;
@@ -120,7 +121,7 @@ else
       ptr.vars{j} = VAR{jVAR} ;
    endfor
    ptr.scale = scale ;
-   ptr.ind = sprintf("%d%d", ind2log(JVAR, numel(VAR))) ;
+   ptr.ind = ind ;
    ##n = length(ptr.var) ;
    ##for i = 1:n
    ##   disp(arrayfun(@(j) nthargout(3, @canoncorr, ptr.x(:,i,:,:), ptr.x(:,j,:,:))(1), find(1:n ~= i))) ;
@@ -167,7 +168,7 @@ if 0
    pdd.x = pdd.x(:) ;
    I = ~any(isnan([ptr.x pdd.x]), 2) ;
    ## first impression
-   disp(nthargout(3, @canoncorr, ptr.x(:,1,:,:), pdd.x)) ;
+   disp(nthargout(3, @canoncorr, ptr.x(:,2,:,:), pdd.x)(1)) ;
 endif
 
 ##pdd.q = quantile(pdd.x, Q0) ;
