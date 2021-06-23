@@ -13,6 +13,11 @@ function s = read_dwd (fin)
    MONS = 5:8 ;
    HRS = 12:23 ;
 
+   fid = fopen(fin, "rt") ;
+   lbl = fgetl(fid) ;
+   fclose(fid) ;
+   lbl = strsplit(lbl, ";") ;
+   
    D = dlmread(fin) ;
    D = D(2:end,:) ;
 
@@ -25,7 +30,11 @@ function s = read_dwd (fin)
    t = t - (d ./ 24) / 2 ; # center of event
 
    if ~issorted(t)
-      [t, Is] = unique(t, 'sorted') ;
+      if strcmp(version()(1), "5")
+	 [t, Is] = unique(t) ;
+      else
+	 [t, Is] = unique(t, 'sorted') ;
+      endif
       D = D(Is,:) ;
    endif
 
@@ -35,7 +44,8 @@ function s = read_dwd (fin)
    s.id = id(II,1:4) ;
    s.x = D(II,Jx) ;
    s.lon = D(II,3) ; s.lat = D(II,4) ;
-
+   s.vars = lbl(Jx) ;
+   
    return ;
    
    id0 = datevec(t(1)) ; id0 = [id0(1) 1 1 0] ;

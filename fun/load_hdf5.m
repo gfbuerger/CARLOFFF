@@ -9,6 +9,8 @@ function [images labels] = load_hdf5 (ifile)
    file = fgetl(fid) ;
    fclose(fid) ;
 
+   printf("<-- %s\n", file) ;
+
    labels = h5read(file, "/label") ;
    images = h5read(file, "/data") ;
 

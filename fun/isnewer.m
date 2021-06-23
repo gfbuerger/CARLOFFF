@@ -12,6 +12,10 @@ function res = isnewer (file1, varargin)
       res = true ;
    endif
 
+##   if iscell(varargin)
+##      varargin = [varargin{:}] ;
+##   endif
+   
    for i = 1:nargin-1
       res = res && all(birth(file1) > birth(varargin{i}) + tick)  ;
    endfor

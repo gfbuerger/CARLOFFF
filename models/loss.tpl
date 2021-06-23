@@ -22,7 +22,6 @@ layer {
   type: "InfogainLoss"
   loss_weight: 0
   infogain_loss_param {
-    axis: 1
     source: "data/infogainH.binaryproto"
   }
 }

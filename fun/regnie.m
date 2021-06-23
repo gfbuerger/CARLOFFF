@@ -1,7 +1,7 @@
-## usage: pdd = regnie (rfile, Y0, Y1)
+## usage: pdd = regnie (rfile, Y0, Y1, R0)
 ##
 ## read DWD REGNIE
-function pdd = regnie (rfile, Y0, Y1)
+function pdd = regnie (rfile, Y0, Y1, R0)
 
    global LON LAT REG MON
 
@@ -9,74 +9,78 @@ function pdd = regnie (rfile, Y0, Y1)
    xdelta = 1/60 ; ydelta = 1/120 ;
    lon =  6 - 10 * xdelta + (0:nc-1) * xdelta ;
    lat = 55 + 10 * ydelta - (0:nr-1) * ydelta ;
-   Ilon = LON(1) <= lon & lon <= LON(2) ;
-   Ilat = LAT(1) <= lat & lat <= LAT(2) ;
-   lon = lon(Ilon) ; lat = lat(Ilat) ;
-
-   ##[lon, lat] = meshgrid(lon, lat) ;
-   ##I = LON(1) <= lon & lon <= LON(2) & LAT(1) <= lat & lat <= LAT(2) ;
-
+   [lon lat] = meshgrid(lon, lat) ;
+   I = LON(1) <= lon & lon <= LON(2) & LAT(2) <= lat & lat <= LAT(1) ;
+   
    mkdir(tt = tempname) ;
    mkdir("data/regnie") ;
    t0 = datenum(Y0,1,1) ; t1 = datenum(Y1,12,31) ; n = t1 - t0 + 1 ;
    id = datevec(t0:t1)(:,1:3) ;
    c = false(n, 1) ;
 
-   hw = waitbar(0) ;
-   i = 0 ;
+   i = 0 ; pdd.id = pdd.lon = pdd.lat = pdd.x = [] ;
    for y = Y0 : Y1
 
-      if exist(ofile = sprintf("data/regnie/%s.%4d.ob", REG, y), "file") == 2
-	 load(ofile) ; continue ;
+      if isnewer(ofile = sprintf("data/regnie/%s.%4d.ob", REG, y), "fun/regnie.m")
+
+	 printf("<-- %s\n", ofile) ;
+	 load(ofile) ;
+
+      else
+	 
+	 tfile = sprintf("%s/ra%4dm.tar", rfile, y) ;
+	 lfile = sprintf("%s/tarfile", tt) ;
+	 while web("opendata.dwd.de")
+	    pause(10) ;
+	 endwhile
+	 urlwrite(tfile, lfile)
+	 gzfiles = unpack(lfile, tt, "tar") ;
+	 delete(lfile) ;
+
+	 x = [] ;
+	 for gf = gzfiles'
+
+	    if ~ismember(str2num(gf{:}(5:6)), MON) continue ; endif
+	    
+	    f = unpack(sprintf("%s/%s", tt, gf{:}), tt, "gz") ;
+	    
+	    printf("<-- %s\n", f{:}) ;
+	    fid = fopen(f{:}, "rt") ;
+	    s = textscan(fid, "%s", "Delimiter", "", "Whitespace", "") ;
+	    fclose(fid) ;
+	    s = cellfun(@(c) str2num(reshape(c, [], nc)')', s{:}(1:nr), "UniformOutput", false) ;
+	    s = cell2mat(s) ;
+
+	    s(s == -999) = NaN ;
+	    s = s / 10 ;
+
+	    if 0
+	       imagesc(lon, lat, s)
+	       set(gca, "ydir", "normal") ;
+	       xlabel("Lon") ; ylabel("Lat") ;
+	       colorbar ;
+	    endif
+	    
+	    i++ ;
+	    II = I & s > R0 ;
+	    if any(II(:))
+	       wid = repmat(id(i,:), sum(II(:)), 1) ;
+	       x = [x ; wid lon(II) lat(II) s(II)] ;
+	    endif
+	    
+	    delete(f{:}) ;
+
+	 endfor
+	 printf("--> %s\n", ofile) ;
+	 save(ofile, "x", "i") ;
+
       endif
-
-      tfile = sprintf("%s/ra%4dm.tar", rfile, y) ;
-      lfile = sprintf("%s/tarfile", tt) ;
-      while web("opendata.dwd.de")
-	 pause(10) ;
-      endwhile
-      urlwrite(tfile, lfile)
-      gzfiles = unpack(lfile, tt, "tar") ;
-      delete(lfile) ;
-
-      for gf = gzfiles'
-
-	 f = unpack(sprintf("%s/%s", tt, gf{:}), tt, "gz") ;
-	 
-	 fid = fopen(f{:}, "rt") ;
-	 s = textscan(fid, "%s", "Delimiter", "", "Whitespace", "") ;
-	 fclose(fid) ;
-	 s = cellfun(@(c) str2num(reshape(c, [], nc)')', s{:}(1:end-1), "UniformOutput", false) ;
-	 s = cell2mat(s) ;
-
-	 s = s(Ilat,Ilon) ;
-	 s(s == -999) = NaN ;
-	 s = s / 10 ;
-
-	 if 0
-	    imagesc(lon, lat, s)
-	    set(gca, "ydir", "normal") ;
-	    xlabel("Lon") ; ylabel("Lat") ;
-	    colorbar ;
-	 endif
-	 
-	 i++ ;
-	 x(i) = max(s(:)) ;
-
-	 delete(f{:}) ;
-	 waitbar(i/n, hw) ;
-	 printf("--> %s\n", f{:}) ;
-
-      endfor
-
-      printf("--> %s\n", ofile) ;
-      save(ofile, "x", "i") ;
+      
+      pdd.id = [pdd.id ; x(:,1:3)] ;
+      pdd.lon = [pdd.lon ; x(:,4)] ;
+      pdd.lat = [pdd.lat ; x(:,5)] ;
+      pdd.x = [pdd.x ; x(:,6)] ;
 
    endfor
-
-   II = ismember(id(:,2), MON) ;
-
-   pdd.id = id(II,:) ;
-   pdd.x = x(II)' ;
 
 endfunction

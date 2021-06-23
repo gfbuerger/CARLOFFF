@@ -1,44 +1,240 @@
+diff --git a/.gitignore b/.gitignore
+index 93c7b4e8..7d7e4c19 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -55,9 +55,6 @@
+ 
+ ## Caffe
+ 
+-# User's build configuration
+-Makefile.config
+-
+ # Data and models are either
+ # 1. reference, and not casually committed
+ # 2. custom, and live on their own unless they're deliberated contributed
 diff --git a/Makefile b/Makefile
-index b7660e85..d5f5d134 100644
+index f9a890ba..a22b5943 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -200,7 +200,7 @@ endif
- ifeq ($(USE_OPENCV), 1)
- 	LIBRARIES += opencv_core opencv_highgui opencv_imgproc
+@@ -74,6 +74,7 @@ NONGEN_CXX_SRCS := $(shell find \
+ 	include/$(PROJECT) \
+ 	python/$(PROJECT) \
+ 	matlab/+$(PROJECT)/private \
++	octave/+$(PROJECT)/private \
+ 	examples \
+ 	tools \
+ 	-name "*.cpp" -or -name "*.hpp" -or -name "*.cu" -or -name "*.cuh")
+@@ -89,10 +90,15 @@ PY$(PROJECT)_SO := python/$(PROJECT)/_$(PROJECT).so
+ PY$(PROJECT)_HXX := include/$(PROJECT)/layers/python_layer.hpp
+ # MAT$(PROJECT)_SRC is the mex entrance point of matlab package for $(PROJECT)
+ MAT$(PROJECT)_SRC := matlab/+$(PROJECT)/private/$(PROJECT)_.cpp
++# OCT$(PROJECT)_SRC is the mex entrance point of octave package for $(PROJECT)
++OCT$(PROJECT)_SRC := octave/+$(PROJECT)/private/$(PROJECT)_.cpp
+ ifneq ($(MATLAB_DIR),)
+ 	MAT_SO_EXT := $(shell $(MATLAB_DIR)/bin/mexext)
+ endif
+ MAT$(PROJECT)_SO := matlab/+$(PROJECT)/private/$(PROJECT)_.$(MAT_SO_EXT)
++OCT_SO_EXT := mex
++OCT_LIB := $(shell octave -qf --eval "disp(__octave_config_info__.octlibdir)")
++OCT$(PROJECT)_SO := $(BUILD_DIR)/octave/$(PROJECT)_.$(OCT_SO_EXT)
  
--	ifeq ($(OPENCV_VERSION), 3)
-+	ifeq ($(OPENCV_VERSION), 4)
- 		LIBRARIES += opencv_imgcodecs
- 	endif
- 
-@@ -429,7 +429,7 @@ LINKFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
+ ##############################
+ # Derive generated files
+@@ -235,6 +241,7 @@ DOXYGEN_SOURCES := $(shell find \
+ 	include/$(PROJECT) \
+ 	python/ \
+ 	matlab/ \
++	octave/ \
+ 	examples \
+ 	tools \
+ 	-name "*.cpp" -or -name "*.hpp" -or -name "*.cu" -or -name "*.cuh" -or \
+@@ -413,6 +420,7 @@ CXXFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
+ NVCCFLAGS += -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
+ # mex may invoke an older gcc that is too liberal with -Wuninitalized
+ MATLAB_CXXFLAGS := $(CXXFLAGS) -Wno-uninitialized
++OCTAVE_CXXFLAGS := $(CXXFLAGS) -Wno-uninitialized
+ LINKFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
  
  USE_PKG_CONFIG ?= 0
- ifeq ($(USE_PKG_CONFIG), 1)
--	PKG_CONFIG := $(shell pkg-config opencv --libs)
-+	PKG_CONFIG := $(shell pkg-config opencv4 --libs)
- else
- 	PKG_CONFIG :=
+@@ -448,6 +456,9 @@ EVERYTHING_TARGETS := all py$(PROJECT) test warn lint
+ ifneq ($(MATLAB_DIR),)
+ 	EVERYTHING_TARGETS += mat$(PROJECT)
  endif
-@@ -534,6 +534,10 @@ $(MAT$(PROJECT)_SO): $(MAT$(PROJECT)_SRC) $(STATIC_NAME)
- 			CXX="$(CXX)" \
- 			CXXFLAGS="\$$CXXFLAGS $(MATLAB_CXXFLAGS)" \
- 			CXXLIBS="\$$CXXLIBS $(STATIC_LINK_COMMAND) $(LDFLAGS)" -output $@
-+#			CXX="$(CXX)" \
-+#			CXXFLAGS="$(CXXFLAGS) $(MATLAB_CXXFLAGS)" \
-+#			CXXLIBS="$(CXXLIBS) $(STATIC_LINK_COMMAND)" \
-+#	mkoctfile --mex $(LDFLAGS) $(MAT$(PROJECT)_SRC) --output matlab/+caffe/private/caffe_
- 	@ if [ -f "$(PROJECT)_.d" ]; then \
++ifneq ($(OCTAVE_DIR),)
++	EVERYTHING_TARGETS += oct$(PROJECT)
++endif
+ 
+ ##############################
+ # Define build targets
+@@ -465,7 +476,7 @@ everything: $(EVERYTHING_TARGETS)
+ linecount:
+ 	cloc --read-lang-def=$(PROJECT).cloc \
+ 		src/$(PROJECT) include/$(PROJECT) tools examples \
+-		python matlab
++		python matlab octave
+ 
+ lint: $(EMPTY_LINT_REPORT)
+ 
+@@ -515,8 +526,12 @@ $(PY$(PROJECT)_SO): $(PY$(PROJECT)_SRC) $(PY$(PROJECT)_HXX) | $(DYNAMIC_NAME)
+ 
+ mat$(PROJECT): mat
+ 
++oct$(PROJECT): oct
++
+ mat: $(MAT$(PROJECT)_SO)
+ 
++oct: $(OCT$(PROJECT)_SO)
++
+ $(MAT$(PROJECT)_SO): $(MAT$(PROJECT)_SRC) $(STATIC_NAME)
+ 	@ if [ -z "$(MATLAB_DIR)" ]; then \
+ 		echo "MATLAB_DIR must be specified in $(CONFIG_FILE)" \
+@@ -532,6 +547,12 @@ $(MAT$(PROJECT)_SO): $(MAT$(PROJECT)_SRC) $(STATIC_NAME)
  		mv -f $(PROJECT)_.d $(BUILD_DIR)/${MAT$(PROJECT)_SO:.$(MAT_SO_EXT)=.d}; \
  	fi
-@@ -547,6 +551,7 @@ pytest: py
  
++$(OCT$(PROJECT)_SO): $(OCT$(PROJECT)_SRC)
++	mkoctfile --mex $(CXXFLAGS) $(OCTAVE_CXXFLAGS) $(CXXLIBS) $(LDFLAGS) $(OCT$(PROJECT)_SRC) -L$(OCT_LIB) -loctinterp -lcaffe --output $(BUILD_DIR)/octave/caffe_
++	@ if [ -f "$(PROJECT)_.d" ]; then \
++		mv -f $(PROJECT)_.d $(BUILD_DIR)/${OCT$(PROJECT)_SO:.$(OCT_SO_EXT)=.d}; \
++	fi
++
+ runtest: $(TEST_ALL_BIN)
+ 	$(TOOL_BUILD_DIR)/caffe
+ 	$(TEST_ALL_BIN) $(TEST_GPUID) --gtest_shuffle $(TEST_FILTER)
+@@ -542,6 +563,9 @@ pytest: py
  mattest: mat
  	cd matlab; $(MATLAB_DIR)/bin/matlab -nodisplay -r 'caffe.run_tests(), exit()'
-+#	cd matlab; octave --eval 'addpath +caffe/private ; caffe.run_tests()'
  
++octtest: oct
++	cd octave; octave -fq --eval 'addpath ../$(BUILD_DIR)/octave +caffe/private ; caffe.run_tests()'
++
  warn: $(EMPTY_WARN_REPORT)
  
+ $(EMPTY_WARN_REPORT): $(ALL_WARNS) | $(BUILD_DIR)
+diff --git a/Makefile.config b/Makefile.config
+new file mode 100644
+index 00000000..fcddf4fe
+--- /dev/null
++++ b/Makefile.config
+@@ -0,0 +1,105 @@
++## Refer to http://caffe.berkeleyvision.org/installation.html
++# Contributions simplifying and improving our build system are welcome!
++
++# cuDNN acceleration switch (uncomment to build with cuDNN).
++USE_CUDNN := 1
++
++# CPU-only switch (uncomment to build without GPU support).
++# CPU_ONLY := 1
++
++# uncomment to disable IO dependencies and corresponding data layers
++USE_OPENCV := 1
++USE_LEVELDB := 1
++USE_LMDB := 1
++
++# uncomment to allow MDB_NOLOCK when reading LMDB files (only if necessary)
++#	You should not set this flag if you will be reading LMDBs with any
++#	possibility of simultaneous read and write
++# ALLOW_LMDB_NOLOCK := 1
++
++# Uncomment if you're using OpenCV 3 or 4
++OPENCV_VERSION := 4
++USE_PKG_CONFIG := 1
++
++# To customize your choice of compiler, uncomment and set the following.
++# N.B. the default for Linux is g++ and the default for OSX is clang++
++CUSTOM_CXX := g++-9
++
++# CUDA directory contains bin/ and lib/ directories that we need.
++CUDA_DIR := /opt/cuda
++# On Ubuntu 14.04, if cuda tools are installed via
++# "sudo apt-get install nvidia-cuda-toolkit" then use this instead:
++# CUDA_DIR := /usr
++
++# CUDA architecture setting: going with all of them.
++# For CUDA < 6.0, comment the lines after *_35 for compatibility.
++CUDA_ARCH := -gencode arch=compute_50,code=sm_50
++
++# BLAS choice:
++# atlas for ATLAS (default)
++# mkl for MKL
++# open for OpenBlas
++# BLAS := atlas
++BLAS := open
++# Custom (MKL/ATLAS/OpenBLAS) include and lib directories.
++# Leave commented to accept the defaults for your choice of BLAS
++# (which should work)!
++# BLAS_INCLUDE := /path/to/your/blas
++# BLAS_LIB := /path/to/your/blas
++
++# Homebrew puts openblas in a directory that is not on the standard search path
++# BLAS_INCLUDE := $(shell brew --prefix openblas)/include
++# BLAS_LIB := $(shell brew --prefix openblas)/lib
++
++# This is required only if you will compile the matlab interface.
++# MATLAB directory should contain the mex binary in /bin.
++# MATLAB_DIR := /usr/local
++MATLAB_DIR := /opt/MATLAB/R2020b
++
++# NOTE: this is required only if you will compile the python interface.
++# We need to be able to find Python.h and numpy/arrayobject.h.
++# PYTHON_INCLUDE := /usr/include/python2.7 \
++#		/usr/lib/python2.7/dist-packages/numpy/core/include
++# Anaconda Python distribution is quite popular. Include path:
++# Verify anaconda location, sometimes it's in root.
++# ANACONDA_HOME := $(HOME)/anaconda2
++# PYTHON_INCLUDE := $(ANACONDA_HOME)/include \
++#		$(ANACONDA_HOME)/include/python2.7 \
++#		$(ANACONDA_HOME)/lib/python2.7/site-packages/numpy/core/include \
++
++# Uncomment to use Python 3 (default is Python 2)
++PYTHON_LIBRARIES := boost_python39 python3.9
++PYTHON_INCLUDE := /usr/include/python3.9 \
++                 /usr/lib/python3/dist-packages/numpy/core/include
++
++# We need to be able to find libpythonX.X.so or .dylib.
++PYTHON_LIB := /usr/lib
++# PYTHON_LIB := $(ANACONDA_HOME)/lib
++
++# Homebrew installs numpy in a non standard path (keg only)
++# PYTHON_INCLUDE += $(dir $(shell python -c 'import numpy.core; print(numpy.core.__file__)'))/include
++# PYTHON_LIB += $(shell brew --prefix numpy)/lib
++
++# Uncomment to support layers written in Python (will link against Python libs)
++WITH_PYTHON_LAYER := 1
++
++# Whatever else you find you need goes here.
++INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/opencv4 /usr/include/hdf5/serial
++LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu/hdf5/serial
++
++# If Homebrew is installed at a non standard location (for example your home directory) and you use it for general dependencies
++# INCLUDE_DIRS += $(shell brew --prefix)/include
++# LIBRARY_DIRS += $(shell brew --prefix)/lib
++
++# N.B. both build and distribute dirs are cleared on `make clean`
++BUILD_DIR := Build
++DISTRIBUTE_DIR := distribute
++
++# Uncomment for debugging. Does not work on OSX due to https://github.com/BVLC/caffe/issues/171
++# DEBUG := 1
++
++# The ID of the GPU that 'make runtest' will use to run unit tests.
++TEST_GPUID := 0
++
++# enable pretty build (comment to see full commands)
++Q ?= @
+diff --git a/cmake/Cuda.cmake b/cmake/Cuda.cmake
+index 5a400a91..29122513 100644
+--- a/cmake/Cuda.cmake
++++ b/cmake/Cuda.cmake
+@@ -190,7 +190,7 @@ function(detect_cuDNN)
+     set(HAVE_CUDNN  TRUE PARENT_SCOPE)
+     set(CUDNN_FOUND TRUE PARENT_SCOPE)
+ 
+-    file(READ ${CUDNN_INCLUDE}/cudnn.h CUDNN_VERSION_FILE_CONTENTS)
++    file(READ ${CUDNN_INCLUDE}/cudnn_version.h CUDNN_VERSION_FILE_CONTENTS)
+ 
+     # cuDNN v3 and beyond
+     string(REGEX MATCH "define CUDNN_MAJOR * +([0-9]+)"
 diff --git a/cmake/Utils.cmake b/cmake/Utils.cmake
 index 653de5fd..51edadca 100644
 --- a/cmake/Utils.cmake
@@ -52,101 +248,437 @@ index 653de5fd..51edadca 100644
      endif()
    endforeach()
  
-diff --git a/matlab/+caffe/Layer.m b/matlab/+caffe/Layer.m
-index 4c202310..a4a738d5 100644
---- a/matlab/+caffe/Layer.m
-+++ b/matlab/+caffe/Layer.m
-@@ -20,9 +20,10 @@ classdef Layer < handle
-       self.attributes = caffe_('layer_get_attr', self.hLayer_self);
-       
-       % setup weights
--      self.params = caffe.Blob.empty();
-+%      self.params = caffe.Blob.empty();
+diff --git a/octave/+caffe/+test/test_io.m b/octave/+caffe/+test/test_io.m
+new file mode 100644
+index 00000000..2c34bd1e
+--- /dev/null
++++ b/octave/+caffe/+test/test_io.m
+@@ -0,0 +1,18 @@
++classdef test_io < matlab.unittest.TestCase
++  methods (Test)
++    function test_read_write_mean(self)
++      % randomly generate mean data
++      width = 200;
++      height = 300;
++      channels = 3;
++      mean_data_write = 255 * rand(width, height, channels, 'single');
++      % write mean data to binary proto
++      mean_proto_file = tempname();
++      caffe.io.write_mean(mean_data_write, mean_proto_file);
++      % read mean data from saved binary proto and test whether they are equal
++      mean_data_read = caffe.io.read_mean(mean_proto_file);
++      self.verifyEqual(mean_data_write, mean_data_read)
++      delete(mean_proto_file);
++    end
++  end
++end
+diff --git a/octave/+caffe/+test/test_net.m b/octave/+caffe/+test/test_net.m
+new file mode 100644
+index 00000000..3dabe84d
+--- /dev/null
++++ b/octave/+caffe/+test/test_net.m
+@@ -0,0 +1,96 @@
++classdef test_net < matlab.unittest.TestCase
++  
++  properties
++    num_output
++    model_file
++    net
++  end
++  
++  methods (Static)
++    function model_file = simple_net_file(num_output)
++      model_file = tempname();
++      fid = fopen(model_file, 'w');
++      fprintf(fid, [ ...
++        'name: "testnet" force_backward: true\n' ...
++        'layer { type: "DummyData" name: "data" top: "data" top: "label"\n' ...
++        'dummy_data_param { num: 5 channels: 2 height: 3 width: 4\n' ...
++        '    num: 5 channels: 1 height: 1 width: 1\n' ...
++        '    data_filler { type: "gaussian" std: 1 }\n' ...
++        '    data_filler { type: "constant" } } }\n' ...
++        'layer { type: "Convolution" name: "conv" bottom: "data" top: "conv"\n' ...
++        '  convolution_param { num_output: 11 kernel_size: 2 pad: 3\n' ...
++        '    weight_filler { type: "gaussian" std: 1 }\n' ...
++        '    bias_filler { type: "constant" value: 2 } }\n' ...
++        '    param { decay_mult: 1 } param { decay_mult: 0 }\n' ...
++        '    }\n' ...
++        'layer { type: "InnerProduct" name: "ip" bottom: "conv" top: "ip"\n' ...
++        '  inner_product_param { num_output: ' num2str(num_output) ...
++        '    weight_filler { type: "gaussian" std: 2.5 }\n' ...
++        '    bias_filler { type: "constant" value: -3 } } }\n' ...
++        'layer { type: "SoftmaxWithLoss" name: "loss" bottom: "ip" bottom: "label"\n' ...
++        '  top: "loss" }' ]);
++      fclose(fid);
++    end
++  end
++  methods
++    function self = test_net()
++      self.num_output = 13;
++      self.model_file = caffe.test.test_net.simple_net_file(self.num_output);
++      self.net = caffe.Net(self.model_file, 'train');
++      % also make sure get_solver runs
++      caffe.get_net(self.model_file, 'train');
++      
++      % fill in valid labels
++      self.net.blobs('label').set_data(randi( ...
++        self.num_output - 1, self.net.blobs('label').shape));
++      
++      delete(self.model_file);
++    end
++  end
++  methods (Test)
++    function self = test_blob(self)
++      self.net.blobs('data').set_data(10 * ones(self.net.blobs('data').shape));
++      self.verifyEqual(self.net.blobs('data').get_data(), ...
++        10 * ones(self.net.blobs('data').shape, 'single'));
++      self.net.blobs('data').set_diff(-2 * ones(self.net.blobs('data').shape));
++      self.verifyEqual(self.net.blobs('data').get_diff(), ...
++        -2 * ones(self.net.blobs('data').shape, 'single'));
++      original_shape = self.net.blobs('data').shape;
++      self.net.blobs('data').reshape([6 5 4 3 2 1]);
++      self.verifyEqual(self.net.blobs('data').shape, [6 5 4 3 2 1]);
++      self.net.blobs('data').reshape(original_shape);
++      self.net.reshape();
++    end
++    function self = test_layer(self)
++      self.verifyEqual(self.net.params('conv', 1).shape, [2 2 2 11]);
++      self.verifyEqual(self.net.layers('conv').params(2).shape, 11);
++      self.verifyEqual(self.net.layers('conv').type(), 'Convolution');
++    end
++    function test_forward_backward(self)
++      self.net.forward_prefilled();
++      self.net.backward_prefilled();
++    end
++    function test_inputs_outputs(self)
++      self.verifyEqual(self.net.inputs, cell(0, 1))
++      self.verifyEqual(self.net.outputs, {'loss'});
++    end
++    function test_save_and_read(self)
++      weights_file = tempname();
++      self.net.save(weights_file);
++      model_file2 = caffe.test.test_net.simple_net_file(self.num_output);
++      net2 = caffe.Net(model_file2, 'train');
++      net2.copy_from(weights_file);
++      net3 = caffe.Net(model_file2, weights_file, 'train');
++      delete(model_file2);
++      delete(weights_file);
++      for l = 1:length(self.net.layer_vec)
++        for i = 1:length(self.net.layer_vec(l).params)
++          self.verifyEqual(self.net.layer_vec(l).params(i).get_data(), ...
++            net2.layer_vec(l).params(i).get_data());
++          self.verifyEqual(self.net.layer_vec(l).params(i).get_data(), ...
++            net3.layer_vec(l).params(i).get_data());
++        end
++      end
++    end
++  end
++end
+diff --git a/octave/+caffe/+test/test_solver.m b/octave/+caffe/+test/test_solver.m
+new file mode 100644
+index 00000000..739258b0
+--- /dev/null
++++ b/octave/+caffe/+test/test_solver.m
+@@ -0,0 +1,45 @@
++classdef test_solver < matlab.unittest.TestCase
++  
++  properties
++    num_output
++    solver
++  end
++  
++  methods
++    function self = test_solver()
++      self.num_output = 13;
++      model_file = caffe.test.test_net.simple_net_file(self.num_output);
++      solver_file = tempname();
++      
++      fid = fopen(solver_file, 'w');
++      fprintf(fid, [ ...
++        'net: "'  model_file  '"\n' ...
++        'test_iter: 10 test_interval: 10 base_lr: 0.01 momentum: 0.9\n' ...
++        'weight_decay: 0.0005 lr_policy: "inv" gamma: 0.0001 power: 0.75\n' ...
++        'display: 100 max_iter: 100 snapshot_after_train: false\n' ]);
++      fclose(fid);
++      
++      self.solver = caffe.Solver(solver_file);
++      % also make sure get_solver runs
++      caffe.get_solver(solver_file);
++      caffe.set_mode_cpu();
++      % fill in valid labels
++      self.solver.net.blobs('label').set_data(randi( ...
++        self.num_output - 1, self.solver.net.blobs('label').shape));
++      self.solver.test_nets(1).blobs('label').set_data(randi( ...
++        self.num_output - 1, self.solver.test_nets(1).blobs('label').shape));
++      
++      delete(solver_file);
++      delete(model_file);
++    end
++  end
++  methods (Test)
++    function test_solve(self)
++      self.verifyEqual(self.solver.iter(), 0)
++      self.solver.step(30);
++      self.verifyEqual(self.solver.iter(), 30)
++      self.solver.solve()
++      self.verifyEqual(self.solver.iter(), 100)
++    end
++  end
++end
+diff --git a/octave/+caffe/Blob.m b/octave/+caffe/Blob.m
+new file mode 100644
+index 00000000..e39f7ee3
+--- /dev/null
++++ b/octave/+caffe/Blob.m
+@@ -0,0 +1,78 @@
++classdef Blob < handle
++  % Wrapper class of caffe::Blob in matlab
++  
++  properties (Access = private)
++    hBlob_self
++  end
++  
++  methods
++    function self = Blob(hBlob_blob)
++      CHECK(is_valid_handle(hBlob_blob), 'invalid Blob handle');
++      
++      % setup self handle
++      self.hBlob_self = hBlob_blob;
++    end
++    function shape = shape(self)
++      shape = caffe_('blob_get_shape', self.hBlob_self);
++    end
++    function reshape(self, shape)
++      shape = self.check_and_preprocess_shape(shape);
++      caffe_('blob_reshape', self.hBlob_self, shape);
++    end
++    function data = get_data(self)
++      data = caffe_('blob_get_data', self.hBlob_self);
++    end
++    function set_data(self, data)
++      data = self.check_and_preprocess_data(data);
++      caffe_('blob_set_data', self.hBlob_self, data);
++    end
++    function diff = get_diff(self)
++      diff = caffe_('blob_get_diff', self.hBlob_self);
++    end
++    function set_diff(self, diff)
++      diff = self.check_and_preprocess_data(diff);
++      caffe_('blob_set_diff', self.hBlob_self, diff);
++    end
++  end
++  
++  methods (Access = private)
++    function shape = check_and_preprocess_shape(~, shape)
++      CHECK(isempty(shape) || (isnumeric(shape) && isrow(shape)), ...
++        'shape must be a integer row vector');
++      shape = double(shape);
++    end
++    function data = check_and_preprocess_data(self, data)
++      CHECK(isnumeric(data), 'data or diff must be numeric types');
++      self.check_data_size_matches(data);
++      if ~isa(data, 'single')
++        data = single(data);
++      end
++    end
++    function check_data_size_matches(self, data)
++      % check whether size of data matches shape of this blob
++      % note: matlab arrays always have at least 2 dimensions. To compare
++      % shape between size of data and shape of this blob, extend shape of
++      % this blob to have at least 2 dimensions
++      self_shape_extended = self.shape;
++      if isempty(self_shape_extended)
++        % target blob is a scalar (0 dim)
++        self_shape_extended = [1, 1];
++      elseif isscalar(self_shape_extended)
++        % target blob is a vector (1 dim)
++        self_shape_extended = [self_shape_extended, 1];
++      end
++      % Also, matlab cannot have tailing dimension 1 for ndim > 2, so you
++      % cannot create 20 x 10 x 1 x 1 array in matlab as it becomes 20 x 10
++      % Extend matlab arrays to have tailing dimension 1 during shape match
++      data_size_extended = ...
++        [size(data), ones(1, length(self_shape_extended) - ndims(data))];
++      is_matched = ...
++        (length(self_shape_extended) == length(data_size_extended)) ...
++        && all(self_shape_extended == data_size_extended);
++      CHECK(is_matched, ...
++        sprintf('%s, input data/diff size: [ %s] vs target blob shape: [ %s]', ...
++        'input data/diff size does not match target blob shape', ...
++        sprintf('%d ', data_size_extended), sprintf('%d ', self_shape_extended)));
++    end
++  end
++end
+diff --git a/octave/+caffe/Layer.m b/octave/+caffe/Layer.m
+new file mode 100644
+index 00000000..39226d6c
+--- /dev/null
++++ b/octave/+caffe/Layer.m
+@@ -0,0 +1,32 @@
++classdef Layer < handle
++  % Wrapper class of caffe::Layer in matlab
++  
++  properties (Access = private)
++    hLayer_self
++    attributes
++    % attributes fields:
++    %     hBlob_blobs
++  end
++  properties (SetAccess = private)
++    params
++  end
++  
++  methods
++    function self = Layer(hLayer_layer)
++      CHECK(is_valid_handle(hLayer_layer), 'invalid Layer handle');
++      
++      % setup self handle and attributes
++      self.hLayer_self = hLayer_layer;
++      self.attributes = caffe_('layer_get_attr', self.hLayer_self);
++      
++      % setup weights
 +      self.params = {};
-       for n = 1:length(self.attributes.hBlob_blobs)
--        self.params(n) = caffe.Blob(self.attributes.hBlob_blobs(n));
++      for n = 1:length(self.attributes.hBlob_blobs)
 +        self.params{n} = caffe.Blob(self.attributes.hBlob_blobs(n));
-       end
-     end
-     function layer_type = type(self)
-diff --git a/matlab/+caffe/Net.m b/matlab/+caffe/Net.m
-index bb99ec89..2c200ed0 100644
---- a/matlab/+caffe/Net.m
-+++ b/matlab/+caffe/Net.m
-@@ -17,8 +17,8 @@ classdef Net < handle
-     blob_vec
-     inputs
-     outputs
--    name2layer_index
--    name2blob_index
++      end
++    end
++    function layer_type = type(self)
++      layer_type = caffe_('layer_get_type', self.hLayer_self);
++    end
++  end
++end
+diff --git a/octave/+caffe/Net.m b/octave/+caffe/Net.m
+new file mode 100644
+index 00000000..e067335c
+--- /dev/null
++++ b/octave/+caffe/Net.m
+@@ -0,0 +1,143 @@
++classdef Net < handle
++  % Wrapper class of caffe::Net in matlab
++  
++  properties (Access = private)
++    hNet_self
++    attributes
++    % attribute fields
++    %     hLayer_layers
++    %     hBlob_blobs
++    %     input_blob_indices
++    %     output_blob_indices
++    %     layer_names
++    %     blob_names
++  end
++  properties (SetAccess = private)
++    layer_vec
++    blob_vec
++    inputs
++    outputs
 +    name2layer_get_index
 +    name2blob_get_index
-     layer_names
-     blob_names
-   end
-@@ -40,15 +40,17 @@ classdef Net < handle
-       self.attributes = caffe_('net_get_attr', self.hNet_self);
-       
-       % setup layer_vec
--      self.layer_vec = caffe.Layer.empty();
-+%      self.layer_vec = caffe.Layer.empty();
++    layer_names
++    blob_names
++  end
++  
++  methods
++    function self = Net(varargin)
++      % decide whether to construct a net from model_file or handle
++      if ~(nargin == 1 && isstruct(varargin{1}))
++        % construct a net from model_file
++        self = caffe.get_net(varargin{:});
++        return
++      end
++      % construct a net from handle
++      hNet_net = varargin{1};
++      CHECK(is_valid_handle(hNet_net), 'invalid Net handle');
++      
++      % setup self handle and attributes
++      self.hNet_self = hNet_net;
++      self.attributes = caffe_('net_get_attr', self.hNet_self);
++      
++      % setup layer_vec
 +      self.layer_vec = {};
-       for n = 1:length(self.attributes.hLayer_layers)
--        self.layer_vec(n) = caffe.Layer(self.attributes.hLayer_layers(n));
++      for n = 1:length(self.attributes.hLayer_layers)
 +        self.layer_vec{n} = caffe.Layer(self.attributes.hLayer_layers(n));
-       end
-       
-       % setup blob_vec
--      self.blob_vec = caffe.Blob.empty();
-+%      self.blob_vec = caffe.Blob.empty();
++      end
++      
++      % setup blob_vec
 +      self.blob_vec = {};
-       for n = 1:length(self.attributes.hBlob_blobs);
--        self.blob_vec(n) = caffe.Blob(self.attributes.hBlob_blobs(n));
++      for n = 1:length(self.attributes.hBlob_blobs);
 +        self.blob_vec{n} = caffe.Blob(self.attributes.hBlob_blobs(n));
-       end
-       
-       % setup input and output blob and their names
-@@ -59,10 +61,10 @@ classdef Net < handle
-         self.attributes.blob_names(self.attributes.output_blob_indices + 1);
-       
-       % create map objects to map from name to layers and blobs
--      self.name2layer_index = containers.Map(self.attributes.layer_names, ...
--        1:length(self.attributes.layer_names));
--      self.name2blob_index = containers.Map(self.attributes.blob_names, ...
--        1:length(self.attributes.blob_names));
-+%%      self.name2layer_index = containers.Map(self.attributes.layer_names, ...
-+%%        1:length(self.attributes.layer_names));
-+%%      self.name2blob_index = containers.Map(self.attributes.blob_names, ...
-+%%        1:length(self.attributes.blob_names));
-       
-       % expose layer_names and blob_names for public read access
-       self.layer_names = self.attributes.layer_names;
-@@ -70,16 +72,18 @@ classdef Net < handle
-     end
-     function delete (self)
-       if ~isempty(self.hNet_self)
--        caffe_('delete_net', self.hNet_self);
-+        if self.isvalid
-+          caffe_('delete_net', self.hNet_self);
-+        end
-       end
-     end
-     function layer = layers(self, layer_name)
-       CHECK(ischar(layer_name), 'layer_name must be a string');
--      layer = self.layer_vec(self.name2layer_index(layer_name));
-+      layer = self.layer_vec(self.name2layer_get_index(layer_name));
-     end
-     function blob = blobs(self, blob_name)
-       CHECK(ischar(blob_name), 'blob_name must be a string');
--      blob = self.blob_vec(self.name2blob_index(blob_name));
-+      blob = self.blob_vec(self.name2blob_get_index(blob_name));
-     end
-     function blob = params(self, layer_name, blob_index)
-       CHECK(ischar(layer_name), 'layer_name must be a string');
-@@ -134,5 +138,20 @@ classdef Net < handle
-       CHECK(ischar(weights_file), 'weights_file must be a string');
-       caffe_('net_save', self.hNet_self, weights_file);
-     end
++      end
++      
++      % setup input and output blob and their names
++      % note: add 1 to indices as matlab is 1-indexed while C++ is 0-indexed
++      self.inputs = ...
++        self.attributes.blob_names(self.attributes.input_blob_indices + 1);
++      self.outputs = ...
++        self.attributes.blob_names(self.attributes.output_blob_indices + 1);
++      
++      % create map objects to map from name to layers and blobs      
++      % expose layer_names and blob_names for public read access
++      self.layer_names = self.attributes.layer_names;
++      self.blob_names = self.attributes.blob_names;
++    end
++    function layer = layers(self, layer_name)
++      CHECK(ischar(layer_name), 'layer_name must be a string');
++      layer = self.layer_vec{self.name2layer_get_index(layer_name)};
++    end
++    function blob = blobs(self, blob_name)
++      CHECK(ischar(blob_name), 'blob_name must be a string');
++      blob = self.blob_vec{self.name2blob_get_index(blob_name)};
++    end
++    function blob = params(self, layer_name, blob_index)
++      CHECK(ischar(layer_name), 'layer_name must be a string');
++      CHECK(isscalar(blob_index), 'blob_index must be a scalar');
++      blob = self.layer_vec{self.name2layer_get_index(layer_name)}.params(blob_index);
++    end
++    function forward_prefilled(self)
++      caffe_('net_forward', self.hNet_self);
++    end
++    function backward_prefilled(self)
++      caffe_('net_backward', self.hNet_self);
++    end
++    function res = forward(self, input_data)
++      CHECK(iscell(input_data), 'input_data must be a cell array');
++      CHECK(length(input_data) == length(self.inputs), ...
++        'input data cell length must match input blob number');
++      % copy data to input blobs
++      for n = 1:length(self.inputs)
++        self.blobs(self.inputs{n}).set_data(input_data{n});
++      end
++      self.forward_prefilled();
++      % retrieve data from output blobs
++      res = cell(length(self.outputs), 1);
++      for n = 1:length(self.outputs)
++        res{n} = self.blobs(self.outputs{n}).get_data();
++      end
++    end
++    function res = backward(self, output_diff)
++      CHECK(iscell(output_diff), 'output_diff must be a cell array');
++      CHECK(length(output_diff) == length(self.outputs), ...
++        'output diff cell length must match output blob number');
++      % copy diff to output blobs
++      for n = 1:length(self.outputs)
++        self.blobs(self.outputs{n}).set_diff(output_diff{n});
++      end
++      self.backward_prefilled();
++      % retrieve diff from input blobs
++      res = cell(length(self.inputs), 1);
++      for n = 1:length(self.inputs)
++        res{n} = self.blobs(self.inputs{n}).get_diff();
++      end
++    end
++    function copy_from(self, weights_file)
++      CHECK(ischar(weights_file), 'weights_file must be a string');
++      CHECK_FILE_EXIST(weights_file);
++      caffe_('net_copy_from', self.hNet_self, weights_file);
++    end
++    function reshape(self)
++      caffe_('net_reshape', self.hNet_self);
++    end
++    function save(self, weights_file)
++      CHECK(ischar(weights_file), 'weights_file must be a string');
++      caffe_('net_save', self.hNet_self, weights_file);
++    end
 +    function i=name2layer_get_index(self, layer_name)
 +      for i = 1:length(self.attributes.layer_names)
 +        if strcmp(self.attributes.layer_names{i},layer_name)
@@ -162,51 +694,1300 @@ index bb99ec89..2c200ed0 100644
 +        endif
 +      end
 +    end
-   end
- end
-diff --git a/matlab/CMakeLists.txt b/matlab/CMakeLists.txt
-index 987730d9..4a9df921 100644
---- a/matlab/CMakeLists.txt
-+++ b/matlab/CMakeLists.txt
-@@ -32,7 +32,6 @@ endfunction()
- 
- # global settings
- file(GLOB Matlab_srcs +caffe/private/caffe_.cpp)
--set(Matlab_caffe_mex ${PROJECT_SOURCE_DIR}/matlab/+caffe/private/caffe_.mex)
- 
- caffe_get_current_cflags(cflags)
- caffe_parse_linker_libs(Caffe_LINKER_LIBS folders libflags macos_frameworks)
-@@ -43,16 +42,17 @@ string(REPLACE ";" ";-L" link_folders "-L${folders}")
- string(REPLACE ";" ":"  rpath_folders   "${folders}")
- 
- if(build_using MATCHES "Matlab")
++  end
++end
+diff --git a/octave/+caffe/Net.m.orig b/octave/+caffe/Net.m.orig
+deleted file mode 100644
+index e69de29b..00000000
+diff --git a/octave/+caffe/Net.m.rej b/octave/+caffe/Net.m.rej
+deleted file mode 100644
+index e69de29b..00000000
+diff --git a/octave/+caffe/Solver.m b/octave/+caffe/Solver.m
+new file mode 100644
+index 00000000..39e43a60
+--- /dev/null
++++ b/octave/+caffe/Solver.m
+@@ -0,0 +1,56 @@
++classdef Solver < handle
++  % Wrapper class of caffe::SGDSolver in matlab
++  
++  properties (Access = private)
++    hSolver_self
++    attributes
++    % attribute fields
++    %     hNet_net
++    %     hNet_test_nets
++  end
++  properties (SetAccess = private)
++    net
++    test_nets
++  end
++  
++  methods
++    function self = Solver(varargin)
++      % decide whether to construct a solver from solver_file or handle
++      if ~(nargin == 1 && isstruct(varargin{1}))
++        % construct a solver from solver_file
++        self = caffe.get_solver(varargin{:});
++        return
++      end
++      % construct a solver from handle
++      hSolver_solver = varargin{1};
++      CHECK(is_valid_handle(hSolver_solver), 'invalid Solver handle');
++      
++      % setup self handle and attributes
++      self.hSolver_self = hSolver_solver;
++      self.attributes = caffe_('solver_get_attr', self.hSolver_self);
++      
++      % setup net and test_nets
++      self.net = caffe.Net(self.attributes.hNet_net);
++      self.test_nets = {};
++      for n = 1:length(self.attributes.hNet_test_nets)
++        self.test_nets{n} = caffe.Net(self.attributes.hNet_test_nets(n));
++      end
++    end
++    function iter = iter(self)
++      iter = caffe_('solver_get_iter', self.hSolver_self);
++    end
++    function restore(self, snapshot_filename)
++      CHECK(ischar(snapshot_filename), 'snapshot_filename must be a string');
++      CHECK_FILE_EXIST(snapshot_filename);
++      caffe_('solver_restore', self.hSolver_self, snapshot_filename);
++    end
++    function solve(self)
++      caffe_('solver_solve', self.hSolver_self);
++    end
++    function step(self, iters)
++      CHECK(isscalar(iters) && iters > 0, 'iters must be positive integer');
++      iters = double(iters);
++      caffe_('solver_step', self.hSolver_self, iters);
++    end
++  end
++end
+diff --git a/octave/+caffe/get_net.m b/octave/+caffe/get_net.m
+new file mode 100644
+index 00000000..4b5683eb
+--- /dev/null
++++ b/octave/+caffe/get_net.m
+@@ -0,0 +1,37 @@
++function net = get_net(varargin)
++% net = get_net(model_file, phase_name) or
++% net = get_net(model_file, weights_file, phase_name)
++%   Construct a net from model_file, and load weights from weights_file
++%   phase_name can only be 'train' or 'test'
++
++CHECK(nargin == 2 || nargin == 3, ['usage: ' ...
++  'net = get_net(model_file, phase_name) or ' ...
++  'net = get_net(model_file, weights_file, phase_name)']);
++if nargin == 3
++  model_file = varargin{1};
++  weights_file = varargin{2};
++  phase_name = varargin{3};
++elseif nargin == 2
++  model_file = varargin{1};
++  phase_name = varargin{2};
++end
++
++CHECK(ischar(model_file), 'model_file must be a string');
++CHECK(ischar(phase_name), 'phase_name must be a string');
++CHECK_FILE_EXIST(model_file);
++CHECK(strcmp(phase_name, 'train') || strcmp(phase_name, 'test'), ...
++  sprintf('phase_name can only be %strain%s or %stest%s', ...
++  char(39), char(39), char(39), char(39)));
++
++% construct caffe net from model_file
++hNet = caffe_('get_net', model_file, phase_name);
++net = caffe.Net(hNet);
++
++% load weights from weights_file
++if nargin == 3
++  CHECK(ischar(weights_file), 'weights_file must be a string');
++  CHECK_FILE_EXIST(weights_file);
++  net.copy_from(weights_file);
++end
++
++end
+diff --git a/octave/+caffe/get_solver.m b/octave/+caffe/get_solver.m
+new file mode 100644
+index 00000000..74d576eb
+--- /dev/null
++++ b/octave/+caffe/get_solver.m
+@@ -0,0 +1,10 @@
++function solver = get_solver(solver_file)
++% solver = get_solver(solver_file)
++%   Construct a Solver object from solver_file
++
++CHECK(ischar(solver_file), 'solver_file must be a string');
++CHECK_FILE_EXIST(solver_file);
++pSolver = caffe_('get_solver', solver_file);
++solver = caffe.Solver(pSolver);
++
++end
+diff --git a/octave/+caffe/io.m b/octave/+caffe/io.m
+new file mode 100644
+index 00000000..4b072fec
+--- /dev/null
++++ b/octave/+caffe/io.m
+@@ -0,0 +1,41 @@
++classdef io
++  % a class for input and output functions
++  
++  methods (Static)
++    function im_data = load_image(im_file)
++      % im_data = load_image(im_file)
++      %   load an image from disk into Caffe-supported data format
++      %   switch channels from RGB to BGR, make width the fastest dimension
++      %   and convert to single
++      %   returns im_data in W x H x C. For colored images, C = 3 in BGR
++      %   channels, and for grayscale images, C = 1
++      CHECK(ischar(im_file), 'im_file must be a string');
++      CHECK_FILE_EXIST(im_file);
++      im_data = imread(im_file);
++      % permute channels from RGB to BGR for colored images
++      if size(im_data, 3) == 3
++        im_data = im_data(:, :, [3, 2, 1]);
++      end
++      % flip width and height to make width the fastest dimension
++      im_data = permute(im_data, [2, 1, 3]);
++      % convert from uint8 to single
++      im_data = single(im_data);
++    end
++    function mean_data = read_mean(mean_proto_file)
++      % mean_data = read_mean(mean_proto_file)
++      %   read image mean data from binaryproto file
++      %   returns mean_data in W x H x C with BGR channels
++      CHECK(ischar(mean_proto_file), 'mean_proto_file must be a string');
++      CHECK_FILE_EXIST(mean_proto_file);
++      mean_data = caffe_('read_mean', mean_proto_file);
++    end
++    function write_mean(mean_data, mean_proto_file)
++      % write_mean(mean_data, mean_proto_file)
++      %   write image mean data to binaryproto file
++      %   mean_data should be W x H x C with BGR channels
++      CHECK(ischar(mean_proto_file), 'mean_proto_file must be a string');
++      CHECK(isa(mean_data, 'single'), 'mean_data must be a SINGLE matrix');
++      caffe_('write_mean', mean_data, mean_proto_file);
++    end   
++  end
++end
+diff --git a/octave/+caffe/private/CHECK.m b/octave/+caffe/private/CHECK.m
+new file mode 100644
+index 00000000..21706549
+--- /dev/null
++++ b/octave/+caffe/private/CHECK.m
+@@ -0,0 +1,7 @@
++function CHECK(expr, error_msg)
++
++if ~expr
++  error(error_msg);
++end
++
++end
+diff --git a/octave/+caffe/private/CHECK_FILE_EXIST.m b/octave/+caffe/private/CHECK_FILE_EXIST.m
+new file mode 100644
+index 00000000..8c80fb80
+--- /dev/null
++++ b/octave/+caffe/private/CHECK_FILE_EXIST.m
+@@ -0,0 +1,7 @@
++function CHECK_FILE_EXIST(filename)
++
++if exist(filename, 'file') == 0
++  error('%s does not exist', filename);
++end
++
++end
+diff --git a/octave/+caffe/private/caffe_.cpp b/octave/+caffe/private/caffe_.cpp
+new file mode 100644
+index 00000000..136e2c17
+--- /dev/null
++++ b/octave/+caffe/private/caffe_.cpp
+@@ -0,0 +1,581 @@
++//
++// caffe_.cpp provides wrappers of the caffe::Solver class, caffe::Net class,
++// caffe::Layer class and caffe::Blob class and some caffe::Caffe functions,
++// so that one could easily use Caffe from matlab.
++// Note that for matlab, we will simply use float as the data type.
++
++// Internally, data is stored with dimensions reversed from Caffe's:
++// e.g., if the Caffe blob axes are (num, channels, height, width),
++// the matcaffe data is stored as (width, height, channels, num)
++// where width is the fastest dimension.
++
++#include <sstream>
++#include <string>
++#include <vector>
++
++#include "mex.h"
++
++#include "caffe/caffe.hpp"
++
++#define MEX_ARGS int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs
++
++using namespace caffe;  // NOLINT(build/namespaces)
++
++// Do CHECK and throw a Mex error if check fails
++inline void mxCHECK(bool expr, const char* msg) {
++  if (!expr) {
++    mexErrMsgTxt(msg);
++  }
++}
++inline void mxERROR(const char* msg) { mexErrMsgTxt(msg); }
++
++// Check if a file exists and can be opened
++void mxCHECK_FILE_EXIST(const char* file) {
++  std::ifstream f(file);
++  if (!f.good()) {
++    f.close();
++    std::string msg("Could not open file ");
++    msg += file;
++    mxERROR(msg.c_str());
++  }
++  f.close();
++}
++
++// The pointers to caffe::Solver and caffe::Net instances
++static vector<shared_ptr<Solver<float> > > solvers_;
++static vector<shared_ptr<Net<float> > > nets_;
++// init_key is generated at the beginning and everytime you call reset
++static double init_key = static_cast<double>(caffe_rng_rand());
++
++/** -----------------------------------------------------------------
++ ** data conversion functions
++ **/
++// Enum indicates which blob memory to use
++enum WhichMemory { DATA, DIFF };
++
++// Copy matlab array to Blob data or diff
++static void mx_mat_to_blob(const mxArray* mx_mat, Blob<float>* blob,
++    WhichMemory data_or_diff) {
++  mxCHECK(blob->count() == mxGetNumberOfElements(mx_mat),
++      "number of elements in target blob doesn't match that in input mxArray");
++  const float* mat_mem_ptr = reinterpret_cast<const float*>(mxGetData(mx_mat));
++  float* blob_mem_ptr = NULL;
++  switch (Caffe::mode()) {
++  case Caffe::CPU:
++    blob_mem_ptr = (data_or_diff == DATA ?
++        blob->mutable_cpu_data() : blob->mutable_cpu_diff());
++    break;
++  case Caffe::GPU:
++    blob_mem_ptr = (data_or_diff == DATA ?
++        blob->mutable_gpu_data() : blob->mutable_gpu_diff());
++    break;
++  default:
++    mxERROR("Unknown Caffe mode");
++  }
++  caffe_copy(blob->count(), mat_mem_ptr, blob_mem_ptr);
++}
++
++// Copy Blob data or diff to matlab array
++static mxArray* blob_to_mx_mat(const Blob<float>* blob,
++    WhichMemory data_or_diff) {
++  const int num_axes = blob->num_axes();
++  vector<mwSize> dims(num_axes);
++  for (int blob_axis = 0, mat_axis = num_axes - 1; blob_axis < num_axes;
++       ++blob_axis, --mat_axis) {
++    dims[mat_axis] = static_cast<mwSize>(blob->shape(blob_axis));
++  }
++  // matlab array needs to have at least one dimension, convert scalar to 1-dim
++  if (num_axes == 0) {
++    dims.push_back(1);
++  }
++  mxArray* mx_mat =
++      mxCreateNumericArray(dims.size(), dims.data(), mxSINGLE_CLASS, mxREAL);
++  float* mat_mem_ptr = reinterpret_cast<float*>(mxGetData(mx_mat));
++  const float* blob_mem_ptr = NULL;
++  switch (Caffe::mode()) {
++  case Caffe::CPU:
++    blob_mem_ptr = (data_or_diff == DATA ? blob->cpu_data() : blob->cpu_diff());
++    break;
++  case Caffe::GPU:
++    blob_mem_ptr = (data_or_diff == DATA ? blob->gpu_data() : blob->gpu_diff());
++    break;
++  default:
++    mxERROR("Unknown Caffe mode");
++  }
++  caffe_copy(blob->count(), blob_mem_ptr, mat_mem_ptr);
++  return mx_mat;
++}
++
++// Convert vector<int> to matlab row vector
++static mxArray* int_vec_to_mx_vec(const vector<int>& int_vec) {
++  mxArray* mx_vec = mxCreateDoubleMatrix(int_vec.size(), 1, mxREAL);
++  double* vec_mem_ptr = mxGetPr(mx_vec);
++  for (int i = 0; i < int_vec.size(); i++) {
++    vec_mem_ptr[i] = static_cast<double>(int_vec[i]);
++  }
++  return mx_vec;
++}
++
++// Convert vector<string> to matlab cell vector of strings
++static mxArray* str_vec_to_mx_strcell(const vector<std::string>& str_vec) {
++  mxArray* mx_strcell = mxCreateCellMatrix(str_vec.size(), 1);
++  for (int i = 0; i < str_vec.size(); i++) {
++    mxSetCell(mx_strcell, i, mxCreateString(str_vec[i].c_str()));
++  }
++  return mx_strcell;
++}
++
++/** -----------------------------------------------------------------
++ ** handle and pointer conversion functions
++ ** a handle is a struct array with the following fields
++ **   (uint64) ptr      : the pointer to the C++ object
++ **   (double) init_key : caffe initialization key
++ **/
++// Convert a handle in matlab to a pointer in C++. Check if init_key matches
++template <typename T>
++static T* handle_to_ptr(const mxArray* mx_handle) {
++  mxArray* mx_ptr = mxGetField(mx_handle, 0, "ptr");
++  mxArray* mx_init_key = mxGetField(mx_handle, 0, "init_key");
++  mxCHECK(mxIsUint64(mx_ptr), "pointer type must be uint64");
++  mxCHECK(mxGetScalar(mx_init_key) == init_key,
++      "Could not convert handle to pointer due to invalid init_key. "
++      "The object might have been cleared.");
++  return reinterpret_cast<T*>(*reinterpret_cast<uint64_t*>(mxGetData(mx_ptr)));
++}
++
++// Create a handle struct vector, without setting up each handle in it
++template <typename T>
++static mxArray* create_handle_vec(int ptr_num) {
++  const int handle_field_num = 2;
++  const char* handle_fields[handle_field_num] = { "ptr", "init_key" };
++  return mxCreateStructMatrix(ptr_num, 1, handle_field_num, handle_fields);
++}
++
++// Set up a handle in a handle struct vector by its index
++template <typename T>
++static void setup_handle(const T* ptr, int index, mxArray* mx_handle_vec) {
++  mxArray* mx_ptr = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
++  *reinterpret_cast<uint64_t*>(mxGetData(mx_ptr)) =
++      reinterpret_cast<uint64_t>(ptr);
++  mxSetField(mx_handle_vec, index, "ptr", mx_ptr);
++  mxSetField(mx_handle_vec, index, "init_key", mxCreateDoubleScalar(init_key));
++}
++
++// Convert a pointer in C++ to a handle in matlab
++template <typename T>
++static mxArray* ptr_to_handle(const T* ptr) {
++  mxArray* mx_handle = create_handle_vec<T>(1);
++  setup_handle(ptr, 0, mx_handle);
++  return mx_handle;
++}
++
++// Convert a vector of shared_ptr in C++ to handle struct vector
++template <typename T>
++static mxArray* ptr_vec_to_handle_vec(const vector<shared_ptr<T> >& ptr_vec) {
++  mxArray* mx_handle_vec = create_handle_vec<T>(ptr_vec.size());
++  for (int i = 0; i < ptr_vec.size(); i++) {
++    setup_handle(ptr_vec[i].get(), i, mx_handle_vec);
++  }
++  return mx_handle_vec;
++}
++
++/** -----------------------------------------------------------------
++ ** matlab command functions: caffe_(api_command, arg1, arg2, ...)
++ **/
++// Usage: caffe_('get_solver', solver_file);
++static void get_solver(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsChar(prhs[0]),
++      "Usage: caffe_('get_solver', solver_file)");
++  char* solver_file = mxArrayToString(prhs[0]);
++  mxCHECK_FILE_EXIST(solver_file);
++  SolverParameter solver_param;
++  ReadSolverParamsFromTextFileOrDie(solver_file, &solver_param);
++  shared_ptr<Solver<float> > solver(
++      SolverRegistry<float>::CreateSolver(solver_param));
++  solvers_.push_back(solver);
++  plhs[0] = ptr_to_handle<Solver<float> >(solver.get());
++  mxFree(solver_file);
++}
++
++// Usage: caffe_('solver_get_attr', hSolver)
++static void solver_get_attr(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('solver_get_attr', hSolver)");
++  Solver<float>* solver = handle_to_ptr<Solver<float> >(prhs[0]);
++  const int solver_attr_num = 2;
++  const char* solver_attrs[solver_attr_num] = { "hNet_net", "hNet_test_nets" };
++  mxArray* mx_solver_attr = mxCreateStructMatrix(1, 1, solver_attr_num,
++      solver_attrs);
++  mxSetField(mx_solver_attr, 0, "hNet_net",
++      ptr_to_handle<Net<float> >(solver->net().get()));
++  mxSetField(mx_solver_attr, 0, "hNet_test_nets",
++      ptr_vec_to_handle_vec<Net<float> >(solver->test_nets()));
++  plhs[0] = mx_solver_attr;
++}
++
++// Usage: caffe_('solver_get_iter', hSolver)
++static void solver_get_iter(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('solver_get_iter', hSolver)");
++  Solver<float>* solver = handle_to_ptr<Solver<float> >(prhs[0]);
++  plhs[0] = mxCreateDoubleScalar(solver->iter());
++}
++
++// Usage: caffe_('solver_restore', hSolver, snapshot_file)
++static void solver_restore(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsChar(prhs[1]),
++      "Usage: caffe_('solver_restore', hSolver, snapshot_file)");
++  Solver<float>* solver = handle_to_ptr<Solver<float> >(prhs[0]);
++  char* snapshot_file = mxArrayToString(prhs[1]);
++  mxCHECK_FILE_EXIST(snapshot_file);
++  solver->Restore(snapshot_file);
++  mxFree(snapshot_file);
++}
++
++// Usage: caffe_('solver_solve', hSolver)
++static void solver_solve(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('solver_solve', hSolver)");
++  Solver<float>* solver = handle_to_ptr<Solver<float> >(prhs[0]);
++  solver->Solve();
++}
++
++// Usage: caffe_('solver_step', hSolver, iters)
++static void solver_step(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsDouble(prhs[1]),
++      "Usage: caffe_('solver_step', hSolver, iters)");
++  Solver<float>* solver = handle_to_ptr<Solver<float> >(prhs[0]);
++  int iters = mxGetScalar(prhs[1]);
++  solver->Step(iters);
++}
++
++// Usage: caffe_('get_net', model_file, phase_name)
++static void get_net(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsChar(prhs[0]) && mxIsChar(prhs[1]),
++      "Usage: caffe_('get_net', model_file, phase_name)");
++  char* model_file = mxArrayToString(prhs[0]);
++  char* phase_name = mxArrayToString(prhs[1]);
++  mxCHECK_FILE_EXIST(model_file);
++  Phase phase;
++  if (strcmp(phase_name, "train") == 0) {
++      phase = TRAIN;
++  } else if (strcmp(phase_name, "test") == 0) {
++      phase = TEST;
++  } else {
++    mxERROR("Unknown phase");
++  }
++  shared_ptr<Net<float> > net(new caffe::Net<float>(model_file, phase));
++  nets_.push_back(net);
++  plhs[0] = ptr_to_handle<Net<float> >(net.get());
++  mxFree(model_file);
++  mxFree(phase_name);
++}
++
++// Usage: caffe_('net_get_attr', hNet)
++static void net_get_attr(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('net_get_attr', hNet)");
++  Net<float>* net = handle_to_ptr<Net<float> >(prhs[0]);
++  const int net_attr_num = 6;
++  const char* net_attrs[net_attr_num] = { "hLayer_layers", "hBlob_blobs",
++      "input_blob_indices", "output_blob_indices", "layer_names", "blob_names"};
++  mxArray* mx_net_attr = mxCreateStructMatrix(1, 1, net_attr_num,
++      net_attrs);
++  mxSetField(mx_net_attr, 0, "hLayer_layers",
++      ptr_vec_to_handle_vec<Layer<float> >(net->layers()));
++  mxSetField(mx_net_attr, 0, "hBlob_blobs",
++      ptr_vec_to_handle_vec<Blob<float> >(net->blobs()));
++  mxSetField(mx_net_attr, 0, "input_blob_indices",
++      int_vec_to_mx_vec(net->input_blob_indices()));
++  mxSetField(mx_net_attr, 0, "output_blob_indices",
++      int_vec_to_mx_vec(net->output_blob_indices()));
++  mxSetField(mx_net_attr, 0, "layer_names",
++      str_vec_to_mx_strcell(net->layer_names()));
++  mxSetField(mx_net_attr, 0, "blob_names",
++      str_vec_to_mx_strcell(net->blob_names()));
++  plhs[0] = mx_net_attr;
++}
++
++// Usage: caffe_('net_forward', hNet)
++static void net_forward(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('net_forward', hNet)");
++  Net<float>* net = handle_to_ptr<Net<float> >(prhs[0]);
++  net->Forward();
++}
++
++// Usage: caffe_('net_backward', hNet)
++static void net_backward(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('net_backward', hNet)");
++  Net<float>* net = handle_to_ptr<Net<float> >(prhs[0]);
++  net->Backward();
++}
++
++// Usage: caffe_('net_copy_from', hNet, weights_file)
++static void net_copy_from(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsChar(prhs[1]),
++      "Usage: caffe_('net_copy_from', hNet, weights_file)");
++  Net<float>* net = handle_to_ptr<Net<float> >(prhs[0]);
++  char* weights_file = mxArrayToString(prhs[1]);
++  mxCHECK_FILE_EXIST(weights_file);
++  net->CopyTrainedLayersFrom(weights_file);
++  mxFree(weights_file);
++}
++
++// Usage: caffe_('net_reshape', hNet)
++static void net_reshape(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('net_reshape', hNet)");
++  Net<float>* net = handle_to_ptr<Net<float> >(prhs[0]);
++  net->Reshape();
++}
++
++// Usage: caffe_('net_save', hNet, save_file)
++static void net_save(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsChar(prhs[1]),
++      "Usage: caffe_('net_save', hNet, save_file)");
++  Net<float>* net = handle_to_ptr<Net<float> >(prhs[0]);
++  char* weights_file = mxArrayToString(prhs[1]);
++  NetParameter net_param;
++  net->ToProto(&net_param, false);
++  WriteProtoToBinaryFile(net_param, weights_file);
++  mxFree(weights_file);
++}
++
++// Usage: caffe_('layer_get_attr', hLayer)
++static void layer_get_attr(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('layer_get_attr', hLayer)");
++  Layer<float>* layer = handle_to_ptr<Layer<float> >(prhs[0]);
++  const int layer_attr_num = 1;
++  const char* layer_attrs[layer_attr_num] = { "hBlob_blobs" };
++  mxArray* mx_layer_attr = mxCreateStructMatrix(1, 1, layer_attr_num,
++      layer_attrs);
++  mxSetField(mx_layer_attr, 0, "hBlob_blobs",
++      ptr_vec_to_handle_vec<Blob<float> >(layer->blobs()));
++  plhs[0] = mx_layer_attr;
++}
++
++// Usage: caffe_('layer_get_type', hLayer)
++static void layer_get_type(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('layer_get_type', hLayer)");
++  Layer<float>* layer = handle_to_ptr<Layer<float> >(prhs[0]);
++  plhs[0] = mxCreateString(layer->type());
++}
++
++// Usage: caffe_('blob_get_shape', hBlob)
++static void blob_get_shape(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('blob_get_shape', hBlob)");
++  Blob<float>* blob = handle_to_ptr<Blob<float> >(prhs[0]);
++  const int num_axes = blob->num_axes();
++  mxArray* mx_shape = mxCreateDoubleMatrix(1, num_axes, mxREAL);
++  double* shape_mem_mtr = mxGetPr(mx_shape);
++  for (int blob_axis = 0, mat_axis = num_axes - 1; blob_axis < num_axes;
++       ++blob_axis, --mat_axis) {
++    shape_mem_mtr[mat_axis] = static_cast<double>(blob->shape(blob_axis));
++  }
++  plhs[0] = mx_shape;
++}
++
++// Usage: caffe_('blob_reshape', hBlob, new_shape)
++static void blob_reshape(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsDouble(prhs[1]),
++      "Usage: caffe_('blob_reshape', hBlob, new_shape)");
++  Blob<float>* blob = handle_to_ptr<Blob<float> >(prhs[0]);
++  const mxArray* mx_shape = prhs[1];
++  double* shape_mem_mtr = mxGetPr(mx_shape);
++  const int num_axes = mxGetNumberOfElements(mx_shape);
++  vector<int> blob_shape(num_axes);
++  for (int blob_axis = 0, mat_axis = num_axes - 1; blob_axis < num_axes;
++       ++blob_axis, --mat_axis) {
++    blob_shape[blob_axis] = static_cast<int>(shape_mem_mtr[mat_axis]);
++  }
++  blob->Reshape(blob_shape);
++}
++
++// Usage: caffe_('blob_get_data', hBlob)
++static void blob_get_data(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('blob_get_data', hBlob)");
++  Blob<float>* blob = handle_to_ptr<Blob<float> >(prhs[0]);
++  plhs[0] = blob_to_mx_mat(blob, DATA);
++}
++
++// Usage: caffe_('blob_set_data', hBlob, new_data)
++static void blob_set_data(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsSingle(prhs[1]),
++      "Usage: caffe_('blob_set_data', hBlob, new_data)");
++  Blob<float>* blob = handle_to_ptr<Blob<float> >(prhs[0]);
++  mx_mat_to_blob(prhs[1], blob, DATA);
++}
++
++// Usage: caffe_('blob_get_diff', hBlob)
++static void blob_get_diff(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
++      "Usage: caffe_('blob_get_diff', hBlob)");
++  Blob<float>* blob = handle_to_ptr<Blob<float> >(prhs[0]);
++  plhs[0] = blob_to_mx_mat(blob, DIFF);
++}
++
++// Usage: caffe_('blob_set_diff', hBlob, new_diff)
++static void blob_set_diff(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsSingle(prhs[1]),
++      "Usage: caffe_('blob_set_diff', hBlob, new_diff)");
++  Blob<float>* blob = handle_to_ptr<Blob<float> >(prhs[0]);
++  mx_mat_to_blob(prhs[1], blob, DIFF);
++}
++
++// Usage: caffe_('set_mode_cpu')
++static void set_mode_cpu(MEX_ARGS) {
++  mxCHECK(nrhs == 0, "Usage: caffe_('set_mode_cpu')");
++  Caffe::set_mode(Caffe::CPU);
++}
++
++// Usage: caffe_('set_mode_gpu')
++static void set_mode_gpu(MEX_ARGS) {
++  mxCHECK(nrhs == 0, "Usage: caffe_('set_mode_gpu')");
++  Caffe::set_mode(Caffe::GPU);
++}
++
++// Usage: caffe_('set_device', device_id)
++static void set_device(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsDouble(prhs[0]),
++      "Usage: caffe_('set_device', device_id)");
++  int device_id = static_cast<int>(mxGetScalar(prhs[0]));
++  Caffe::SetDevice(device_id);
++}
++
++// Usage: caffe_('get_init_key')
++static void get_init_key(MEX_ARGS) {
++  mxCHECK(nrhs == 0, "Usage: caffe_('get_init_key')");
++  plhs[0] = mxCreateDoubleScalar(init_key);
++}
++
++// Usage: caffe_('reset')
++static void reset(MEX_ARGS) {
++  mxCHECK(nrhs == 0, "Usage: caffe_('reset')");
++  // Clear solvers and stand-alone nets
++  mexPrintf("Cleared %d solvers and %d stand-alone nets\n",
++      solvers_.size(), nets_.size());
++  solvers_.clear();
++  nets_.clear();
++  // Generate new init_key, so that handles created before becomes invalid
++  init_key = static_cast<double>(caffe_rng_rand());
++}
++
++// Usage: caffe_('read_mean', mean_proto_file)
++static void read_mean(MEX_ARGS) {
++  mxCHECK(nrhs == 1 && mxIsChar(prhs[0]),
++      "Usage: caffe_('read_mean', mean_proto_file)");
++  char* mean_proto_file = mxArrayToString(prhs[0]);
++  mxCHECK_FILE_EXIST(mean_proto_file);
++  Blob<float> data_mean;
++  BlobProto blob_proto;
++  bool result = ReadProtoFromBinaryFile(mean_proto_file, &blob_proto);
++  mxCHECK(result, "Could not read your mean file");
++  data_mean.FromProto(blob_proto);
++  plhs[0] = blob_to_mx_mat(&data_mean, DATA);
++  mxFree(mean_proto_file);
++}
++
++// Usage: caffe_('write_mean', mean_data, mean_proto_file)
++static void write_mean(MEX_ARGS) {
++  mxCHECK(nrhs == 2 && mxIsSingle(prhs[0]) && mxIsChar(prhs[1]),
++      "Usage: caffe_('write_mean', mean_data, mean_proto_file)");
++  char* mean_proto_file = mxArrayToString(prhs[1]);
++  int ndims = mxGetNumberOfDimensions(prhs[0]);
++  mxCHECK(ndims >= 2 && ndims <= 3, "mean_data must have at 2 or 3 dimensions");
++  const mwSize *dims = mxGetDimensions(prhs[0]);
++  int width = dims[0];
++  int height = dims[1];
++  int channels;
++  if (ndims == 3)
++    channels = dims[2];
++  else
++    channels = 1;
++  Blob<float> data_mean(1, channels, height, width);
++  mx_mat_to_blob(prhs[0], &data_mean, DATA);
++  BlobProto blob_proto;
++  data_mean.ToProto(&blob_proto, false);
++  WriteProtoToBinaryFile(blob_proto, mean_proto_file);
++  mxFree(mean_proto_file);
++}
++
++// Usage: caffe_('version')
++static void version(MEX_ARGS) {
++  mxCHECK(nrhs == 0, "Usage: caffe_('version')");
++  // Return version string
++  plhs[0] = mxCreateString(AS_STRING(CAFFE_VERSION));
++}
++
++/** -----------------------------------------------------------------
++ ** Available commands.
++ **/
++struct handler_registry {
++  string cmd;
++  void (*func)(MEX_ARGS);
++};
++
++static handler_registry handlers[] = {
++  // Public API functions
++  { "get_solver",         get_solver      },
++  { "solver_get_attr",    solver_get_attr },
++  { "solver_get_iter",    solver_get_iter },
++  { "solver_restore",     solver_restore  },
++  { "solver_solve",       solver_solve    },
++  { "solver_step",        solver_step     },
++  { "get_net",            get_net         },
++  { "net_get_attr",       net_get_attr    },
++  { "net_forward",        net_forward     },
++  { "net_backward",       net_backward    },
++  { "net_copy_from",      net_copy_from   },
++  { "net_reshape",        net_reshape     },
++  { "net_save",           net_save        },
++  { "layer_get_attr",     layer_get_attr  },
++  { "layer_get_type",     layer_get_type  },
++  { "blob_get_shape",     blob_get_shape  },
++  { "blob_reshape",       blob_reshape    },
++  { "blob_get_data",      blob_get_data   },
++  { "blob_set_data",      blob_set_data   },
++  { "blob_get_diff",      blob_get_diff   },
++  { "blob_set_diff",      blob_set_diff   },
++  { "set_mode_cpu",       set_mode_cpu    },
++  { "set_mode_gpu",       set_mode_gpu    },
++  { "set_device",         set_device      },
++  { "get_init_key",       get_init_key    },
++  { "reset",              reset           },
++  { "read_mean",          read_mean       },
++  { "write_mean",         write_mean      },
++  { "version",            version         },
++  // The end.
++  { "END",                NULL            },
++};
++
++/** -----------------------------------------------------------------
++ ** matlab entry point.
++ **/
++// Usage: caffe_(api_command, arg1, arg2, ...)
++void mexFunction(MEX_ARGS) {
++  mexLock();  // Avoid clearing the mex file.
++  mxCHECK(nrhs > 0, "Usage: caffe_(api_command, arg1, arg2, ...)");
++  // Handle input command
++  char* cmd = mxArrayToString(prhs[0]);
++  bool dispatched = false;
++  // Dispatch to cmd handler
++  for (int i = 0; handlers[i].func != NULL; i++) {
++    if (handlers[i].cmd.compare(cmd) == 0) {
++      handlers[i].func(nlhs, plhs, nrhs-1, prhs+1);
++      dispatched = true;
++      break;
++    }
++  }
++  if (!dispatched) {
++    ostringstream error_msg;
++    error_msg << "Unknown command '" << cmd << "'";
++    mxERROR(error_msg.str().c_str());
++  }
++  mxFree(cmd);
++}
+diff --git a/octave/+caffe/private/is_valid_handle.m b/octave/+caffe/private/is_valid_handle.m
+new file mode 100644
+index 00000000..a0648ecd
+--- /dev/null
++++ b/octave/+caffe/private/is_valid_handle.m
+@@ -0,0 +1,27 @@
++function valid = is_valid_handle(hObj)
++% valid = is_valid_handle(hObj) or is_valid_handle('get_new_init_key')
++%   Check if a handle is valid (has the right data type and init_key matches)
++%   Use is_valid_handle('get_new_init_key') to get new init_key from C++;
++
++% a handle is a struct array with the following fields
++%   (uint64) ptr      : the pointer to the C++ object
++%   (double) init_key : caffe initialization key
++
++persistent init_key;
++if isempty(init_key)
++  init_key = caffe_('get_init_key');
++end
++
++% is_valid_handle('get_new_init_key') to get new init_key from C++;
++if ischar(hObj) && strcmp(hObj, 'get_new_init_key')
++  init_key = caffe_('get_init_key');
++  return
++else
++  % check whether data types are correct and init_key matches
++  valid = isstruct(hObj) ...
++    && isscalar(hObj.ptr) && isa(hObj.ptr, 'uint64') ...
++    && isscalar(hObj.init_key) && isa(hObj.init_key, 'double') ...
++    && hObj.init_key == init_key;
++end
++
++end
+diff --git a/octave/+caffe/reset_all.m b/octave/+caffe/reset_all.m
+new file mode 100644
+index 00000000..a8b33dee
+--- /dev/null
++++ b/octave/+caffe/reset_all.m
+@@ -0,0 +1,8 @@
++function reset_all()
++% reset_all()
++%   clear all solvers and stand-alone nets and reset Caffe to initial status
++
++caffe_('reset');
++is_valid_handle('get_new_init_key');
++
++end
+diff --git a/octave/+caffe/run_tests.m b/octave/+caffe/run_tests.m
+new file mode 100644
+index 00000000..6dbf6b23
+--- /dev/null
++++ b/octave/+caffe/run_tests.m
+@@ -0,0 +1,20 @@
++function results = run_tests()
++% results = run_tests()
++%   run all tests in this caffe matlab wrapper package
++
++% use CPU for testing
++caffe.set_mode_cpu();
++
++% reset caffe before testing
++caffe.reset_all();
++
++% put all test cases here
++results = [...
++  run(caffe.test.test_net) ...
++  run(caffe.test.test_solver) ...
++  run(caffe.test.test_io) ];
++
++% reset caffe after testing
++caffe.reset_all();
++
++end
+diff --git a/octave/+caffe/set_device.m b/octave/+caffe/set_device.m
+new file mode 100644
+index 00000000..f94068cb
+--- /dev/null
++++ b/octave/+caffe/set_device.m
+@@ -0,0 +1,11 @@
++function set_device(device_id)
++% set_device(device_id)
++%   set Caffe's GPU device ID
++
++CHECK(isscalar(device_id) && device_id >= 0, ...
++  'device_id must be non-negative integer');
++device_id = double(device_id);
++
++caffe_('set_device', device_id);
++
++end
+diff --git a/octave/+caffe/set_mode_cpu.m b/octave/+caffe/set_mode_cpu.m
+new file mode 100644
+index 00000000..a87e0e28
+--- /dev/null
++++ b/octave/+caffe/set_mode_cpu.m
+@@ -0,0 +1,7 @@
++function set_mode_cpu()
++% set_mode_cpu()
++%   set Caffe to CPU mode
++
++caffe_('set_mode_cpu');
++
++end
+diff --git a/octave/+caffe/set_mode_gpu.m b/octave/+caffe/set_mode_gpu.m
+new file mode 100644
+index 00000000..78e5f677
+--- /dev/null
++++ b/octave/+caffe/set_mode_gpu.m
+@@ -0,0 +1,7 @@
++function set_mode_gpu()
++% set_mode_gpu()
++%   set Caffe to GPU mode
++
++caffe_('set_mode_gpu');
++
++end
+diff --git a/octave/+caffe/version.m b/octave/+caffe/version.m
+new file mode 100644
+index 00000000..61cae4f7
+--- /dev/null
++++ b/octave/+caffe/version.m
+@@ -0,0 +1,7 @@
++function version_str = version()
++% version()
++%   show Caffe's version.
++
++version_str = caffe_('version');
++
++end
+diff --git a/octave/CMakeLists.txt b/octave/CMakeLists.txt
+new file mode 100644
+index 00000000..d9f0b351
+--- /dev/null
++++ b/octave/CMakeLists.txt
+@@ -0,0 +1,72 @@
++# Builds Matlab (or Octave) interface. In case of Matlab caffe must be
++# compield as shared library. Octave can link static or shared caffe library
++# To install octave run: sudo apt-get install liboctave-dev
++
++if(NOT BUILD_matlab)
++  return()
++endif()
++
++if(HAVE_MATLAB AND Octave_compiler)
++  set(build_using ${Matlab_build_mex_using})
++elseif(HAVE_MATLAB AND NOT Octave_compiler)
++  set(build_using "Matlab")
++elseif(NOT HAVE_MATLAB AND Octave_compiler)
++  set(build_using "Octave")
++else()
++  return()
++endif()
++
++if(NOT BUILD_SHARED_LIBS AND build_using MATCHES Matlab)
++  message(FATAL_ERROR "Matlab MEX interface (with default mex options file) can only be built if caffe is compiled as shared library. Please enable 'BUILD_SHARED_LIBS' in CMake. Aternativelly you can switch to Octave compiler.")
++endif()
++
++# helper function to set proper mex file extention
++function(caffe_fetch_and_set_proper_mexext mexfile_variable)
++  execute_process(COMMAND ${Matlab_mexext} OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE res OUTPUT_VARIABLE ext)
++  if(res MATCHES 0)
++    get_filename_component(folder  ${${mexfile_variable}} PATH)
++    get_filename_component(name_we ${${mexfile_variable}} NAME_WE)
++    set(${mexfile_variable} ${folder}/${name_we}.${ext} PARENT_SCOPE)
++  endif()
++endfunction()
++
++# global settings
++file(GLOB Matlab_srcs +caffe/private/caffe_.cpp)
++
++caffe_get_current_cflags(cflags)
++caffe_parse_linker_libs(Caffe_LINKER_LIBS folders libflags macos_frameworks)
++set(folders $<TARGET_LINKER_FILE_DIR:caffe> ${folders})
++
++# prepare linker flag lists
++string(REPLACE ";" ";-L" link_folders "-L${folders}")
++string(REPLACE ";" ":"  rpath_folders   "${folders}")
++
++if(build_using MATCHES "Matlab")
 +  set(Matlab_caffe_mex ${PROJECT_SOURCE_DIR}/matlab/+caffe/private/caffe_.mex)
-   set(libflags -lcaffe${Caffe_POSTFIX} ${libflags}) # Matlab R2014a complans for -Wl,--whole-archive
--
-   caffe_fetch_and_set_proper_mexext(Matlab_caffe_mex)
-   add_custom_command(OUTPUT ${Matlab_caffe_mex} COMMAND ${Matlab_mex}
--      ARGS -output ${Matlab_caffe_mex} ${Matlab_srcs} ${cflags} ${link_folders} ${libflags}
++  set(libflags -lcaffe${Caffe_POSTFIX} ${libflags}) # Matlab R2014a complans for -Wl,--whole-archive
++  caffe_fetch_and_set_proper_mexext(Matlab_caffe_mex)
++  add_custom_command(OUTPUT ${Matlab_caffe_mex} COMMAND ${Matlab_mex}
 +      ARGS -output ${Matlab_caffe_mex} ${Matlab_srcs} -I/opt/cuda/include -I/opt/boost_1_74_0 -I/opt/caffe/include ${cflags} -L/opt/boost_1_74_0/stage/lib ${link_folders} ${libflags}
-       DEPENDS caffe COMMENT "Building Matlab interface: ${Matlab_caffe_mex}" VERBATIM)
-   add_custom_target(matlab ALL DEPENDS ${Matlab_caffe_mex} SOURCES ${Matlab_srcs})
- 
- elseif(build_using MATCHES "Octave")
- 
++      DEPENDS caffe COMMENT "Building Matlab interface: ${Matlab_caffe_mex}" VERBATIM)
++  add_custom_target(matlab ALL DEPENDS ${Matlab_caffe_mex} SOURCES ${Matlab_srcs})
++
++elseif(build_using MATCHES "Octave")
++
 +  set(Matlab_caffe_mex ${PROJECT_SOURCE_DIR}/matlab/+caffe/private/caffe_.oct)
-   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-     set(libflags -Wl,-force_load,$<TARGET_LINKER_FILE:caffe> ${libflags})
-   elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-@@ -60,7 +60,7 @@ elseif(build_using MATCHES "Octave")
-   endif()
- 
-   add_custom_command(OUTPUT ${Matlab_caffe_mex} COMMAND ${Octave_compiler}
--      ARGS --mex -o ${Matlab_caffe_mex} ${Matlab_srcs} ${cflags} ${link_folders} ${libflags} -Wl,-rpath,${rpath_folders}
++  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
++    set(libflags -Wl,-force_load,$<TARGET_LINKER_FILE:caffe> ${libflags})
++  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
++    set(libflags -Wl,--whole-archive -lcaffe${Caffe_POSTFIX} -Wl,--no-whole-archive ${libflags})
++  endif()
++
++  add_custom_command(OUTPUT ${Matlab_caffe_mex} COMMAND ${Octave_compiler}
 +      ARGS -o ${Matlab_caffe_mex} ${Matlab_srcs} -I/opt/cuda/include -I${PROJECT_SOURCE_DIR}/include -I/opt/boost_1_74_0 -I/opt/caffe/include ${cflags} -L/opt/boost_1_74_0/stage/lib ${link_folders} ${libflags} -Wl,-rpath,${rpath_folders}
-       DEPENDS caffe COMMENT "Building Octave interface: ${Matlab_caffe_mex}" VERBATIM)
- 
-   add_custom_target(octave ALL DEPENDS ${Matlab_caffe_mex} SOURCES ${Matlab_srcs})
++      DEPENDS caffe COMMENT "Building Octave interface: ${Matlab_caffe_mex}" VERBATIM)
++
++  add_custom_target(octave ALL DEPENDS ${Matlab_caffe_mex} SOURCES ${Matlab_srcs})
++endif()
++
++# ---[ Install
++file(GLOB mfiles caffe/*.m)
++install(FILES ${mfiles} ${Matlab_caffe_mex} DESTINATION matlab)
++
+diff --git a/octave/demo/classification_demo.m b/octave/demo/classification_demo.m
+new file mode 100644
+index 00000000..2b603329
+--- /dev/null
++++ b/octave/demo/classification_demo.m
+@@ -0,0 +1,147 @@
++function [scores, maxlabel] = classification_demo(im, use_gpu)
++% [scores, maxlabel] = classification_demo(im, use_gpu)
++%
++% Image classification demo using BVLC CaffeNet.
++%
++% IMPORTANT: before you run this demo, you should download BVLC CaffeNet
++% from Model Zoo (http://caffe.berkeleyvision.org/model_zoo.html)
++%
++% ****************************************************************************
++% For detailed documentation and usage on Caffe's Matlab interface, please
++% refer to Caffe Interface Tutorial at
++% http://caffe.berkeleyvision.org/tutorial/interfaces.html#matlab
++% ****************************************************************************
++%
++% input
++%   im       color image as uint8 HxWx3
++%   use_gpu  1 to use the GPU, 0 to use the CPU
++%
++% output
++%   scores   1000-dimensional ILSVRC score vector
++%   maxlabel the label of the highest score
++%
++% You may need to do the following before you start matlab:
++%  $ export LD_LIBRARY_PATH=/opt/intel/mkl/lib/intel64:/usr/local/cuda-5.5/lib64
++%  $ export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
++% Or the equivalent based on where things are installed on your system
++%
++% Usage:
++%  im = imread('../../examples/images/cat.jpg');
++%  scores = classification_demo(im, 1);
++%  [score, class] = max(scores);
++% Five things to be aware of:
++%   caffe uses row-major order
++%   matlab uses column-major order
++%   caffe uses BGR color channel order
++%   matlab uses RGB color channel order
++%   images need to have the data mean subtracted
++
++% Data coming in from matlab needs to be in the order
++%   [width, height, channels, images]
++% where width is the fastest dimension.
++% Here is the rough matlab for putting image data into the correct
++% format in W x H x C with BGR channels:
++%   % permute channels from RGB to BGR
++%   im_data = im(:, :, [3, 2, 1]);
++%   % flip width and height to make width the fastest dimension
++%   im_data = permute(im_data, [2, 1, 3]);
++%   % convert from uint8 to single
++%   im_data = single(im_data);
++%   % reshape to a fixed size (e.g., 227x227).
++%   im_data = imresize(im_data, [IMAGE_DIM IMAGE_DIM], 'bilinear');
++%   % subtract mean_data (already in W x H x C with BGR channels)
++%   im_data = im_data - mean_data;
++
++% If you have multiple images, cat them with cat(4, ...)
++
++% Add caffe/matlab to you Matlab search PATH to use matcaffe
++if exist('../+caffe', 'dir')
++  addpath('..');
++else
++  error('Please run this demo from caffe/matlab/demo');
++end
++
++% Set caffe mode
++if exist('use_gpu', 'var') && use_gpu
++  caffe.set_mode_gpu();
++  gpu_id = 0;  % we will use the first gpu in this demo
++  caffe.set_device(gpu_id);
++else
++  caffe.set_mode_cpu();
++end
++
++% Initialize the network using BVLC CaffeNet for image classification
++% Weights (parameter) file needs to be downloaded from Model Zoo.
++model_dir = '../../models/bvlc_reference_caffenet/';
++net_model = [model_dir 'deploy.prototxt'];
++net_weights = [model_dir 'bvlc_reference_caffenet.caffemodel'];
++phase = 'test'; % run with phase test (so that dropout isn't applied)
++if ~exist(net_weights, 'file')
++  error('Please download CaffeNet from Model Zoo before you run this demo');
++end
++
++% Initialize a network
++net = caffe.Net(net_model, net_weights, phase);
++
++if nargin < 1
++  % For demo purposes we will use the cat image
++  fprintf('using caffe/examples/images/cat.jpg as input image\n');
++  im = imread('../../examples/images/cat.jpg');
++end
++
++% prepare oversampled input
++% input_data is Height x Width x Channel x Num
++tic;
++input_data = {prepare_image(im)};
++toc;
++
++% do forward pass to get scores
++% scores are now Channels x Num, where Channels == 1000
++tic;
++% The net forward function. It takes in a cell array of N-D arrays
++% (where N == 4 here) containing data of input blob(s) and outputs a cell
++% array containing data from output blob(s)
++scores = net.forward(input_data);
++toc;
++
++scores = scores{1};
++scores = mean(scores, 2);  % take average scores over 10 crops
++
++[~, maxlabel] = max(scores);
++
++% call caffe.reset_all() to reset caffe
++caffe.reset_all();
++
++% ------------------------------------------------------------------------
++function crops_data = prepare_image(im)
++% ------------------------------------------------------------------------
++% caffe/matlab/+caffe/imagenet/ilsvrc_2012_mean.mat contains mean_data that
++% is already in W x H x C with BGR channels
++d = load('../+caffe/imagenet/ilsvrc_2012_mean.mat');
++mean_data = d.mean_data;
++IMAGE_DIM = 256;
++CROPPED_DIM = 227;
++
++% Convert an image returned by Matlab's imread to im_data in caffe's data
++% format: W x H x C with BGR channels
++im_data = im(:, :, [3, 2, 1]);  % permute channels from RGB to BGR
++im_data = permute(im_data, [2, 1, 3]);  % flip width and height
++im_data = single(im_data);  % convert from uint8 to single
++im_data = imresize(im_data, [IMAGE_DIM IMAGE_DIM], 'bilinear');  % resize im_data
++im_data = im_data - mean_data;  % subtract mean_data (already in W x H x C, BGR)
++
++% oversample (4 corners, center, and their x-axis flips)
++crops_data = zeros(CROPPED_DIM, CROPPED_DIM, 3, 10, 'single');
++indices = [0 IMAGE_DIM-CROPPED_DIM] + 1;
++n = 1;
++for i = indices
++  for j = indices
++    crops_data(:, :, :, n) = im_data(i:i+CROPPED_DIM-1, j:j+CROPPED_DIM-1, :);
++    crops_data(:, :, :, n+5) = crops_data(end:-1:1, :, :, n);
++    n = n + 1;
++  end
++end
++center = floor(indices(2) / 2) + 1;
++crops_data(:,:,:,5) = ...
++  im_data(center:center+CROPPED_DIM-1,center:center+CROPPED_DIM-1,:);
++crops_data(:,:,:,10) = crops_data(end:-1:1, :, :, 5);
+diff --git a/octave/hdf5creation/.gitignore b/octave/hdf5creation/.gitignore
+new file mode 100644
+index 00000000..e2333dd1
+--- /dev/null
++++ b/octave/hdf5creation/.gitignore
+@@ -0,0 +1,2 @@
++*.h5
++list.txt
+diff --git a/octave/hdf5creation/demo.m b/octave/hdf5creation/demo.m
+new file mode 100644
+index 00000000..4f9f7b5a
+--- /dev/null
++++ b/octave/hdf5creation/demo.m
+@@ -0,0 +1,64 @@
++%% WRITING TO HDF5
++filename='trial.h5';
++
++num_total_samples=10000;
++% to simulate data being read from disk / generated etc.
++data_disk=rand(5,5,1,num_total_samples); 
++label_disk=rand(10,num_total_samples); 
++
++chunksz=100;
++created_flag=false;
++totalct=0;
++for batchno=1:num_total_samples/chunksz
++  fprintf('batch no. %d\n', batchno);
++  last_read=(batchno-1)*chunksz;
++
++  % to simulate maximum data to be held in memory before dumping to hdf5 file 
++  batchdata=data_disk(:,:,1,last_read+1:last_read+chunksz); 
++  batchlabs=label_disk(:,last_read+1:last_read+chunksz);
++
++  % store to hdf5
++  startloc=struct('dat',[1,1,1,totalct+1], 'lab', [1,totalct+1]);
++  curr_dat_sz=store2hdf5(filename, batchdata, batchlabs, ~created_flag, startloc, chunksz); 
++  created_flag=true;% flag set so that file is created only once
++  totalct=curr_dat_sz(end);% updated dataset size (#samples)
++end
++
++% display structure of the stored HDF5 file
++h5disp(filename);
++
++%% READING FROM HDF5
++
++% Read data and labels for samples #1000 to 1999
++data_rd=h5read(filename, '/data', [1 1 1 1000], [5, 5, 1, 1000]);
++label_rd=h5read(filename, '/label', [1 1000], [10, 1000]);
++fprintf('Testing ...\n');
++try 
++  assert(isequal(data_rd, single(data_disk(:,:,:,1000:1999))), 'Data do not match');
++  assert(isequal(label_rd, single(label_disk(:,1000:1999))), 'Labels do not match');
++
++  fprintf('Success!\n');
++catch err
++  fprintf('Test failed ...\n');
++  getReport(err)
++end
++
++%delete(filename);
++
++% CREATE list.txt containing filename, to be used as source for HDF5_DATA_LAYER
++FILE=fopen('list.txt', 'w');
++fprintf(FILE, '%s', filename);
++fclose(FILE);
++fprintf('HDF5 filename listed in %s \n', 'list.txt');
++
++% NOTE: In net definition prototxt, use list.txt as input to HDF5_DATA as: 
++% layer {
++%   name: "data"
++%   type: "HDF5Data"
++%   top: "data"
++%   top: "labelvec"
++%   hdf5_data_param {
++%     source: "/path/to/list.txt"
++%     batch_size: 64
++%   }
++% }
+diff --git a/octave/hdf5creation/store2hdf5.m b/octave/hdf5creation/store2hdf5.m
+new file mode 100644
+index 00000000..4e8c81d9
+--- /dev/null
++++ b/octave/hdf5creation/store2hdf5.m
+@@ -0,0 +1,59 @@
++function [curr_dat_sz, curr_lab_sz] = store2hdf5(filename, data, labels, create, startloc, chunksz)  
++  % *data* is W*H*C*N matrix of images should be normalized (e.g. to lie between 0 and 1) beforehand
++  % *label* is D*N matrix of labels (D labels per sample) 
++  % *create* [0/1] specifies whether to create file newly or to append to previously created file, useful to store information in batches when a dataset is too big to be held in memory  (default: 1)
++  % *startloc* (point at which to start writing data). By default, 
++  % if create=1 (create mode), startloc.data=[1 1 1 1], and startloc.lab=[1 1]; 
++  % if create=0 (append mode), startloc.data=[1 1 1 K+1], and startloc.lab = [1 K+1]; where K is the current number of samples stored in the HDF
++  % chunksz (used only in create mode), specifies number of samples to be stored per chunk (see HDF5 documentation on chunking) for creating HDF5 files with unbounded maximum size - TLDR; higher chunk sizes allow faster read-write operations 
++
++  % verify that format is right
++  dat_dims=size(data);
++  lab_dims=size(labels);
++  num_samples=dat_dims(end);
++
++  assert(lab_dims(end)==num_samples, 'Number of samples should be matched between data and labels');
++
++  if ~exist('create','var')
++    create=true;
++  end
++
++  
++  if create
++    %fprintf('Creating dataset with %d samples\n', num_samples);
++    if ~exist('chunksz', 'var')
++      chunksz=1000;
++    end
++    if exist(filename, 'file')
++      fprintf('Warning: replacing existing file %s \n', filename);
++      delete(filename);
++    end      
++    h5create(filename, '/data', [dat_dims(1:end-1) Inf], 'Datatype', 'single', 'ChunkSize', [dat_dims(1:end-1) chunksz]); % width, height, channels, number 
++    h5create(filename, '/label', [lab_dims(1:end-1) Inf], 'Datatype', 'single', 'ChunkSize', [lab_dims(1:end-1) chunksz]); % width, height, channels, number 
++    if ~exist('startloc','var') 
++      startloc.dat=[ones(1,length(dat_dims)-1), 1];
++      startloc.lab=[ones(1,length(lab_dims)-1), 1];
++    end 
++  else  % append mode
++    if ~exist('startloc','var')
++      info=h5info(filename);
++      prev_dat_sz=info.Datasets(1).Dataspace.Size;
++      prev_lab_sz=info.Datasets(2).Dataspace.Size;
++      assert(all(prev_dat_sz(1:end-1)==dat_dims(1:end-1)), 'Data dimensions must match existing dimensions in dataset');
++      assert(all(prev_lab_sz(1:end-1)==lab_dims(1:end-1)), 'Label dimensions must match existing dimensions in dataset');
++      startloc.dat=[ones(1,length(dat_dims)-1), prev_dat_sz(end)+1];
++      startloc.lab=[ones(1,length(lab_dims)-1), prev_lab_sz(end)+1];
++    end
++  end
++
++  if ~isempty(data)
++    h5write(filename, '/data', single(data), startloc.dat, size(data));
++    h5write(filename, '/label', single(labels), startloc.lab, size(labels));  
++  end
++
++  if nargout
++    info=h5info(filename);
++    curr_dat_sz=info.Datasets(1).Dataspace.Size;
++    curr_lab_sz=info.Datasets(2).Dataspace.Size;
++  end
++end
 diff --git a/src/caffe/layers/window_data_layer.cpp b/src/caffe/layers/window_data_layer.cpp
-index 1bf3760e..f41169de 100644
+index 103dd4b6..1f223059 100644
 --- a/src/caffe/layers/window_data_layer.cpp
 +++ b/src/caffe/layers/window_data_layer.cpp
 @@ -290,7 +290,7 @@ void WindowDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
@@ -219,7 +2000,7 @@ index 1bf3760e..f41169de 100644
            LOG(ERROR) << "Could not open or find file " << image.first;
            return;
 diff --git a/src/caffe/test/test_io.cpp b/src/caffe/test/test_io.cpp
-index c2c919e9..b80df287 100644
+index 2f082c59..12d8b76d 100644
 --- a/src/caffe/test/test_io.cpp
 +++ b/src/caffe/test/test_io.cpp
 @@ -20,8 +20,8 @@ class IOTest : public ::testing::Test {};
@@ -234,12 +2015,12 @@ index c2c919e9..b80df287 100644
    cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
    if (!cv_img_origin.data) {
 diff --git a/src/caffe/util/io.cpp b/src/caffe/util/io.cpp
-index 5295d9dd..1f9167a1 100644
+index 103427bf..cda1fca9 100644
 --- a/src/caffe/util/io.cpp
 +++ b/src/caffe/util/io.cpp
-@@ -73,8 +73,8 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
- cv::Mat ReadImageToCVMat(const string& filename,
-     const int height, const int width, const bool is_color) {
+@@ -83,8 +83,8 @@ cv::Mat ReadImageToCVMat(const string& filename, const int height,
+     const int width, const int min_dim, const int max_dim,
+     const bool is_color) {
    cv::Mat cv_img;
 -  int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
 -    CV_LOAD_IMAGE_GRAYSCALE);
@@ -248,7 +2029,7 @@ index 5295d9dd..1f9167a1 100644
    cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
    if (!cv_img_origin.data) {
      LOG(ERROR) << "Could not open or find file " << filename;
-@@ -179,8 +179,8 @@ cv::Mat DecodeDatumToCVMat(const Datum& datum, bool is_color) {
+@@ -663,8 +663,8 @@ cv::Mat DecodeDatumToCVMat(const Datum& datum, bool is_color) {
    CHECK(datum.encoded()) << "Datum not encoded";
    const string& data = datum.data();
    std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
@@ -260,7 +2041,7 @@ index 5295d9dd..1f9167a1 100644
    if (!cv_img.data) {
      LOG(ERROR) << "Could not decode datum ";
 diff --git a/tools/extra/extract_seconds.py b/tools/extra/extract_seconds.py
-index 68af69a2..bab500a0 100755
+index 591a51f9..2d08192f 100755
 --- a/tools/extra/extract_seconds.py
 +++ b/tools/extra/extract_seconds.py
 @@ -7,7 +7,7 @@ def extract_datetime_from_line(line, year):
@@ -273,10 +2054,10 @@ index 68af69a2..bab500a0 100755
      pos = timestamp.rfind('.')
      ts = [int(x) for x in timestamp[:pos].split(':')]
 diff --git a/tools/extra/parse_log.py b/tools/extra/parse_log.py
-index 4248e2b8..f189ac88 100755
+index 017306b5..52e5bfb3 100755
 --- a/tools/extra/parse_log.py
 +++ b/tools/extra/parse_log.py
-@@ -160,7 +160,7 @@ def write_csv(output_filename, dict_list, delimiter, verbose=False):
+@@ -153,7 +153,7 @@ def write_csv(output_filename, dict_list, delimiter, verbose=False):
  
      if not dict_list:
          if verbose:
@@ -285,7 +2066,7 @@ index 4248e2b8..f189ac88 100755
          return
  
      dialect = csv.excel
-@@ -172,7 +172,7 @@ def write_csv(output_filename, dict_list, delimiter, verbose=False):
+@@ -165,7 +165,7 @@ def write_csv(output_filename, dict_list, delimiter, verbose=False):
          dict_writer.writeheader()
          dict_writer.writerows(dict_list)
      if verbose:

@@ -26,5 +26,7 @@ function L = ind2log (I, n)
    else
       L = C{1} ;
    endif
+
+   if size(L, 1) ~= size(I, 1) L = L' ; endif
    
 endfunction

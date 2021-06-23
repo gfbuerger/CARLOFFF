@@ -17,6 +17,10 @@ function save_hdf5 (of, images, labels)
    images = flipdim(images) ;
 
    N = size(images) ;
+   if length(N) < 3
+      N = [1 1 N] ;
+   endif
+   
    h5create(file, '/data', N, 'Datatype', 'double') ;
    h5write(file, '/data', images) ;
 
@@ -24,4 +28,6 @@ function save_hdf5 (of, images, labels)
    h5create(file,'/label', N, 'Datatype', 'double') ;
    h5write(file,'/label', labels) ;
 
+   printf("--> %s\n", file) ;
+   
 endfunction

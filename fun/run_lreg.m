@@ -1,10 +1,11 @@
-## usage: [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargin)
+## usage: [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, varargin)
 ##
 ## calibrate and apply caffe logistic optimization
-function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargin)
+function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, varargin)
 
-   global PENALIZED
+   global PENALIZED REG
    pkg load statistics
+   if strcmp(class(PCA), "char") ; pkg load tisean ; endif
    source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
 
    Lfun = @(beta, x) beta(1) + x * beta(2:end) ;
@@ -26,35 +27,36 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
 	 X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
 	 x = squeeze(X(ptr.CAL,j,:)) ;
 
-	 if isnewer(efile = sprintf("data/eof.%s.ob", ptr.var{j}), "data/atm.ob")
-	    printf("<-- %s\n", efile) ;
+	 if isnewer(efile = sprintf("data/eof.%s.ob", ptr.vars{j}), sprintf("data/atm.%s.ob", REG))
 	    load(efile)
+	    printf("<-- %s [%d]\n", efile, columns(E)) ;
 	 else
 	    switch class(PCA)
 	       case "char"
-		  [~, E] = pca(x) ;
+		  [ev, E] = pca(x) ;
 	       case {"function_handle" "double"}
 		  E = gpca(x, PCA) ;
 	       otherwise
 		  E = eye(columns(x)) ;
 	    endswitch
-	    printf("--> %s\n", efile) ;
+	    printf("[%d] --> %s\n", columns(E), efile) ;
 	    save(efile, "E") ;
 	 endif
 
-	 PC = [PC, nanmult(X(:,j,:), E(:,1:PCA))] ;
+	 PC = [PC, nanmult(X(:,j,:), E)] ;
       endfor
+
+      if ~isempty(PCA) && PCA > size(PC, 2)
+	 warning(sprintf("PCA = %d > %d = size(PC, 2)\n", PCA, size(PC, 2))) ;
+      endif
 
    else
 
       PC = X ;
-
+      PCA = N(2) ;
+      
    endif
 
-   if PCA > size(PC, 2)
-      error(sprintf("PCA = %d > %d = size(PC, 2)", PCA, size(PC, 2))) ;
-   endif
-   
    for PHS = {"CAL" "VAL"}
 
       PHS = PHS{:} ;
@@ -70,6 +72,9 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
 
 	    model = glm_logistic(y,x) ;
 	    fit = penalized(model, @p_lasso, varargin{:}) ;
+	    plot_penalized(fit) ;
+	    title("LASSO logistic regression") ;
+	    print("nc/LASSO_lreg.png") ;
 	    AIC = goodness_of_fit("aic", fit) ;
 	    BIC = goodness_of_fit("bic", fit, model) ;
 	    CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
@@ -103,7 +108,6 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
 	    beta0 = zeros(columns(XX)+1, 1) ;
 	    opt = optimset("Display", "iter") ;
 	    beta = nlinfit (XX, yy, modelfun, beta0, opt) ;
-	    ILasso = true(1, columns(E)) ;
 	    
 	 endif
 	 
@@ -137,12 +141,7 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC, SKL = {"GSS" "HSS"}, varargi
 
       ce.(PHS) = crossentropy(pdd.c(pdd.(PHS)), prob.(PHS)) ;
 
-      for s = SKL
-	 s = s{:} ;
-	 [thx fval] = fminsearch(@(th) -MoC(s, pdd.c(pdd.(PHS)), prob.(PHS)(:,end) > th), 0.1) ;
-	 th.(s).(PHS) = thx ;
-	 skl.(s).(PHS) = -fval ;
-      endfor
+      [th.(PHS) skl.(PHS)] = skl_est(prob.(PHS)(:,end), pdd.c(pdd.(PHS)), SKL) ;
       
    endfor
 

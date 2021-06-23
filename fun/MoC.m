@@ -14,10 +14,9 @@ function res = MoC (skl, o, f)
    s = sum (I & o > 0) ./ n;
    r = sum (I & f > 0) ./ n;
 
-   a = sum (I & f > 0 & o > 0) ./ n;
-   b = sum (I & f > 0 & o <= 0) ./ n;
-   c = sum (I & f <= 0 & o > 0) ./ n;
-   d = sum (I & f <= 0 & o <= 0) ./ n;
+   b = r - a;
+   c = s - a;
+   d = 1 + a - s - r;
 
 ##   H = a / s ;
 ##   F = (r - a) / r ;
@@ -27,13 +26,15 @@ function res = MoC (skl, o, f)
 	 z = 2*log(s) ;
 	 n = log(a) ;
 	 res = z./n -1 ;
+      case "BSS"
+	 res = 1 - (s + r - 2*a) / min(s, 1-s) ;
       case "PHI"
 	 z = a - s.*r ;
 	 n = sqrt(s.*(1-s).*r.*(1-r));
 	 if (n == 0)
 	    res = NaN ;
 	 else
-	    res = z./n;
+	    res = z./n ;
 	 endif
 ##      case "PHI0"
 ##	 z = (H-F).*(B-H) ;

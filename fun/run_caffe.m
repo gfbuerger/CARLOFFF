@@ -1,11 +1,9 @@
-## usage: res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
+## usage: res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" "HSS"})
 ##
 ## calibrate and apply caffe model
-function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
+function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" "HSS"})
 
    global REG
-
-   TH = 0.05:0.05:0.95 ;
    
    if exist(sprintf("%s/%s_CAL_lmdb", proto, REG), "dir") ~= 7 & 0
       str = fileread("tools/gen_lmdb.sh") ;
@@ -37,6 +35,10 @@ function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
    endfor
 
    [fss fsn fsd] = proto_upd(:, ptr, pdd, proto) ;
+   if netonly
+      res = {fss fsn fsd} ;
+      return ;
+   endif
    
    ## train model
    solver = caffe.Solver(sprintf("models/%s/%s_solver.prototxt", proto, pdd.name)) ;
@@ -58,7 +60,6 @@ function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
 
    ## apply model
    weights = strrep(state, "solverstate", "caffemodel") ;
-   n = size(ptr.x) ;   
    model = sprintf("models/%s/%s_deploy.prototxt", proto, pdd.name) ;
    if exist(model, "file") ~= 2
       error("file not found: %s", model)
@@ -84,9 +85,15 @@ function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
       else
 
 	 labels = pdd.c(pdd.(PHS)) ;
+	 Data = flipdim(ptr.x) ;
+	 N = size(Data) ;
+	 if length(N) < 3
+	    N = [1 1 N] ;
+	    Data = reshape(Data, N) ;
+	 endif
 	 prob.(PHS) = nan(sum(ptr.(PHS)), 2) ; ii = 0 ;
 	 for i = find(ptr.(PHS))'
-	    data = ptr.scale * squeeze(flipdim(ptr.x(i,:,:,:))) ;
+	    data = ptr.scale * Data(:,:,:,i) ;
 	    phat = net.forward({data}) ;
 	    prob.(PHS)(++ii,:) = phat{1} ;
 	 end
@@ -95,15 +102,8 @@ function res = run_caffe (ptr, pdd, proto = "test1", SKL= {"GSS" "HSS"})
       
       ce.(PHS) = crossentropy(labels, prob.(PHS)) ;
 
-      for s = SKL
-	 s = s{:} ;
-	 fval = arrayfun(@(th) -MoC(s, labels, prob.(PHS)(:,end) > th), TH) ;
-	 [~, j] = min(fval) ;
-	 [thx fval] = fminsearch(@(th) -MoC(s, labels, prob.(PHS)(:,end) > th), TH(j)) ;
-	 th.(s).(PHS) = thx ;
-	 skl.(s).(PHS) = -fval ;
-      endfor
-
+      [th.(PHS) skl.(PHS)] = skl_est(prob.(PHS)(:,end), labels, SKL) ;
+      
    endfor
 
    res = struct("prob", prob, "crossentropy", ce, "th", th, "skl", skl) ;

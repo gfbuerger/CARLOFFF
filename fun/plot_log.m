@@ -1,4 +1,6 @@
-## usage: plot_log (lfile, loss = "loss", plog = 0)
+
+
+## usage: plot_log (lfile, loss = "loss", pse = 5, plog = 0)
 ##
 ##
 function plot_log (lfile, loss = "loss", pse = 5, plog = 0)

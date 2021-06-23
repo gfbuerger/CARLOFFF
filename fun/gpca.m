@@ -1,4 +1,4 @@
-function [E PC ev lmb D] = gpca(x, trunc="nEOF", lNaN=true)
+function [E PC ev lmb D] = gpca(x, trunc, lNaN=true)
 
    ## usage:  [E PC ev lmb D] = gpca(x [,trunc [,lNaN]])
    ## 
@@ -76,6 +76,7 @@ function [E PC ev lmb D] = gpca(x, trunc="nEOF", lNaN=true)
    lmb = diag(D).'.^2 / (nt-1) ;
 
    if ischar(trunc) trunc = str2func(trunc) ; endif
+   if isempty(trunc) trunc = @nEOF ; endif
    if isa(trunc, "function_handle")
       np = feval(trunc, lmb) ;
    elseif 0 < trunc && trunc < 1
