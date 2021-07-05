@@ -31,13 +31,13 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
    fsn = sprintf("models/%s/%s.prototxt", proto, pdd.name) ;
    fsd = sprintf("models/%s/%s_deploy.prototxt", proto, pdd.name) ;
 
-   if BLD | ~isnewer(fss, sprintf("models/%s/solver.tpl", proto))
+   if ~isnewer(fss, sprintf("models/%s/solver.tpl", proto))
       print_str(ptr, pdd, proto, ss, fss) ;
    endif
-   if true | ~isnewer(fsn, sprintf("models/%s/net.tpl", proto))  # FIXME
+   if ~isnewer(fsn, sprintf("models/%s/net.tpl", proto), sprintf("models/%s/loss.tpl", proto))  # FIXME
       print_str(ptr, pdd, proto, sn, fsn) ;
    endif
-   if BLD | ~isnewer(fsd, sprintf("models/%s/data.tpl", proto))
+   if ~isnewer(fsd, sprintf("models/%s/data.tpl", proto))
       print_str(ptr, pdd, proto, sd, fsd) ;
    endif
 
@@ -49,15 +49,18 @@ endfunction
 ## print suitable string to ofile
 function print_str (ptr, pdd, proto, str, ofile)
 
-   global REG
+   global REG NH
 
    N = size(ptr.x) ;
    if length(N) < 3
       N = [N 1 1] ;
    endif
 
+   NHs = sprintf("%02d", NH);
+
    str = strrep(str, "PROTO_tpl", proto);
    str = strrep(str, "REG_tpl", REG);
+   str = strrep(str, "NH_tpl", NHs);
    str = strrep(str, "PDD_tpl", pdd.name);
    str = strrep(str, "CHANNEL_tpl", num2str(N(2)));
    str = strrep(str, "WIDTH_tpl", num2str(N(3)));

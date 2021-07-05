@@ -1,9 +1,9 @@
 ## usage: [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, varargin)
 ##
 ## calibrate and apply caffe logistic optimization
-function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, varargin)
+function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="CVE", SKL = {"GSS" "HSS"}, varargin)
 
-   global PENALIZED REG
+   global PENALIZED REG NH
    pkg load statistics
    if strcmp(class(PCA), "char") ; pkg load tisean ; endif
    source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
@@ -18,6 +18,8 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, v
    
    X = ptr.x ;
    N = size(X) ;
+   prob.id = ptr.id ;
+   prob.x = nan(N(1), 2) ;
 
    if ndims(X) > 2
 
@@ -27,7 +29,7 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, v
 	 X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
 	 x = squeeze(X(ptr.CAL,j,:)) ;
 
-	 if isnewer(efile = sprintf("data/eof.%s.ob", ptr.vars{j}), sprintf("data/atm.%s.ob", REG))
+	 if isnewer(efile = sprintf("data/eof.%s.%02d.ob", ptr.vars{j}, NH), "data/atm.ob")
 	    load(efile)
 	    printf("<-- %s [%d]\n", efile, columns(E)) ;
 	 else
@@ -72,12 +74,12 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, v
 
 	    model = glm_logistic(y,x) ;
 	    fit = penalized(model, @p_lasso, varargin{:}) ;
-	    plot_penalized(fit) ;
-	    title("LASSO logistic regression") ;
-	    print("nc/LASSO_lreg.png") ;
+##	    plot_penalized(fit) ;
+##	    title("LASSO logistic regression") ;
+##	    print("nc/LASSO_lreg.png") ;
 	    AIC = goodness_of_fit("aic", fit) ;
 	    BIC = goodness_of_fit("bic", fit, model) ;
-	    CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
+	    CV = fit.CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
 	    switch TRC
 	       case "AIC"
 		  [~, jLasso] = min(AIC) ;
@@ -90,9 +92,10 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, v
 	       otherwise
 		  jLasso = size(fit.beta, 2) ;
 	    endswitch
+	    fit.jLasso = jLasso ;
 
 	    beta = fit.beta(:,jLasso) ;
-	    ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(fit.beta ~= 0, 1) gets saturated
+	    ILasso = beta(2:end) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
 	    printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
 	 else
@@ -113,39 +116,16 @@ function [res ptr1] = run_lreg (ptr, pdd, PCA, TRC="AIC", SKL = {"GSS" "HSS"}, v
 	 
       endif
       
-      if PENALIZED & 0
-	 clf ;
-	 ax(1) = subplot(3, 2, [1 3]) ;
-	 plot_penalized(fit) ;
-	 ax(2) = subplot(3, 2, [5]) ;
-	 semilogx(fit.lambda, sum(fit.beta(2:end,:) ~= 0, 1)) ;
-	 ax(3) = subplot(3, 2, 2) ;
-	 semilogx(fit.lambda, AIC) ;
-	 xlabel({"\\lambda"}) ; ylabel({"AIC"}) ;
-	 ax(4) = subplot(3, 2, 4) ;
-	 semilogx(fit.lambda, BIC) ;
-	 xlabel({"\\lambda"}) ; ylabel({"BIC"}) ;
-	 ax(5) = subplot(3, 2, 6) ;
-	 semilogx(CV.lambda', CV.cve) ;
-	 xlabel({"\\lambda"}) ; ylabel({"CVE"}) ;
-	 set(ax(2:5), "xdir", "reverse") ;
-	 set(ax, "xlim", xlim(ax(1))) ;
-	 
-	 bar(fit.beta(2:end,end)) ;
-	 xlabel("potential coefficients") ; ylabel("{\\beta}") ;
+      w = logistic_cdf(Lfun(beta, x)) ;
+      prob.x(ptr.(PHS),:) = [1 - w w] ;
 
-      endif
+      ce.(PHS) = crossentropy(pdd.c(pdd.(PHS)), prob.x(ptr.(PHS),:)) ;
 
-      prob.(PHS) = logistic_cdf(Lfun(beta, x)) ;
-      prob.(PHS) = [1 - prob.(PHS) prob.(PHS)] ;
-
-      ce.(PHS) = crossentropy(pdd.c(pdd.(PHS)), prob.(PHS)) ;
-
-      [th.(PHS) skl.(PHS)] = skl_est(prob.(PHS)(:,end), pdd.c(pdd.(PHS)), SKL) ;
+      [th.(PHS) skl.(PHS)] = skl_est(prob.x(ptr.(PHS),end), pdd.c(pdd.(PHS)), SKL) ;
       
    endfor
 
-   res = struct("beta", beta, "prob", prob, "th", th, "skl", skl) ;
+   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl) ;
 
    ptr1 = ptr ;
    ptr1.x = PC ;

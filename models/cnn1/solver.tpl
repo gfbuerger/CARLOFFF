@@ -1,7 +1,7 @@
 # reduce learning rate after 120 epochs (60000 iters) by factor 0f 10
 # then another factor of 10 after 10 more epochs (5000 iters)
 # The train/test net protocol buffer definition
-net: "models/cnn1/cape.prototxt"
+net: "models/PROTO_tpl/PDD_tpl.prototxt"
 # test_iter specifies how many forward passes the test should carry out.
 # In the case of CIFAR10, we have test batch size 100 and 100 test iterations,
 # covering the full 10,000 testing images.
@@ -22,7 +22,7 @@ max_iter: 10000
 # snapshot intermediate results
 snapshot: 5000
 #snapshot_format: HDF5
-snapshot_prefix: "models/cnn1/cape"
+snapshot_prefix: "models/PROTO_tpl/PDD_tpl"
 # solver mode: CPU or GPU
 solver_mode: GPU
 #type: "Adam"

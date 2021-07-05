@@ -3,7 +3,7 @@
 %%
 function s = read_klamex (fin)
 
-   global isoctave LON LAT MON
+   global isoctave LON LAT MON REG
 
    if isoctave(), pkg load io ; end
 
@@ -44,5 +44,6 @@ function s = read_klamex (fin)
    s.id = id(II,1:4) ;
    s.x = D(II,Jx) ;
    s.lon = D(II,dlon) ; s.lat = D(II,dlat) ;
-
+   s.reg = REG ;
+   
 endfunction

@@ -13,16 +13,9 @@ layer {
   top: "loss"
   loss_weight: 1
 }
-##layer {
-##  name: "Softmax"
-##  type: "Softmax"
-##  bottom: "out"
-##  top: "out"
-##}
 layer {
   bottom: "out"
   bottom: "label"
-#  bottom: "H"
   top: "infoGainLoss"
   name: "infoGainLoss"
   type: "InfogainLoss"

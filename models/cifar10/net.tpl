@@ -41,21 +41,9 @@ layer {
   top: "pool1"
 }
 layer {
-  name: "norm1"
-  type: "LRN"
-  bottom: "pool1"
-  top: "norm1"
-  lrn_param {
-    local_size: 3
-    alpha: 5e-05
-    beta: 0.75
-    norm_region: WITHIN_CHANNEL
-  }
-}
-layer {
   name: "conv2"
   type: "Convolution"
-  bottom: "norm1"
+  bottom: "pool1"
   top: "conv2"
   param {
     lr_mult: 1
@@ -95,22 +83,16 @@ layer {
   }
 }
 layer {
-  name: "norm2"
-  type: "LRN"
-  bottom: "pool2"
-  top: "norm2"
-  lrn_param {
-    local_size: 3
-    alpha: 5e-05
-    beta: 0.75
-    norm_region: WITHIN_CHANNEL
-  }
-}
-layer {
   name: "conv3"
   type: "Convolution"
-  bottom: "norm2"
+  bottom: "pool2"
   top: "conv3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   convolution_param {
     num_output: 64
     pad: 2
@@ -146,20 +128,40 @@ layer {
   name: "ip1"
   type: "InnerProduct"
   bottom: "pool3"
-  top: "out"
+  top: "ip1"
   param {
     lr_mult: 1
-    decay_mult: 250
   }
   param {
     lr_mult: 2
-    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 64
+    weight_filler {
+      type: "gaussian"
+      std: 0.1
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "ip2"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "out"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
   }
   inner_product_param {
     num_output: 2
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: 0.1
     }
     bias_filler {
       type: "constant"

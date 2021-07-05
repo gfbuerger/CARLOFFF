@@ -3,9 +3,9 @@
 ## calibrate and apply caffe model
 function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" "HSS"})
 
-   global REG
+   global REG NH
    
-   if exist(sprintf("%s/%s_CAL_lmdb", proto, REG), "dir") ~= 7 & 0
+   if exist(sprintf("%s/%s.%02d/CAL_lmdb", proto, REG, NH), "dir") ~= 7 & 0
       str = fileread("tools/gen_lmdb.sh") ;
       str = strrep(str, "REG_tpl", REG) ;
       tt = tempname ;
@@ -16,18 +16,18 @@ function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" 
       unlink(tt) ;
    endif
 
-   h5f = @(pddn, PHS) sprintf("data/%s_%s.%s.txt", REG, pddn, PHS) ;
+   h5f = @(pddn, PHS) sprintf("data/%s.%02d/%s.%s.txt", REG, NH, pddn, PHS) ;
 
    for PHS = {"CAL" "VAL"}
       PHS = PHS{:} ;
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
-      if exist(of = h5f(pdd.name, PHS), "file") ~= 2 | 1
+      if isnewer(ptr.pfile, of = h5f(pdd.name, PHS))
 	 labels = pdd.c(pdd.(PHS)) ;
 	 images = ptr.x(ptr.(PHS), :, :, :) ;
 	 if 0
-	    ifile = sprintf('data/%s_%s-images-idx3-ubyte', REG, PHS) ;
-	    lfile = sprintf('data/%s_%s-labels-idx1-ubyte', REG, PHS) ;
+	    ifile = sprintf('data/%s.%02d/%s-images-idx3-ubyte', REG, NH, PHS) ;
+	    lfile = sprintf('data/%s.%02d/%s-labels-idx1-ubyte', REG, NH, PHS) ;
 	    save_bin(images, ifile, labels, lfile) ;
 	 endif
 	 save_hdf5(of, ptr.scale * images, labels) ;
