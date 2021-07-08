@@ -6,8 +6,8 @@ set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 addpath ~/oct/nc/borders
 [glat glon] = borders("germany") ;
 GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
-##LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
-LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
+LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
+##LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
 ##LON = [7 10] ; LAT = [47.5 49.5] ; REG = "SW" ; # Südwest
 ##LON = [9 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
@@ -32,7 +32,7 @@ addpath ~/CARLOFFF/fun
 cd ~/CARLOFFF
 mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 scale = 0.00390625 ; % MNIST
-Q0 = 0.8 ;
+Q0 = 0.95 ;
 
 if isnewer(afile = "data/atm.ob", glob("data/ind/*.nc"){:})
    load(afile) ;
@@ -61,15 +61,15 @@ else
       eval(sprintf("%s.name = VAR{j} ;", v{:})) ;
    endfor
    save(afile, VAR{:}, "VAR", "LVAR") ;
-end
+endif
 
-PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
+PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{1} ;
 switch PDD
    case {"cape" "cp"}
       if isnewer(dfile = sprintf("data/%s.%s.ob", REG, PDD), "data/atm.ob")
 	 load(dfile) ;
       else
-	 eval(sprintf("pdd = sel_ptr(%s, LON, LAT) ;", PDD)) ;
+	 eval(sprintf("pdd = sel_ptr(%s, LON, LAT, Q0) ;", PDD)) ;
 	 save(dfile, "pdd") ;
       endif
    case "regnie"
@@ -190,14 +190,9 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
-if strcmp(PDD, "cape")
-   [i j] = find(squeeze(any(pdd.x ~= 0, 1))) ;
-   pdd.c = squeeze(pdd.x(:,1,i,j) > 0) ;
-else
-   w = pdd.x(:,1,:,:) ;
-   pdd.q = min(w(w(:) > 0)) ;
-   pdd.c = any(lookup(pdd.q, reshape(pdd.x, rows(pdd.x), [])), 2) ;
-endif
+w = pdd.x(:,1,:,:) ;
+pdd.q = quantile(w(:), Q0) ;
+pdd.c = any(any(w > pdd.q, 3), 4) ;
 write_H(pdd.c) ;
 
 %% write train (CAL) & test (VAL) data
@@ -214,7 +209,9 @@ PENALIZED = true ;
 if isnewer(mfile = sprintf("data/%s.%02d/lreg.%s.%s.ob", REG, NH, ptr.ind, pdd.name), pfile)
    load(mfile) ;
 else
-   [lreg ptr1] = run_lreg(ptr, pdd, [], "CVE", {"HSS" "GSS" "PHI" "CSI"}) ;
+   varargin = {} ;
+##   varargin = {"lambdamax", 1e3, "lambdaminratio", 1e-3} ;
+   [lreg ptr1] = run_lreg(ptr, pdd, [], "CVE", {"HSS" "GSS" "PHI" "CSI"}, varargin{:}) ;
    save(mfile, "lreg", "ptr1") ;
 endif
 strucdisp(lreg.skl) ;
@@ -227,8 +224,8 @@ set(findall("type", "text"), "fontsize", 22) ;
 if isnewer(mfile = sprintf("data/%s.%02d/caffe.%s.%s.ob", REG, NH, ptr.ind, pdd.name), pfile)
    load(mfile) ;
 else
-   netonly = true ;
-   caffe = run_caffe(ptr, pdd, "ALL-CNN", netonly, {"HSS" "GSS" "PHI" "CSI"}) ;
+   netonly = ~true ;
+   caffe = run_caffe(ptr, pdd, "cifar10", netonly, {"HSS" "GSS" "PHI" "CSI"}) ;
    save(mfile, "caffe") ;
 endif
 strucdisp(caffe.skl) ;

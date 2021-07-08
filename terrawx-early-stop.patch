@@ -1,0 +1,156 @@
+diff -Naur ./bvlc-caffe/include/caffe/solver.hpp ./early-stop/include/caffe/solver.hpp
+--- ./bvlc-caffe/include/caffe/solver.hpp	2017-08-03 14:40:18.155456611 +0800
++++ ./early-stop/include/caffe/solver.hpp	2017-08-08 19:25:06.248459535 +0800
+@@ -56,6 +56,11 @@
+   // in a non-zero iter number to resume training for a pre-trained net.
+   virtual void Solve(const char* resume_file = NULL);
+   inline void Solve(const string resume_file) { Solve(resume_file.c_str()); }
++
++  // Put in your stopping conditions here. 
++  // the defaultStopCondition is used as a catch-all.
++  bool KeepRunning(bool defaultStopCondition);
++
+   void Step(int iters);
+   // The Restore method simply dispatches to one of the
+   // RestoreSolverStateFrom___ protected methods. You should implement these
+@@ -129,6 +134,14 @@
+   Timer iteration_timer_;
+   float iterations_last_;
+ 
++  // For Early Stopping. 
++  bool es_has_; 
++  int es_length_; // maximum runs needed for improvement.
++  int es_skip_; // number of skips. 
++  float es_best_loss_;
++  int es_iter_;
++  int es_test_; // ID of test network. 
++
+   DISABLE_COPY_AND_ASSIGN(Solver);
+ };
+ 
+diff -Naur ./bvlc-caffe/src/caffe/proto/caffe.proto ./early-stop/src/caffe/proto/caffe.proto
+--- ./bvlc-caffe/src/caffe/proto/caffe.proto	2017-08-03 14:40:22.899384604 +0800
++++ ./early-stop/src/caffe/proto/caffe.proto	2017-08-08 19:25:06.260459293 +0800
+@@ -98,7 +98,7 @@
+ // NOTE
+ // Update the next available ID when you add a new SolverParameter field.
+ //
+-// SolverParameter next available ID: 42 (last added: layer_wise_reduce)
++// SolverParameter next available ID: 43 (last added: early_stop_param)
+ message SolverParameter {
+   //////////////////////////////////////////////////////////////////////////////
+   // Specifying the train and test networks
+@@ -227,6 +227,9 @@
+   // If false, don't save a snapshot after training finishes.
+   optional bool snapshot_after_train = 28 [default = true];
+ 
++  // Early Stopping. 
++  optional EarlyStopParameter early_stop_param = 42;
++
+   // DEPRECATED: old solver enum types, use string instead
+   enum SolverType {
+     SGD = 0;
+@@ -243,6 +246,17 @@
+   optional bool layer_wise_reduce = 41 [default = true];
+ }
+ 
++// Parameters for Early Stopping.
++message EarlyStopParameter {
++	// Minimum number of epochs needed for improved test before early stopping.
++	// ignored if <= 0. 
++	optional int32 length = 1 [default = 10];
++	// Number of epochs to skip between each test.
++	optional int32 skip = 2 [default = 5];
++	// ID of test network to early-stop on. 
++	optional int32 test = 3 [default = 0];
++}
++
+ // A message that stores the solver snapshots
+ message SolverState {
+   optional int32 iter = 1; // The current iteration
+diff -Naur ./bvlc-caffe/src/caffe/solver.cpp ./early-stop/src/caffe/solver.cpp
+--- ./bvlc-caffe/src/caffe/solver.cpp	2017-08-03 14:40:22.895384665 +0800
++++ ./early-stop/src/caffe/solver.cpp	2017-08-08 19:25:06.260459293 +0800
+@@ -2,6 +2,7 @@
+ 
+ #include <string>
+ #include <vector>
++#include <limits>
+ 
+ #include "caffe/solver.hpp"
+ #include "caffe/util/format.hpp"
+@@ -57,6 +58,29 @@
+   }
+   iter_ = 0;
+   current_step_ = 0;
++
++  // Initialize early stopping
++  es_has_ = param_.has_early_stop_param();
++  if(es_has_){
++  	es_test_ = param_.early_stop_param().test();
++	CHECK_GE(es_test_,0) << "Test ID can't be non-zero";
++    
++	es_length_ = param_.early_stop_param().length();
++	CHECK_GE(es_length_,1) << "Early Stopping length must be more than 1";
++
++	es_skip_ = param_.early_stop_param().skip();
++	CHECK_GE(es_skip_,1) << "Early Stopping skip must be more than 1"; 
++
++	es_best_loss_  = FLT_MAX;
++	es_iter_ = 0;
++	LOG_IF(INFO, Caffe::root_solver())
++		        << "Early Stopping on Test Network #: " << es_test_;
++	LOG_IF(INFO, Caffe::root_solver())
++		        << "Early Stopping Length: " << es_length_;
++    LOG_IF(INFO, Caffe::root_solver())
++	            << "Early Stopping Skip: " << es_skip_;
++  }
++
+ }
+ 
+ template <typename Dtype>
+@@ -185,7 +209,7 @@
+   smoothed_loss_ = 0;
+   iteration_timer_.Start();
+ 
+-  while (iter_ < stop_iter) {
++  while (KeepRunning(iter_ < stop_iter)) {
+     // zero-init the params
+     net_->ClearParamDiffs();
+     if (param_.test_interval() && iter_ % param_.test_interval() == 0
+@@ -484,6 +508,35 @@
+   }
+ }
+ 
++template <typename Dtype>
++bool Solver<Dtype>::KeepRunning(bool defaultStopCondition){
++
++	if ( es_has_ && (iter_ % es_skip_ == 0) ){ // Check for early stopping	
++		const shared_ptr<Net<Dtype> >& test_net = test_nets_[es_test_];
++		Dtype loss = 0;
++		int n = param_.test_iter(es_test_);
++		for (int i = 0; i < n; ++i) {
++			Dtype iter_loss;
++			test_net->Forward(&iter_loss);
++			loss += iter_loss;
++		}
++		if( loss < es_best_loss_ ){
++			es_iter_ = 0;
++			es_best_loss_ = loss;
++		}else{
++			++es_iter_;
++		}
++		
++		if( es_iter_ >= es_length_ ){
++			LOG(INFO) << "Early Stopping: best test loss= "
++			          << es_best_loss_ / n ;
++			 return false;
++		}
++	}
++
++	return defaultStopCondition;
++}
++
+ INSTANTIATE_CLASS(Solver);
+ 
+ }  // namespace caffe

@@ -22,7 +22,7 @@ function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" 
       PHS = PHS{:} ;
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
-      if isnewer(ptr.pfile, of = h5f(pdd.name, PHS))
+      if ~isnewer(of = h5f(pdd.name, PHS), ptr.pfile)
 	 labels = pdd.c(pdd.(PHS)) ;
 	 images = ptr.x(ptr.(PHS), :, :, :) ;
 	 if 0

@@ -1,13 +1,16 @@
-## usage: pdd = sel_ptr (s, LON, LAT)
+## usage: pdd = sel_ptr (s, LON, LAT, Q0)
 ##
 ## select areal ptr from s
-function pdd = sel_ptr (s, LON=[6 11], LAT=[52 53])
+function pdd = sel_ptr (s, LON=[6 11], LAT=[52 53], Q0=0.8)
 
    Ilon = LON(1) <= s.lon & s.lon <= LON(2) ;
    Ilat = LAT(1) <= s.lat & s.lat <= LAT(2) ;
 
-   pdd.id = s.id ;
-   pdd.x = s.x(:,Ilon,Ilat) ;
+   xq = quantile(s.x(:,Ilon,Ilat)(:), Q0) ;
+   I = any(any(s.x(:,Ilon,Ilat) > xq, 2), 3) ;
+   
+   pdd.id = s.id(I,:) ;
+   pdd.x = s.x(I,Ilon,Ilat) ;
 
    N = size(pdd.x) ;
 
