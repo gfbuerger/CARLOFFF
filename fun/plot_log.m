@@ -1,39 +1,52 @@
-
-
-## usage: plot_log (lfile, loss = "loss", pse = 5, plog = 0)
+## usage: plot_log (lfile, phase = {"Test"}, loss = "loss", pse = 5, plog = 0)
 ##
 ##
-function plot_log (lfile, loss = "loss", pse = 5, plog = 0)
+function plot_log (lfile, phase = {"Test"}, loss = "loss", pse = 5, plog = 0)
 
-   Ipat = sprintf(" Iteration [0-9]+, Testing net") ;
-   lpat = sprintf("Test net output #[0-9]+: %s = ", loss) ;
-
+   global COLORORDER
+   
    mtime = 0 ;
-   clf ;
-   axes("ygrid", "on") ;
+##   clf ;
+   set(gca, "ygrid", "on", "NextPlot", "add", "Colororder", COLORORDER) ;
    
    while stat(lfile).mtime > mtime
 
       mtime = stat(lfile).mtime ;
 
-      fid = fopen(lfile, "rt") ;
-      s = fscanf(fid, "%c") ;
-      s = strsplit(s, "\n") ;
+      
+      for phs = phase
 
-      [S, E, TE, M, T, NM, SP] = regexp(s, Ipat) ;
-      I = cellfun(@(c) ~isempty(c), S) ;
-      Iter = cellfun(@(c) str2num(strsplit(c{:}, " "){3}), M(I))' ;
+	 phs = phs{:} ;
+	 
+	 fid = fopen(lfile, "rt") ;
+	 s = fscanf(fid, "%c") ;
+	 s = strsplit(s, "\n") ;
 
-      [S, E, TE, M, T, NM, SP] = regexp(s, lpat) ;
-      I = cellfun(@(c) ~isempty(c), S) ;
-      x = cellfun(@(c) str2num(strsplit(c{2}, " "){1}), SP(I))' ;
+	 if strcmp(phs, "Train")
+	    Ipat = sprintf(" Iteration [0-9]+, loss") ;
+	 else
+	    Ipat = sprintf(" Iteration [0-9]+, Testing") ;
+	 endif
+	 
+	 [S, E, TE, M, T, NM, SP] = regexp(s, Ipat) ;
+	 I = cellfun(@(c) ~isempty(c), S) ;
+	 Iter = cellfun(@(c) str2num(strsplit(c{:}, " "){3}), M(I))' ;
 
-      fclose(fid) ;
+	 lpat = sprintf("%s net output #[0-9]+: %s = ", phs, loss) ;
+	 [S, E, TE, M, T, NM, SP] = regexp(s, lpat) ;
+	 I = cellfun(@(c) ~isempty(c), S) ;
+	 x = cellfun(@(c) str2num(strsplit(c{2}, " "){1}), SP(I))' ;
 
-      n = min(numel(Iter), numel(x)) ;
-      if plog set(gca, "yscale", "log") ; endif
-      h = line(Iter(1:n), x(1:n), "linestyle", "-", "color", "black") ;
-      ylabel(loss) ;
+	 fclose(fid) ;
+
+	 n = min(numel(Iter), numel(x)) ;
+	 if plog set(gca, "yscale", "log") ; endif
+	 h = plot(Iter(1:n), x(1:n), "linestyle", "-") ;
+	 xlabel("iterations") ; ylabel(loss) ;
+
+      endfor
+      legend(phase, "box", "off") ;
+      
       pause(pse) ;
       if plog set(gca, "yscale", "linear") ; endif
       ##      drawnow ;

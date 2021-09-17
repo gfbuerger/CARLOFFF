@@ -223,9 +223,18 @@ index 00000000..fcddf4fe
 +# enable pretty build (comment to see full commands)
 +Q ?= @
 diff --git a/cmake/Cuda.cmake b/cmake/Cuda.cmake
-index 5a400a91..29122513 100644
+index 5a400a91..51897349 100644
 --- a/cmake/Cuda.cmake
 +++ b/cmake/Cuda.cmake
+@@ -4,7 +4,7 @@ endif()
+ 
+ # Known NVIDIA GPU achitectures Caffe can be compiled for.
+ # This list will be used for CUDA_ARCH_NAME = All option
+-set(Caffe_known_gpu_archs "20 21(20) 30 35 50 52 61")
++set(Caffe_known_gpu_archs "50 52 61")
+ 
+ ################################################################################################
+ # A function for automatic detection of GPUs installed  (if autodetection is enabled)
 @@ -190,7 +190,7 @@ function(detect_cuDNN)
      set(HAVE_CUDNN  TRUE PARENT_SCOPE)
      set(CUDNN_FOUND TRUE PARENT_SCOPE)
@@ -696,12 +705,6 @@ index 00000000..e067335c
 +    end
 +  end
 +end
-diff --git a/octave/+caffe/Net.m.orig b/octave/+caffe/Net.m.orig
-deleted file mode 100644
-index e69de29b..00000000
-diff --git a/octave/+caffe/Net.m.rej b/octave/+caffe/Net.m.rej
-deleted file mode 100644
-index e69de29b..00000000
 diff --git a/octave/+caffe/Solver.m b/octave/+caffe/Solver.m
 new file mode 100644
 index 00000000..39e43a60

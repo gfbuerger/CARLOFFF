@@ -3,22 +3,22 @@
 ## update proto files
 function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
 
-   if exist(ss = sprintf("models/%s/solver.tpl", proto), "file") == 2
-      ss = fileread(ss) ;
+   if exist(wss = sprintf("models/%s/solver.tpl", proto), "file") == 2
+      ss = fileread(wss) ;
    else
-      ss = fileread("models/solver.tpl") ;
+      ss = fileread(wss = "models/solver.tpl") ;
    endif
    
-   sn1 = fileread("models/data.tpl") ;
-   if exist(sn2 = sprintf("models/%s/net.tpl", proto), "file") == 2
-      sn2 = fileread(sn2) ;
+   sn1 = fileread(wsn1 = "models/data.tpl") ;
+   if exist(wsn2 = sprintf("models/%s/net.tpl", proto), "file") == 2
+      sn2 = fileread(wsn2) ;
    else
-      sn2 = fileread("models/net.tpl") ;
+      sn2 = fileread(wsn2 = "models/net.tpl") ;
    endif
-   if exist(sn3 = sprintf("models/%s/loss.tpl", proto), "file")
-      sn3 = fileread(sn3) ;
+   if exist(wsn3 = sprintf("models/%s/loss.tpl", proto), "file")
+      sn3 = fileread(wsn3) ;
    else
-      sn3 = fileread("models/loss.tpl") ;
+      sn3 = fileread(wsn3 = "models/loss.tpl") ;
    endif
 
    sd1 = fileread(sprintf("models/inp.tpl", proto)) ;
@@ -31,13 +31,13 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
    fsn = sprintf("models/%s/%s.prototxt", proto, pdd.name) ;
    fsd = sprintf("models/%s/%s_deploy.prototxt", proto, pdd.name) ;
 
-   if ~isnewer(fss, sprintf("models/%s/solver.tpl", proto))
+   if ~isnewer(fss, wss)
       print_str(ptr, pdd, proto, ss, fss) ;
    endif
-   if ~isnewer(fsn, sprintf("models/%s/net.tpl", proto), sprintf("models/%s/loss.tpl", proto))  # FIXME
+   if ~isnewer(fsn, wsn2, wsn3)  # FIXME
       print_str(ptr, pdd, proto, sn, fsn) ;
    endif
-   if ~isnewer(fsd, sprintf("models/%s/data.tpl", proto))
+   if ~isnewer(fsd, wsn1)
       print_str(ptr, pdd, proto, sd, fsd) ;
    endif
 

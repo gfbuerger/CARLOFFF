@@ -1,0 +1,206 @@
+name: "cnn2"
+state {
+  phase: TRAIN
+  level: 0
+  stage: ""
+}
+layer {
+  name: "CAL"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "data/DE_RR.CAL.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "VAL"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "data/DE_RR.VAL.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 7
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 1
+    stride: 1
+  }
+}
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 10
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "pool2"
+  type: "Pooling"
+  bottom: "conv2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 1
+    stride: 1
+  }
+}
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "pool2"
+  top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "ip1"
+  top: "ip1"
+}
+layer {
+  name: "out"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "out"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "out"
+  bottom: "label"
+  top: "accuracy"
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "out"
+  bottom: "label"
+  top: "loss"
+  loss_weight: 1
+}
+layer {
+  bottom: "out"
+  bottom: "label"
+#  bottom: "H"
+  top: "infoGainLoss"
+  name: "infoGainLoss"
+  type: "InfogainLoss"
+  loss_weight: 0
+  infogain_loss_param {
+    axis: 1
+    source: "data/infogainH.binaryproto"
+  }
+}
+##layer {
+##    name: "computeH"
+##    bottom: "label"
+##    top: "H"
+##    type: "Python"
+##    python_param {
+##        module: "digits_python_layers"
+##        layer: "ComputeH"
+##        param_str: '{"n_classes": 10}'
+##    }
+##    exclude { stage: "deploy" }
+##}
+
+##layer {
+##  name: "loss"
+##  type: "InfogainLoss"
+##  bottom: "ip2"
+##  bottom: "label2"
+##  bottom: "infogain"
+##  top: "loss"
+##  infogain_loss_param {
+##    axis: 1  # compute loss and probability along axis
+##  }
+##  loss_param {
+##      normalization: 0
+##  }
+##  exclude {
+##    stage: "deploy"
+##  }
+##}

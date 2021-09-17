@@ -1,0 +1,107 @@
+name: "logreg"
+state {
+  phase: TRAIN
+  level: 0
+  stage: ""
+}
+layer {
+  name: "CAL"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "data/NW.24/CatRaRE.CAL.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "VAL"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "data/NW.24/CatRaRE.VAL.txt"
+    batch_size: 100
+  }
+}
+################################
+# simple logistic regression classifier
+################################
+layer {
+       name: "fc"
+       type: "InnerProduct"
+       bottom: "data"
+       top: "out"
+       inner_product_param {
+       	num_output: 2
+	  }
+   }
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "out"
+  bottom: "label"
+  top: "accuracy"
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "out"
+  bottom: "label"
+  top: "loss"
+  loss_weight: 1
+}
+##layer {
+##  name: "Softmax"
+##  type: "Softmax"
+##  bottom: "out"
+##  top: "out"
+##}
+layer {
+  bottom: "out"
+  bottom: "label"
+#  bottom: "H"
+  top: "infoGainLoss"
+  name: "infoGainLoss"
+  type: "InfogainLoss"
+  loss_weight: 0
+  infogain_loss_param {
+    source: "data/infogainH.binaryproto"
+  }
+}
+##layer {
+##    name: "computeH"
+##    bottom: "label"
+##    top: "H"
+##    type: "Python"
+##    python_param {
+##        module: "digits_python_layers"
+##        layer: "ComputeH"
+##        param_str: '{"n_classes": 10}'
+##    }
+##    exclude { stage: "deploy" }
+##}
+
+##layer {
+##  name: "loss"
+##  type: "InfogainLoss"
+##  bottom: "ip2"
+##  bottom: "label2"
+##  bottom: "infogain"
+##  top: "loss"
+##  infogain_loss_param {
+##    axis: 1  # compute loss and probability along axis
+##  }
+##  loss_param {
+##      normalization: 0
+##  }
+##  exclude {
+##    stage: "deploy"
+##  }
+##}

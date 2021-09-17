@@ -1,3 +1,35 @@
+name: "unet"
+layer {
+  name: "data"
+  type: "DenseImageData"
+  top: "data"
+  top: "label"
+  dense_image_data_param {
+    source: "train.txt"
+    batch_size: 5
+    shuffle: true
+    mirror: true
+  }
+  include {
+    phase: TRAIN
+  }
+}
+layer {
+  name: "tdata"
+  type: "MemoryData"
+  top: "data"
+  top: "label"
+  memory_data_param {
+    batch_size: 1
+    channels: 3
+    height: 480
+    width: 480
+  }
+ include {
+    phase: TEST
+  }
+}
+
 layer {
   name: "conv_d0a-b"
   type: "Convolution"
@@ -21,6 +53,9 @@ layer {
     }
   }
 }
+
+
+
 layer {
   name: "relu_d0b"
   type: "ReLU"
@@ -49,6 +84,9 @@ layer {
     }
   }
 }
+
+
+
 layer {
   name: "relu_d0c"
   type: "ReLU"
@@ -88,6 +126,9 @@ layer {
     }
   }
 }
+
+
+
 layer {
   name: "relu_d1b"
   type: "ReLU"
@@ -116,6 +157,10 @@ layer {
     }
   }
 }
+
+
+
+
 layer {
   name: "relu_d1c"
   type: "ReLU"
@@ -155,6 +200,11 @@ layer {
     }
   }
 }
+
+
+
+
+
 layer {
   name: "relu_d2b"
   type: "ReLU"
@@ -183,6 +233,10 @@ layer {
     }
   }
 }
+
+
+
+
 layer {
   name: "relu_d2c"
   type: "ReLU"
@@ -222,6 +276,10 @@ layer {
     }
   }
 }
+
+
+
+
 layer {
   name: "relu_d3b"
   type: "ReLU"
@@ -250,12 +308,19 @@ layer {
     }
   }
 }
+
+
+
 layer {
   name: "relu_d3c"
   type: "ReLU"
   bottom: "d3c"
   top: "d3c"
 }
+
+
+  
+  
 layer {
   name: "pool_d3c-4a"
   type: "Pooling"
@@ -289,6 +354,10 @@ layer {
     }
   }
 }
+
+
+
+
 layer {
   name: "relu_d4b"
   type: "ReLU"
@@ -317,12 +386,18 @@ layer {
     }
   }
 }
+
+
+
+
 layer {
   name: "relu_d4c"
   type: "ReLU"
   bottom: "d4c"
   top: "d4c"
 }
+
+  
 layer {
   name: "upconv_d4c_u3a"
   type: "Deconvolution"
@@ -346,6 +421,10 @@ layer {
     }
   }
 }
+
+
+
+
 layer {
   name: "relu_u3a"
   type: "ReLU"
@@ -705,35 +784,31 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 2
+    num_output: 8
     pad: 0
     kernel_size: 1
     weight_filler {
       type: "msra"
     }
-  }
+   }
 }
 layer {
-  name: "linear_aggregation"
-  type: "Convolution"
+  name: "loss"
+  type: "SoftmaxWithLoss"
   bottom: "score"
-  top: "score_agg"
-  convolution_param {
-    num_output: 1
-    kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-      std: 0.5
-    }
-    axis: 1
-  }
-}
-layer {
-  name: "agg_norm"
-  type: "Sigmoid"
-  bottom: "score_agg"
-  top: "out"
+  bottom: "label"
+  top: "loss"
+  softmax_param {engine: CAFFE}
   include {
     phase: TRAIN
   }
 }
+layer {
+  name: "probt"
+  type: "Softmax"
+  bottom: "score"
+  top: "probt"
+  include {
+    phase: TEST
+  }
+ }

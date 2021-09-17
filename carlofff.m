@@ -1,19 +1,27 @@
 
-global isoctave LON LAT REG NH MON PENALIZED
+global isoctave LON LAT REG NH MON MODE IMB
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
-addpath ~/oct/nc/borders
+addpath ~/oct/nc/borders ~/CARLOFFF/fun
+[~, ~] = mkdir("data/CARLOFFF")
+cd ~/CARLOFFF
+mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 [glat glon] = borders("germany") ;
 GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
-LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
-##LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
+##LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
+LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
 ##LON = [7 10] ; LAT = [47.5 49.5] ; REG = "SW" ; # Südwest
 ##LON = [9 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
+ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 NH = 24 ; # relevant hours
+scale = 0.00390625 ; % MNIST
+Q0 = 0.99 ;
+IMB = "notSMOTE" ;
 
+##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
 if isoctave()
    pkg load hdf5oct netcdf statistics
@@ -27,13 +35,6 @@ else
    addpath /opt/caffeML/matlab
 end
 
-addpath ~/CARLOFFF/fun
-[~, ~] = mkdir("data/CARLOFFF")
-cd ~/CARLOFFF
-mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
-scale = 0.00390625 ; % MNIST
-Q0 = 0.95 ;
-
 if isnewer(afile = "data/atm.ob", glob("data/ind/*.nc"){:})
    load(afile) ;
 else
@@ -41,8 +42,8 @@ else
    lon = ncread(F{1}, "longitude") ;
    lat = ncread(F{1}, "latitude") ;
    if (Llat = lat(1) > lat(end)) lat = flip(lat) ; endif
-   t = ncread(F{1}, "time") ;
-   id = nctime(t, :, :) ;
+   nc = ncinfo(F{1}) ;
+   id = nctime(F{1}) ;
    JLON = GLON(1) <= lon & lon <= GLON(2) ;
    JLAT = GLAT(1) <= lat & lat <= GLAT(2) ;
    JLON = JLON | true ; JLAT = JLAT | true ; # allow tolerance
@@ -54,122 +55,52 @@ else
       x = squeeze(ncread(F{j}, v{:})) ;
       x = permute(x, [3 1 2]) ; # all data are N x W x H
       if Llat x = flip(x, 3) ; endif
+      [id x] = selmon(id, x) ;
       eval(sprintf("%s.id = id ;", v{:})) ;
       eval(sprintf("%s.x = x(:,JLON,JLAT) ;", v{:})) ;
       eval(sprintf("%s.lon = lon(JLON) ;", v{:})) ;
       eval(sprintf("%s.lat = lat(JLAT) ;", v{:})) ;
       eval(sprintf("%s.name = VAR{j} ;", v{:})) ;
+      ## aggregate
+      eval(sprintf("%s = agg(%s, NH) ;", v{:}, v{:})) ;
    endfor
    save(afile, VAR{:}, "VAR", "LVAR") ;
 endif
 
-PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{1} ;
-switch PDD
-   case {"cape" "cp"}
-      if isnewer(dfile = sprintf("data/%s.%s.ob", REG, PDD), "data/atm.ob")
-	 load(dfile) ;
-      else
-	 eval(sprintf("pdd = sel_ptr(%s, LON, LAT, Q0) ;", PDD)) ;
-	 save(dfile, "pdd") ;
-      endif
-   case "regnie"
-      if isnewer(dfile = sprintf("data/%s.%s.ob", REG, PDD), "fun/regnie.m")
-	 load(dfile) ;
-      else
-	 R0 = 10 ; # from climate explorer
-	 rfile = "https://opendata.dwd.de/climate_environment/CDC/grids_germany/daily/regnie" ;
-	 pdd = regnie(rfile, 2001, 2020, R0) ;
-	 save(dfile, "pdd") ;
-      endif
-      x0 = quantile(pdd.x, Q0) ;
-      pdd.x(pdd.x <= x0,:) = NaN ;
-   case "RR"
-      if exist(dfile = sprintf("data/%s.dwd.%s.ob", REG, PDD), "file") == 2
-	 load(dfile) ;
-      else
-	 pdd = read_dwd("nc/StaedteDWD/klamex_with_coords.csv") ;
-	 save(dfile, "pdd") ;
-      endif
-##      pdd.x = pdd.x(:,3) ; # use RRmean
-##      pdd.x = pdd.x(:,5) ; # use Eta
-##      pdd.x = pdd.x(:,6) ; # use RRmax
-   case "CatRaRE"
-      if exist(dfile = sprintf("data/%s.dwd.%s.ob", REG, PDD), "file") == 2
-	 load(dfile) ;
-      else
-	 pdd = read_klamex("nc/StaedteDWD/CatRaRE_2001_2020_W3_Eta_v2021_01.csv") ;
-	 save(dfile, "pdd") ;
-      endif
-##      pdd.x = pdd.x(:,3) ; # use RRmean
-##      pdd.x = pdd.x(:,5) ; # use Eta
-##      pdd.x = pdd.x(:,6) ; # use RRmax
-endswitch
-pdd.name = PDD ;
+PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
+if exist(pdfile = sprintf("data/%s.%s.ob", REG, PDD), "file") == 2
+   load(pdfile) ;
+else
+   ## select predictand
+   jV = find(strcmp(PDD, VAR)) ; if isempty(jV) jV = 1 ; endif
+   str = sprintf("%s,", VAR{:}) ; str = str(1:end-1) ;
+   eval(sprintf("pdd = selpdd(PDD, LON, LAT, ID, Q0, %s) ;", VAR{jV}))
+   ## aggregate
+   pdd = agg(pdd, NH) ;
+   save(pdfile, "pdd") ;
+endif
 
-JVAR = [2 3 4 5 10 11] ;
-jVAR = JVAR(1) ; # cape
+JVAR = [2 3 4] ;
+FILL = true ;
 ind = sprintf("%d%d", ind2log(JVAR, numel(VAR))) ;
-if isnewer(pfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name), afile, dfile)
+if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name), afile, pdfile)
 
-   load(pfile) ;
+   load(ptfile) ;
 
 else
    
    ## select predictors
-   if isempty(JVAR) JVAR = [1 : length(VAR)] ; endif
-   jVAR = JVAR(1) ; eval(sprintf("N = size(%s.x) ;", VAR{jVAR})) ;
-   eval(sprintf("ptr = %s ;", VAR{jVAR})) ; ptr = rmfield(ptr, "x") ;
-   j = 0 ;
-   for jVAR = JVAR(1:end)
-      eval(sprintf("x = %s.x ;", VAR{jVAR})) ;
-      clear(VAR{jVAR}) ;
-      if any(isnan(x(:))) continue ; endif
-      j++ ;
-      if ~any(x(:) < 0)
-	 xm = 0 ;
-      else
-	 xm = nanmean(x(:)) ;
-      endif
-      xs = nanstd(x(:)) ;
-      ptr.x(:,j,:,:) = (x - xm) ./ xs ;
-      ptr.vars{j} = VAR{jVAR} ;
-   endfor
-   ptr.scale = scale ;
-   ptr.ind = ind ;
-   ptr.pfile = pfile ;
-   ##n = length(ptr.var) ;
-   ##for i = 1:n
-   ##   disp(arrayfun(@(j) ndcorr(ptr.x(:,i,:,:), ptr.x(:,j,:,:)), find(1:n ~= i))) ;
-   ##endfor
-
-   id0 = [2001 5 1 0] ; id1 = [2019 8 31 23] ;
-   ptr = unifid(ptr, id0, id1, MON) ;
-   pdd = togrid(pdd, ptr.lon, ptr.lat) ;
-   pdd = unifid(pdd, id0, id1, MON) ;
-
-   ## plot pdd statistics
-   if 0
-      for jVAR = JVAR
-	 plot_pdd(pdd, jVAR) ;
-      endfor
-   endif
-
-   pdd.x(isinf(pdd.x)) = 0 ;
-
-   if 0
-      plot_hrs(pdd) ;
-   endif
+   str = sprintf("%s,", VAR{JVAR}) ; str = str(1:end-1) ;
+   eval(sprintf("ptr = selptr(scale, ind, ptfile, ID, FILL, %s) ;", str))
+   ptr.name = "ptr" ;
    
-   ## aggregate
-   ptr = agg(ptr, NH) ;
-   pdd = agg(pdd, NH) ;
-
-   save(pfile, "ptr", "pdd") ;
+   ptr.ptfile = ptfile ;
+   save(ptfile, "ptr") ;
    
 endif
 
 if 0
-   ## select predictand and hours
+   ## select hours
    H = 12 : 20 ; # from barplot
    I = ismember(ptr.id(:,4), H) ; 
    ptr.id = ptr.id(I,:) ;
@@ -190,7 +121,7 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
-w = pdd.x(:,1,:,:) ;
+w = pdd.x(:,1,:,:) ; # Eta
 pdd.q = quantile(w(:), Q0) ;
 pdd.c = any(any(w > pdd.q, 3), 4) ;
 write_H(pdd.c) ;
@@ -204,15 +135,15 @@ if 0
    [rptr rpdd] = redclass(ptr, pdd, 0.8) ;
 endif
 
- ##logistic regression
-PENALIZED = true ;
-if isnewer(mfile = sprintf("data/%s.%02d/lreg.%s.%s.ob", REG, NH, ptr.ind, pdd.name), pfile)
+## logistic regression
+MODE = "penalized" ;
+if isnewer(mfile = sprintf("data/%s.%02d/lreg.%s.%s.ob", REG, NH, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
    varargin = {} ;
 ##   varargin = {"lambdamax", 1e3, "lambdaminratio", 1e-3} ;
-   [lreg ptr1] = run_lreg(ptr, pdd, [], "CVE", {"HSS" "GSS" "PHI" "CSI"}, varargin{:}) ;
-   save(mfile, "lreg", "ptr1") ;
+   lreg = run_lreg(ptr, pdd, [], "CVE", {"HSS" "GSS"}, varargin{:}) ;
+   save(mfile, "lreg") ;
 endif
 strucdisp(lreg.skl) ;
 plot_fit(lreg.fit) ;
@@ -220,18 +151,24 @@ set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
 set(findall("type", "axes"), "fontsize", 24) ;
 set(findall("type", "text"), "fontsize", 22) ;
 
-## caffe
-if isnewer(mfile = sprintf("data/%s.%02d/caffe.%s.%s.ob", REG, NH, ptr.ind, pdd.name), pfile)
+## nnet
+NET = {"simple1" "simple2" "logreg" "cifar10" "mnist"}{1} ;
+if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
-   netonly = ~true ;
-   caffe = run_caffe(ptr, pdd, "cifar10", netonly, {"HSS" "GSS" "PHI" "CSI"}) ;
-   save(mfile, "caffe") ;
+   init_rnd(1) ;
+   solverstate = "" ;
+##   solverstate = "HHH" ;
+##   solverstate = "models/simple1/cape_iter_3000.solverstate" ;
+##   solverstate = "models/simple1/CatRaRE_iter_10000.solverstate" ;
+   [nnet ptr.prob] = run_caffe(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
+   strucdisp(nnet.skl) ;
+   cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
+   system(cmd) ;
+   save(mfile, "nnet") ;
+   save(ptr.ptfile, "ptr") ;
 endif
-strucdisp(caffe.skl) ;
-
-caffe = run_caffe(ptr, pdd, "logreg") ;
-strucdisp(caffe) ;
+strucdisp(nnet.skl) ;
 
 ## cases
 ## June 2013
@@ -319,3 +256,105 @@ hb = borders("germany", "color", "black") ;
 set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 30) ;
 hgsave(sprintf("nc/%s.%02d/%s.2016-05.og", REG, NH, pdd.vars{1})) ;
 print(sprintf("nc/%s.%02d/%s.2016-05.png", REG, NH, pdd.vars{1})) ;
+##}
+
+### historical and future simulations
+load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;
+lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
+ID = [1961 1 1 ; 1990 12 31] ;
+SVAR = {"cape" "prc"} ;
+SIM = {"ptr" "historical" "rcp85"}([2 3]) ;
+NSIM = {"ANA" "HIST" "RCP85"}([2 3]) ;
+
+model = "models/simple1/CatRaRE_deploy.prototxt" ;
+weights = "models/simple1/CatRaRE_iter_10000.caffemodel" ;
+net = caffe.Net(model, weights, 'test') ;
+
+for jsim = 1 : length(SIM)
+
+   sim = SIM{jsim} ;
+
+   for svar = SVAR
+      svar = svar{:} ;
+
+      if exist(ptfile = sprintf("esgf/%s.%s.ob", svar, sim), "file") == 2
+
+	 load(ptfile) ;
+
+      else
+
+	 eval(sprintf("%s = read_sim(\"esgf\", svar, sim, lon, lat) ;", svar)) ;
+	 
+	 ## aggregate
+	 eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
+	 save(ptfile, svar) ;
+
+      endif
+
+   endfor
+
+   if exist(ptfile = sprintf("esgf/%s.ob", sim), "file") == 2
+
+      load(ptfile) ;
+
+   else
+      
+      ## select predictors
+      str = sprintf("%s,", SVAR{:}) ; str = str(1:end-1) ;
+      if strcmp(sim, "historical")
+	 eval(sprintf("[%s %s] = selptr(scale, ind, ptfile, ID, FILL, %s) ;", sim, str, str))   
+	 for svar = SVAR
+	    eval(sprintf("ref.%s.xm = %s.xm ; ref.%s.xs = %s.xs ;", svar{:}, svar{:}, svar{:}, svar{:})) ;
+	 endfor
+      else
+	 for svar = SVAR
+	    eval(sprintf("%s.xm = ref.%s.xm ; %s.xs = ref.%s.xs ;", svar{:}, svar{:}, svar{:}, svar{:})) ;
+	 endfor
+	 eval(sprintf("%s = selptr(scale, ind, ptfile, ID=[], FILL, %s) ;", sim, str))   
+      endif
+      eval(sprintf("%s.name = sim ;", NSIM{jsim})) ;
+      eval(sprintf("%s.nnet.prob = apply_net(scale*%s.x, net) ;", sim, sim)) ;
+      eval(sprintf("%s.lreg.prob = run_lreg(%s, lreg, [], []) ;", sim, sim)) ;
+
+      save(ptfile, sim) ;
+   endif
+
+endfor
+
+### plots
+global COLORORDER
+COLORORDER = [0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([3 2],:) ;
+set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 24) ;
+set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 22, "defaultlinelinewidth", 2) ;
+
+# nnet training
+clf ;
+plot_log("models/simple1/CatRaRE.log", {"Train" "Test"}, "loss") ;
+hgsave(sprintf("nc/plots/%s.loss.og", NET)) ;
+print(sprintf("nc/plots/%s.loss.png", NET)) ;
+
+# 
+I = pdd.id(:,1) == 2016 & ismember(pdd.id(:,2), MON) ;
+printf("average rate Eta > 0: %7.0f%%\n", 100*sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x)) ;
+scatter(datenum(pdd.id(I,:)), nanmean(nanmean(pdd.x(I,1,:,:), 3), 4), 60, "k", "filled") ; axis tight
+set(gca, "ytick", [0 0.01 0.02])
+xlabel("") ; ylabel("Eta") ;
+datetick("mmm") ;
+hgsave(sprintf("nc/plots/Eta.og")) ;
+print(sprintf("nc/plots/Eta.svg")) ;
+
+for mdl = {"lreg" "nnet"}
+   mdl = mdl{:} ;
+   clf ; hold on ; clear h ; j = 0 ;
+   for sim = SIM
+      eval(sprintf("sim = %s ;", sim{:})) ; j++ ;
+      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", mdl)) ;
+      scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL{j}, "filled") ; axis tight
+      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL{j}, "linewidth", 5) ;
+      xlabel("year") ; ylabel(sprintf("prob (WS {\\geq 3})", 0.3)) ;
+   endfor
+   set(gca, "ygrid", "on") ;
+   legend(h, NSIM, "box", "off", "location", "northwest") ;
+   hgsave(sprintf("nc/plots/%s.sim.og", mdl)) ;
+   print(sprintf("nc/plots/%s.sim.png", mdl)) ;
+endfor

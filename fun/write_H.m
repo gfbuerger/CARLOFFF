@@ -9,13 +9,13 @@ function write_H (c)
    f = sum(c(:) == cu) / numel(c) ;
    [~, j] = min(f) ;
 
-   s = fileread("infoGainloss.tpl") ;
+   s = fileread("python/infoGainloss.tpl") ;
    s = strrep(s, "WGT", num2str(1/f(j))) ;
-   fid = fopen("infoGainloss.py", "wt") ;
+   fid = fopen("python/infoGainloss.py", "wt") ;
    fdisp(fid, s) ;
    fclose(fid) ;
 
-   system("python infoGainloss.py") ;
+   system("python python/infoGainloss.py") ;
    
 ##   H = ones(N(2)+1, N(2)+1) ;
 ##   H(1,2,1) = 1 ./ f(2) ;

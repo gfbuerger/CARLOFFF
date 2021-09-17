@@ -1,11 +1,13 @@
-## usage: v = unifid (u, id0, id1, MON)
+## usage: v = unifid (u, ID, MON)
 ##
 ## find matching events
-function v = unifid (u, id0, id1, MON)
+function v = unifid (u, ID, MON)
 
+   id0 = ID(1,:) ; id1 = ID(2,:) ;
+   
    v = selper(u, id0, id1) ;
    
-   if nargin < 4
+   if nargin < 3
       MON = 1 : 12 ;
    endif
    

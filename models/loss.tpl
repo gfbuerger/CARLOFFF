@@ -17,40 +17,39 @@ layer {
 ##  name: "Softmax"
 ##  type: "Softmax"
 ##  bottom: "out"
-##  top: "out"
+##  top: "prob"
 ##}
-layer {
-  bottom: "out"
-  bottom: "label"
-#  bottom: "H"
-  top: "infoGainLoss"
-  name: "infoGainLoss"
-  type: "InfogainLoss"
-  loss_weight: 0
-  infogain_loss_param {
-    source: "data/infogainH.binaryproto"
-  }
-}
+##layer {
+##  bottom: "out"
+##  bottom: "label"
+###  bottom: "H"
+##  top: "infoGainLoss"
+##  name: "infoGainLoss"
+##  type: "InfogainLoss"
+##  loss_weight: 0
+##  infogain_loss_param {
+##    source: "data/infogainH.binaryproto"
+##  }
+##}
 ##layer {
 ##    name: "computeH"
 ##    bottom: "label"
 ##    top: "H"
 ##    type: "Python"
 ##    python_param {
-##        module: "digits_python_layers"
+##        module: "computeH"
 ##        layer: "ComputeH"
-##        param_str: '{"n_classes": 10}'
+##        param_str: '{"n_classes": 2}'
 ##    }
 ##    exclude { stage: "deploy" }
 ##}
-
 ##layer {
-##  name: "loss"
+##  name: "IGloss"
 ##  type: "InfogainLoss"
-##  bottom: "ip2"
-##  bottom: "label2"
-##  bottom: "infogain"
-##  top: "loss"
+##  bottom: "prob"
+##  bottom: "label"
+##  bottom: "H"
+##  top: "IGloss"
 ##  infogain_loss_param {
 ##    axis: 1  # compute loss and probability along axis
 ##  }
@@ -60,4 +59,5 @@ layer {
 ##  exclude {
 ##    stage: "deploy"
 ##  }
+##  loss_weight: 1
 ##}

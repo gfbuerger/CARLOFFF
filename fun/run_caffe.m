@@ -1,9 +1,9 @@
-## usage: res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" "HSS"})
+## usage: [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GSS" "HSS"})
 ##
 ## calibrate and apply caffe model
-function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" "HSS"})
+function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GSS" "HSS"})
 
-   global REG NH
+   global REG NH IMB
    
    if exist(sprintf("%s/%s.%02d/CAL_lmdb", proto, REG, NH), "dir") ~= 7 & 0
       str = fileread("tools/gen_lmdb.sh") ;
@@ -22,9 +22,22 @@ function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" 
       PHS = PHS{:} ;
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
-      if ~isnewer(of = h5f(pdd.name, PHS), ptr.pfile)
+      if ~isnewer(of = h5f(pdd.name, PHS), ptr.pfile) || ~isempty(IMB)
 	 labels = pdd.c(pdd.(PHS)) ;
 	 images = ptr.x(ptr.(PHS), :, :, :) ;
+
+	 if strcmp(PHS, "CAL")
+	    ## oversampling
+	    switch IMB
+	       case "SMOTE"
+		  [images labels] = smote(images, labels) ;
+	       case ""
+	       otherwise
+		  [images labels] = oversmpl(images, labels) ;
+	    endswitch
+	    printf("calibration type: %s\n", IMB) ;
+	 endif
+	 
 	 if 0
 	    ifile = sprintf('data/%s.%02d/%s-images-idx3-ubyte', REG, NH, PHS) ;
 	    lfile = sprintf('data/%s.%02d/%s-labels-idx1-ubyte', REG, NH, PHS) ;
@@ -35,7 +48,7 @@ function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" 
    endfor
 
    [fss fsn fsd] = proto_upd(:, ptr, pdd, proto) ;
-   if netonly
+   if strcmp(solverstate, "netonly")
       res = {fss fsn fsd} ;
       return ;
    endif
@@ -43,17 +56,28 @@ function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" 
    ## train model
    solver = caffe.Solver(sprintf("models/%s/%s_solver.prototxt", proto, pdd.name)) ;
    pat = sprintf("models/%s/%s_iter_*.solverstate*", proto, pdd.name) ;
-   if isempty(glob(pat))
+   if exist(solverstate, "file") == 2
+      state = solverstate ;
+   elseif ~ismember(solverstate, {"empty" "null" ""}) && ~isempty(glob(pat))
+      state = strtrim(ls("-1t", pat)(1,:)) ;
+   endif
+   
+   if exist("state", "var") == 0 || exist(state, "file") ~= 2
       solver.solve() ;
-   elseif ~isnewer(glob(pat){1}, fss, fsn, fsd, h5f(pdd.name, "CAL"))
-      if yes_or_no("re-train model?")
-	 solver.solve() ;
-      else
-	 state = strtrim(ls("-1t", pat)(1,:)) ;
-	 printf("<-- %s\n", state) ;
-	 solver.restore(state) ;
-##	 iter = solver.iter ;
-##	 solver.step(round(0.5 * iter)) ;
+   elseif ~isnewer(state, fss, fsn, fsd, h5f(pdd.name, "CAL"))
+      solver.restore(state) ;
+      iter = solver.iter ;
+      printf("solver at iteration: %d\n", iter) ;
+      n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
+      if ~isempty(n)
+	 switch n > 0
+	    case 0
+	       printf("from scratch\n") ;
+	       solver.solve() ;
+	    otherwise
+	       printf("<-- %s\n", state) ;
+	       solver.step(n) ;
+	 endswitch
       endif
    endif
    state = strtrim(ls("-1t", pat)(1,:)) ;
@@ -61,7 +85,9 @@ function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" 
    ## apply model
    weights = strrep(state, "solverstate", "caffemodel") ;
    model = sprintf("models/%s/%s_deploy.prototxt", proto, pdd.name) ;
-   if exist(model, "file") ~= 2
+   if exist(model, "file") == 2
+      printf("<-- %s\n", model) ;
+   else
       error("file not found: %s", model)
    endif
 
@@ -74,38 +100,31 @@ function res = run_caffe (ptr, pdd, proto = "test1", netonly=false, SKL= {"GSS" 
 	 [images labels] = load_hdf5(h5f(pdd.name, PHS)) ;
 	 labels_h5 = labels ;
 	 n = size(labels, 1) ;
-	 prob.(PHS) = nan(n, 2) ;
+	 prb.(PHS) = nan(n, 2) ;
 	 for i = 1 : n
 	    data = squeeze(images(i,1,:,:))' ;
 	    data_h5(:,:,i) = data ;
 	    phat = net.forward({data}) ;
-	    prob.(PHS)(i,:) = phat{1} ;
+	    prb.(PHS)(i,:) = phat{1} ;
 	 end
 
       else
 
 	 labels = pdd.c(pdd.(PHS)) ;
-	 Data = flipdim(ptr.x) ;
-	 N = size(Data) ;
-	 if length(N) < 3
-	    N = [1 1 N] ;
-	    Data = reshape(Data, N) ;
-	 endif
-	 prob.(PHS) = nan(sum(ptr.(PHS)), 2) ; ii = 0 ;
-	 for i = find(ptr.(PHS))'
-	    data = ptr.scale * Data(:,:,:,i) ;
-	    phat = net.forward({data}) ;
-	    prob.(PHS)(++ii,:) = phat{1} ;
-	 end
+	 prb.(PHS) = apply_net(ptr.scale*ptr.x, net, ptr.(PHS)) ;
 
       endif
       
-      ce.(PHS) = crossentropy(labels, prob.(PHS)) ;
+      ce.(PHS) = crossentropy(labels, prb.(PHS)) ;
 
-      [th.(PHS) skl.(PHS)] = skl_est(prob.(PHS)(:,end), labels, SKL) ;
+      [th.(PHS) skl.(PHS)] = skl_est(prb.(PHS)(:,end), labels, SKL) ;
       
    endfor
 
-   res = struct("prob", prob, "crossentropy", ce, "th", th, "skl", skl) ;
+   res = struct("crossentropy", ce, "th", th, "skl", skl) ;
 
+   t = [datenum(pdd.id(pdd.CAL,:)) ; datenum(pdd.id(pdd.VAL,:))] ;
+   [~, Is] = sort(t) ;
+   prob = [prb.CAL ; prb.VAL](Is) ;
+   
 endfunction

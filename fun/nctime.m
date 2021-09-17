@@ -1,9 +1,14 @@
-## usage: id = nctime (ntime, v = "hours since 1900-01-01 00:00:00.0", wcal)
+## usage: id = nctime (ncf, wcal)
 ##
 ## convert netcdf date to id
-function id = nctime (ntime, v = "hours since 1900-01-01 00:00:00.0", wcal = "Gregorian")
+function id = nctime (ncf, wcal = "Gregorian")
 
-   ntime = double(ntime) ;
+   ntime = double(ncread(ncf, "time")) ;
+	 
+   j = find(strcmp({ncinfo(ncf).Variables.Name}, "time")) ;
+   k = find(strcmp({ncinfo(ncf).Variables(j).Attributes.Name}, "units")) ;
+   v = ncinfo(ncf).Variables(j).Attributes(k).Value ;
+
    [~, ~, ~, dstr] = regexpi(v, "\(day\|hour\)s* since .*") ;
    dstr = dstr{:} ;
    if isempty(dstr)
