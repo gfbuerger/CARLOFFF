@@ -30,7 +30,7 @@ function res = run_lreg (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
 	 X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
 
 	 if strcmp(ptr.vars{j}, "prc") ptr.vars{j} = "cp" ; endif
-	 if isnewer(efile = sprintf("data/eof.%s.%02d.ob", ptr.vars{j}, NH), "data/atm.ob")
+	 if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), "data/atm.ob")
 	    load(efile)
 	    printf("<-- %s [%d]\n", efile, columns(E)) ;
 	 else
@@ -87,7 +87,7 @@ function res = run_lreg (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
 	 
 	 switch MODE
 
-	    case "penalized"
+	    case "lasso"
 
 	       source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
 	       model = glm_logistic(yy,xx) ;
@@ -113,13 +113,14 @@ function res = run_lreg (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
 	       fit.jLasso = jLasso ;
 
 	       ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
-	       fit.beta = fit.beta(:,jLasso) ;
+	       fit.par = fit.beta(:,jLasso) ;
+	       fit.model = @(par, x) logistic_cdf(Lfun(par, x)) ;
 	       printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
 	    case "nnet"
 
 	       XX = xx ;
-	       yy = double(ismember(pdd.c(pdd.(phs)), c(end))) ;
+	       yy = double(y) ;
 	       I = all(~isnan([XX yy]), 2) ;
 	       XX = XX(I,:) ; yy = yy(I,:) ;
 	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
@@ -132,10 +133,27 @@ function res = run_lreg (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
 ##	       net.trainParam.mu_max = 1e12 ;
 	       net = train(net, XX', yy') ;
 	       
+	    case "tree"
+
+	       XX = xx ;
+	       yy = double(yy) ;
+	       I = all(~isnan([XX yy]), 2) ;
+	       XX = XX(I,:) ; yy = yy(I,:) ;
+
+	       addpath ~/oct/nc/M5PrimeLab ;
+	       trainParamsEnsemble = m5pparamsensemble(50) ;
+	       trainParamsEnsemble.getOOBContrib = false ;
+	       fit.par = m5pbuild(XX, yy, [], [], trainParamsEnsemble) ;
+	       if trainParamsEnsemble.numTrees > 1
+		  fit.model = @(par, x) mean(cell2mat(cellfun(@(p) m5ppredict(p, x), par, "UniformOutput", false)'), 2) ;
+	       else
+		  fit.model = @(par, x) m5ppredict(par, x) ;
+	       endif
+
 	    otherwise
 
 	       XX = xx ;
-	       yy = double(ismember(pdd.c(pdd.(phs)), c(end))) ;
+	       yy = double(yy) ;
 	       I = all(~isnan([XX yy]), 2) ;
 	       XX = XX(I,:) ; yy = yy(I,:) ;
 
@@ -150,10 +168,10 @@ function res = run_lreg (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
       endif
 
       if Lcv
-	 w = logistic_cdf(Lfun(fit.beta, x)) ;
+	 w = feval(fit.model, fit.par, x) ;
 	 prob.x(ptr.(phs),:) = [1 - w w] ;
       else
-	 w = logistic_cdf(Lfun(pdd.fit.beta, x)) ;
+	 w = feval(pdd.fit.model, pdd.fit.par, x) ;
 	 res = [1 - w w] ;
 	 return ;
       endif

@@ -3,7 +3,7 @@ layer {
     name: "data"
     type: "Input"
     top: "data"
-    input_param { shape: { dim: 1 dim: 5 dim: 39 dim: 33 } }
+    input_param { shape: { dim: 1 dim: 1 dim: 39 dim: 33 } }
 }
 layer {
   name: "conv1"

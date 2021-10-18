@@ -1,7 +1,7 @@
-## usage: [ptr varargout] = selptr (scale, ind=[], pfile, ID=[], FILL=false, varargin)
+## usage: [ptr varargout] = selptr (scale, ind=[], ptfile, ID=[], FILL=false, varargin)
 ##
 ## select predictors
-function [ptr varargout] = selptr (scale, ind=[], pfile, ID=[], FILL=false, varargin)
+function [ptr varargout] = selptr (scale, ind=[], ptfile, ID=[], FILL=false, varargin)
 
    ptr = varargin{1} ;
    N = size(ptr.x) ;
@@ -40,7 +40,7 @@ function [ptr varargout] = selptr (scale, ind=[], pfile, ID=[], FILL=false, vara
 
    ptr.scale = scale ;
    ptr.ind = ind ;
-   ptr.pfile = pfile ;
+   ptr.ptfile = ptfile ;
 
    if ~isempty(ID)
       ptr = selper(ptr, ID(1,:), ID(2,:)) ;

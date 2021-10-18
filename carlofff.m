@@ -8,12 +8,15 @@ addpath ~/oct/nc/borders ~/CARLOFFF/fun
 cd ~/CARLOFFF
 mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 [glat glon] = borders("germany") ;
-GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
+##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
+GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ; GREG = "DE" ;
 ##LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
-##LON = [7 10] ; LAT = [47.5 49.5] ; REG = "SW" ; # Südwest
-##LON = [9 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
+##LON = [10 14] ; LAT = [51 54] ; REG = "NE" ; # Nordost
+##LON = [6 10] ; LAT = [47.5 51] ; REG = "SW" ; # Südwest
+##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
+##GLON = LON ; GLAT = LAT ; GREG = REG ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 NH = 24 ; # relevant hours
@@ -34,8 +37,9 @@ if isoctave()
 else
    addpath /opt/caffeML/matlab
 end
+mkdir(sprintf("data/%s.%02d", REG, NH)) ;
 
-if isnewer(afile = "data/atm.ob", glob("data/ind/*.nc"){:})
+if isnewer(afile = sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:})
    load(afile) ;
 else
    F = glob("data/ind/*.nc")' ;
@@ -46,7 +50,6 @@ else
    id = nctime(F{1}) ;
    JLON = GLON(1) <= lon & lon <= GLON(2) ;
    JLAT = GLAT(1) <= lat & lat <= GLAT(2) ;
-   JLON = JLON | true ; JLAT = JLAT | true ; # allow tolerance
 
    for j = 1 : length(F)
       nc = ncinfo(F{j}) ;
@@ -80,7 +83,7 @@ else
    save(pdfile, "pdd") ;
 endif
 
-JVAR = [2 3 4] ;
+JVAR = [2 4] ;
 FILL = true ;
 ind = sprintf("%d%d", ind2log(JVAR, numel(VAR))) ;
 if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name), afile, pdfile)
@@ -94,7 +97,6 @@ else
    eval(sprintf("ptr = selptr(scale, ind, ptfile, ID, FILL, %s) ;", str))
    ptr.name = "ptr" ;
    
-   ptr.ptfile = ptfile ;
    save(ptfile, "ptr") ;
    
 endif
@@ -136,8 +138,9 @@ if 0
 endif
 
 ## logistic regression
-MODE = "penalized" ;
-if isnewer(mfile = sprintf("data/%s.%02d/lreg.%s.%s.ob", REG, NH, ptr.ind, pdd.name), ptfile)
+MODE = "lasso" ;
+MODE = "tree" ;
+if isnewer(mfile = sprintf("data/%s.%02d/%s.%s.%s.ob", REG, NH, MODE, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
    varargin = {} ;
@@ -152,15 +155,13 @@ set(findall("type", "axes"), "fontsize", 24) ;
 set(findall("type", "text"), "fontsize", 22) ;
 
 ## nnet
-NET = {"simple1" "simple2" "logreg" "cifar10" "mnist"}{1} ;
+NET = {"simple1" "simple2" "logreg" "cifar10" "mnist"}{4} ;
 if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
-   init_rnd(1) ;
+   init_rnd() ;
    solverstate = "" ;
-##   solverstate = "HHH" ;
-##   solverstate = "models/simple1/cape_iter_3000.solverstate" ;
-##   solverstate = "models/simple1/CatRaRE_iter_10000.solverstate" ;
+   solverstate = sprintf("models/%s/cape_iter_3000.solverstate", NET) ;
    [nnet ptr.prob] = run_caffe(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
    strucdisp(nnet.skl) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
@@ -322,20 +323,23 @@ for jsim = 1 : length(SIM)
 endfor
 
 ### plots
-global COLORORDER
-COLORORDER = [0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([3 2],:) ;
+alpha = 0.05 ;
+global COL
+COL = [0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([3 2],:) ;
 set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 24) ;
 set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 22, "defaultlinelinewidth", 2) ;
 
 # nnet training
 clf ;
-plot_log("models/simple1/CatRaRE.log", {"Train" "Test"}, "loss") ;
+h = plot_log("models/simple1/CatRaRE.log", {"Train" "Test"}, "loss") ;
+set(h(1), "linewidth", 1) ; set(h(2), "linewidth", 4) ;
 hgsave(sprintf("nc/plots/%s.loss.og", NET)) ;
 print(sprintf("nc/plots/%s.loss.png", NET)) ;
 
 # 
 I = pdd.id(:,1) == 2016 & ismember(pdd.id(:,2), MON) ;
-printf("average rate Eta > 0: %7.0f%%\n", 100*sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x)) ;
+qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
+printf("average rate Eta > 0: %7.0f%%\n", 100*qEta) ;
 scatter(datenum(pdd.id(I,:)), nanmean(nanmean(pdd.x(I,1,:,:), 3), 4), 60, "k", "filled") ; axis tight
 set(gca, "ytick", [0 0.01 0.02])
 xlabel("") ; ylabel("Eta") ;
@@ -343,18 +347,33 @@ datetick("mmm") ;
 hgsave(sprintf("nc/plots/Eta.og")) ;
 print(sprintf("nc/plots/Eta.svg")) ;
 
+COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
 for mdl = {"lreg" "nnet"}
    mdl = mdl{:} ;
    clf ; hold on ; clear h ; j = 0 ;
+   h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 2, "linestyle", "--") ;
    for sim = SIM
       eval(sprintf("sim = %s ;", sim{:})) ; j++ ;
       eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", mdl)) ;
-      scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL{j}, "filled") ; axis tight
-      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL{j}, "linewidth", 5) ;
+      scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL(j,:), "filled") ; axis tight
+      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      stats(j,:) = STATS ;
+      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
+      h(j) = plot(s.id(:,1), yf, "color", COL(j,:), "linewidth", 5) ;
+##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
       xlabel("year") ; ylabel(sprintf("prob (WS {\\geq 3})", 0.3)) ;
    endfor
-   set(gca, "ygrid", "on") ;
-   legend(h, NSIM, "box", "off", "location", "northwest") ;
+   if stats(3,3) < alpha
+      text(2040, 0.4, "p<0.05", "color", COL(3,:)) ;
+   endif
+   ##   set(gca, "ygrid", "on") ;
+   ylim([0.1 0.4]) ;
+   if strcmp(mdl, "lreg")
+      loc = "northwest" ;
+   else
+      loc = "southeast" ;
+   endif
+   legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", loc) ;
    hgsave(sprintf("nc/plots/%s.sim.og", mdl)) ;
    print(sprintf("nc/plots/%s.sim.png", mdl)) ;
 endfor
