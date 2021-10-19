@@ -1,13 +1,15 @@
-## usage: varargout = plot_log (lfile, phase = {"Test"}, loss = "loss", pse = 5, plog = 0)
+## usage: varargout = plot_log (lfile, loss = "loss", pse = 5, plog = 0)
 ##
 ##
-function varargout = plot_log (lfile, phase = {"Train" "Test"}, loss = "loss", pse = 5, plog = 0)
+function varargout = plot_log (lfile, loss = "loss", pse = 5, plog = 0)
 
    global COL
+
+   phase = {"Train" "Test"} ;
    
    mtime = 0 ;
 ##   clf ;
-   set(gca, "ygrid", "on", "NextPlot", "add", "Colororder", COL) ;
+   set(gca, "ygrid", "on", "NextPlot", "add", "colororder", [0 1 0 ; 0 0 1]) ;
    
    while stat(lfile).mtime > mtime
 

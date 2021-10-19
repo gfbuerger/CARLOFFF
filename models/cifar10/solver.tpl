@@ -18,11 +18,11 @@ lr_policy: "fixed"
 # Display every 100 iterations
 display: 100
 # The maximum number of iterations
-max_iter: 4000
+max_iter: 3000
 # snapshot intermediate results
-snapshot: 4000
+snapshot: 3000
 #snapshot_format: HDF5
-snapshot_prefix: "models/PROTO_tpl/PDD_tpl"
+snapshot_prefix: "models/PROTO_tpl/REG_tpl/PDD_tpl"
 # solver mode: CPU or GPU
 solver_mode: GPU
 type: "Adam"

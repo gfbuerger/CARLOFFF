@@ -52,6 +52,7 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
       res = {fss fsn fsd} ;
       return ;
    endif
+   mkdir(sprintf("models/%s/%s", proto, REG)) ;
    
    ## train model
    solver = caffe.Solver(sprintf("models/%s/%s_solver.prototxt", proto, pdd.name)) ;

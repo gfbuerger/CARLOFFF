@@ -20,9 +20,9 @@ display: 100
 # The maximum number of iterations
 max_iter: 3000
 # snapshot intermediate results
-snapshot: 500
+snapshot: 3000
 #snapshot_format: HDF5
-snapshot_prefix: "models/cifar10/CatRaRE"
+snapshot_prefix: "models/cifar10/NE/CatRaRE"
 # solver mode: CPU or GPU
 solver_mode: GPU
 type: "Adam"

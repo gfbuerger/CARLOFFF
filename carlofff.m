@@ -161,7 +161,7 @@ if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.in
 else
    init_rnd() ;
    solverstate = "" ;
-   solverstate = sprintf("models/%s/cape_iter_3000.solverstate", NET) ;
+   solverstate = sprintf("models/%s/%s/cape_iter_3000.solverstate", NET, REG) ;
    [nnet ptr.prob] = run_caffe(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
    strucdisp(nnet.skl) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;

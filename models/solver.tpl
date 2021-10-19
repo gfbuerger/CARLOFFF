@@ -22,7 +22,7 @@ max_iter: 10000
 # snapshot intermediate results
 snapshot: 10000
 #snapshot_format: HDF5
-snapshot_prefix: "models/PROTO_tpl/PDD_tpl"
+snapshot_prefix: "models/PROTO_tpl/REG_tpl/PDD_tpl"
 # solver mode: CPU or GPU
 solver_mode: GPU
 type: "Adam"
