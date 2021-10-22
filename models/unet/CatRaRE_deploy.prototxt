@@ -3,8 +3,34 @@ layer {
     name: "data"
     type: "Input"
     top: "data"
-    input_param { shape: { dim: 1 dim: 5 dim: 39 dim: 33 } }
+    input_param { shape: { dim: 1 dim: 2 dim: 39 dim: 33 } }
 }
+layer {
+  name: "conv_d0a-b"
+  type: "Convolution"
+  bottom: "data"
+  top: "d0b"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 64
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "msra"
+    }
+  }
+}
+
+
+
 layer {
   name: "relu_d0b"
   type: "ReLU"

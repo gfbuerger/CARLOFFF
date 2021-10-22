@@ -1,35 +1,3 @@
-name: "unet"
-layer {
-  name: "data"
-  type: "DenseImageData"
-  top: "data"
-  top: "label"
-  dense_image_data_param {
-    source: "train.txt"
-    batch_size: 5
-    shuffle: true
-    mirror: true
-  }
-  include {
-    phase: TRAIN
-  }
-}
-layer {
-  name: "tdata"
-  type: "MemoryData"
-  top: "data"
-  top: "label"
-  memory_data_param {
-    batch_size: 1
-    channels: 3
-    height: 480
-    width: 480
-  }
- include {
-    phase: TEST
-  }
-}
-
 layer {
   name: "conv_d0a-b"
   type: "Convolution"
@@ -774,7 +742,7 @@ layer {
   name: "conv_u0d-score_New"
   type: "Convolution"
   bottom: "u0d"
-  top: "score"
+  top: "out"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -792,23 +760,3 @@ layer {
     }
    }
 }
-layer {
-  name: "loss"
-  type: "SoftmaxWithLoss"
-  bottom: "score"
-  bottom: "label"
-  top: "loss"
-  softmax_param {engine: CAFFE}
-  include {
-    phase: TRAIN
-  }
-}
-layer {
-  name: "probt"
-  type: "Softmax"
-  bottom: "score"
-  top: "probt"
-  include {
-    phase: TEST
-  }
- }

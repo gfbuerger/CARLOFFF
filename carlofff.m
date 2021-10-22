@@ -155,13 +155,18 @@ set(findall("type", "axes"), "fontsize", 24) ;
 set(findall("type", "text"), "fontsize", 22) ;
 
 ## nnet
-NET = {"simple1" "simple2" "logreg" "cifar10" "mnist"}{4} ;
+jNET = 3 ;
+NET = {"simple3" "cifar10" "SqueezeNet" "resnet" "lenet" "RCNN" "AlexNet" "GoogleNet" "resnet"}{jNET} ;
+RES = {[32 32] [32 32] [227 227] [32 32] [28 28] [227 227] [227 227] [224 224]}{jNET} ;
+ptr.img = center(arr2img(ptr.x, RES), 1) ;
+ptr.img = ptr.x ;
 if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
    init_rnd() ;
-   solverstate = "" ;
-   solverstate = sprintf("models/%s/%s/cape_iter_3000.solverstate", NET, REG) ;
+   solverstate = "netonly" ;
+   solverstate = sprintf("models/%s/%s.%02d/cape_iter_4000.solverstate", NET, REG, NH) ;
+   solverstate = sprintf("models/%s/%s.%02d/%s_iter_100000.solverstate", NET, REG, NH, PDD) ;
    [nnet ptr.prob] = run_caffe(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
    strucdisp(nnet.skl) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;

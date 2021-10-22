@@ -3,11 +3,15 @@
 ## update proto files
 function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
 
+   global REG NH
+
    if exist(wss = sprintf("models/%s/solver.tpl", proto), "file") == 2
       ss = fileread(wss) ;
    else
       ss = fileread(wss = "models/solver.tpl") ;
    endif
+   ss = [ss "net: \"models/PROTO_tpl/REG_tpl.NH_tpl/PDD_tpl.prototxt\"\n"] ;
+   ss = [ss "snapshot_prefix: \"models/PROTO_tpl/REG_tpl.NH_tpl/PDD_tpl\"\n"] ;
    
    sn1 = fileread(wsn1 = "models/data.tpl") ;
    if exist(wsn2 = sprintf("models/%s/net.tpl", proto), "file") == 2
@@ -27,17 +31,19 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
    sn = strcat(sn1, sn2, sn3) ;
    sd = strcat(sd1, sn2, sd2) ;
 
-   fss = sprintf("models/%s/%s_solver.prototxt", proto, pdd.name) ;
-   fsn = sprintf("models/%s/%s.prototxt", proto, pdd.name) ;
-   fsd = sprintf("models/%s/%s_deploy.prototxt", proto, pdd.name) ;
+   fss = sprintf("models/%s/%s.%02d/%s_solver.prototxt", proto, REG, NH, pdd.name) ;
+   fsn = sprintf("models/%s/%s.%02d/%s.prototxt", proto, REG, NH, pdd.name) ;
+   fsd = sprintf("models/%s/%s.%02d/%s_deploy.prototxt", proto, REG, NH, pdd.name) ;
 
-   if ~isnewer(fss, wss)
+   ds = sprintf("data/%s.%02d", REG, NH) ;
+
+   if ~isnewer(fss, wss, ds)
       print_str(ptr, pdd, proto, ss, fss) ;
    endif
-   if ~isnewer(fsn, wsn2, wsn3)  # FIXME
+   if ~isnewer(fsn, wsn2, wsn3, ds)  # FIXME
       print_str(ptr, pdd, proto, sn, fsn) ;
    endif
-   if ~isnewer(fsd, wsn1)
+   if ~isnewer(fsd, wsn1, ds)
       print_str(ptr, pdd, proto, sd, fsd) ;
    endif
 
@@ -51,7 +57,7 @@ function print_str (ptr, pdd, proto, str, ofile)
 
    global REG NH
 
-   N = size(ptr.x) ;
+   N = size(ptr.img) ;
    if length(N) < 3
       N = [N 1 1] ;
    endif

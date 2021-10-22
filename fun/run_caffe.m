@@ -24,7 +24,7 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
       if ~isnewer(of = h5f(pdd.name, PHS), ptr.ptfile) || ~isempty(IMB)
 	 labels = pdd.c(pdd.(PHS)) ;
-	 images = ptr.x(ptr.(PHS), :, :, :) ;
+	 images = ptr.img(ptr.(PHS), :, :, :) ;
 
 	 if strcmp(PHS, "CAL")
 	    ## oversampling
@@ -47,16 +47,17 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
       endif
    endfor
 
+   mkdir(D = sprintf("models/%s/%s.%02d", proto, REG, NH)) ;
+
    [fss fsn fsd] = proto_upd(:, ptr, pdd, proto) ;
    if strcmp(solverstate, "netonly")
-      res = {fss fsn fsd} ;
+      res = {fss fsn fsd} ; prob = NaN ;
       return ;
    endif
-   mkdir(sprintf("models/%s/%s", proto, REG)) ;
    
    ## train model
-   solver = caffe.Solver(sprintf("models/%s/%s_solver.prototxt", proto, pdd.name)) ;
-   pat = sprintf("models/%s/%s_iter_*.solverstate*", proto, pdd.name) ;
+   solver = caffe.Solver(sprintf("%s/%s_solver.prototxt", D, pdd.name)) ;
+   pat = sprintf("%s/%s_iter_*.solverstate*", D, pdd.name) ;
    if exist(solverstate, "file") == 2
       state = solverstate ;
    elseif ~ismember(solverstate, {"empty" "null" ""}) && ~isempty(glob(pat))
@@ -85,7 +86,7 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
 
    ## apply model
    weights = strrep(state, "solverstate", "caffemodel") ;
-   model = sprintf("models/%s/%s_deploy.prototxt", proto, pdd.name) ;
+   model = sprintf("%s/%s_deploy.prototxt", D, pdd.name) ;
    if exist(model, "file") == 2
       printf("<-- %s\n", model) ;
    else
@@ -112,7 +113,7 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
       else
 
 	 labels = pdd.c(pdd.(PHS)) ;
-	 prb.(PHS) = apply_net(ptr.scale*ptr.x, net, ptr.(PHS)) ;
+	 prb.(PHS) = apply_net(ptr.scale*ptr.img, net, ptr.(PHS)) ;
 
       endif
       
