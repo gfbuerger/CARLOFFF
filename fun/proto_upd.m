@@ -26,7 +26,7 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
    endif
 
    sd1 = fileread(sprintf("models/inp.tpl", proto)) ;
-   sd2 = fileread(sprintf("models/loss_deploy.tpl", proto)) ;
+   sd2 = fileread(sprintf("models/deploy.tpl", proto)) ;
    
    sn = strcat(sn1, sn2, sn3) ;
    sd = strcat(sd1, sn2, sd2) ;
@@ -37,7 +37,7 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
 
    ds = sprintf("data/%s.%02d", REG, NH) ;
 
-   if ~isnewer(fss, wss, ds)
+   if ~isnewer(fss, wss)
       print_str(ptr, pdd, proto, ss, fss) ;
    endif
    if ~isnewer(fsn, wsn2, wsn3, ds)  # FIXME

@@ -7,7 +7,7 @@ function pdd = selpdd (PDD, LON, LAT, ID, Q0, s)
    
    switch PDD
       case {"cape" "cp"}
-	 pdd = sel_ptr(s, LON, LAT, Q0) ;
+	 pdd = ptr2pdd(s, LON, LAT, Q0) ;
       case "regnie"
 	 R0 = 10 ; # from climate explorer
 	 rfile = "https://opendata.dwd.de/climate_environment/CDC/grids_germany/daily/regnie" ;

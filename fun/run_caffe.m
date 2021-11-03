@@ -31,11 +31,11 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
 	    switch IMB
 	       case "SMOTE"
 		  [images labels] = smote(images, labels) ;
-	       case ""
-	       otherwise
+	       case "SIMPLE"
 		  [images labels] = oversmpl(images, labels) ;
+	       otherwise
 	    endswitch
-	    printf("calibration type: %s\n", IMB) ;
+	    printf("oversampling with: %s\n", IMB) ;
 	 endif
 	 
 	 if 0
@@ -66,20 +66,22 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
    
    if exist("state", "var") == 0 || exist(state, "file") ~= 2
       solver.solve() ;
-   elseif ~isnewer(state, fss, fsn, fsd, h5f(pdd.name, "CAL"))
+   else
       solver.restore(state) ;
       iter = solver.iter ;
       printf("solver at iteration: %d\n", iter) ;
-      n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
-      if ~isempty(n)
-	 switch n > 0
-	    case 0
-	       printf("from scratch\n") ;
-	       solver.solve() ;
-	    otherwise
-	       printf("<-- %s\n", state) ;
-	       solver.step(n) ;
-	 endswitch
+      if ~isnewer(state, fss, fsn, fsd, h5f(pdd.name, "CAL"))
+	 n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
+	 if ~isempty(n)
+	    switch n > 0
+	       case 0
+		  printf("from scratch\n") ;
+		  solver.solve() ;
+	       otherwise
+		  printf("<-- %s\n", state) ;
+		  solver.step(n) ;
+	    endswitch
+	 endif
       endif
    endif
    state = strtrim(ls("-1t", pat)(1,:)) ;
@@ -106,7 +108,7 @@ function [res prob] = run_caffe (ptr, pdd, proto = "test1", solverstate=[], SKL=
 	 for i = 1 : n
 	    data = squeeze(images(i,1,:,:))' ;
 	    data_h5(:,:,i) = data ;
-	    phat = net.forward({data}) ;
+	    phat = net.forward({single(data)}) ;
 	    prb.(PHS)(i,:) = phat{1} ;
 	 end
 

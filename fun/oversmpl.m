@@ -6,7 +6,9 @@ function [iout, lout] = oversmpl (i, l)
    N = size(i) ;
    
    lu = unique(l) ;
-   I = l == lu(end) ;
+   I = l == lu' ;
+   [~, j] = min(sum(I)) ;
+   I = I(:,j) ;
 
    n = floor(sum(~I) / sum(I)) ;
    fI = repmat(find(I), n, 1) ;

@@ -1,7 +1,7 @@
-# reduce learning rate after 120 epochs (60000 iters) by factor 0f 10
-# then another factor of 10 after 10 more epochs (5000 iters)
 # The train/test net protocol buffer definition
-net: "models/PROTO_tpl/PDD_tpl.prototxt"
+# test_iter specifies how many forward passes the test should carry out.
+# We have test batch size 200 and 50 test iterations,
+# covering the full 10,000 testing images for cifar-10.
 test_iter: 50
 # Carry out testing every 200 training iterations.
 test_interval: 200
@@ -26,7 +26,6 @@ display: 200
 max_iter: 70000
 # snapshot intermediate results every 2000 iterations ~ 10 epochs
 snapshot: 2000
-snapshot_prefix: "models/PROTO_tpl/PDD_tpl"
 # solver mode: CPU or GPU
 solver_mode: GPU
 # debug mode

@@ -10,8 +10,8 @@ mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) 
 [glat glon] = borders("germany") ;
 ##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
 GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ; GREG = "DE" ;
-##LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
-LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
+LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
+##LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
 ##LON = [10 14] ; LAT = [51 54] ; REG = "NE" ; # Nordost
 ##LON = [6 10] ; LAT = [47.5 51] ; REG = "SW" ; # Südwest
 ##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
@@ -22,7 +22,7 @@ MON = 5 : 8 ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
-IMB = "notSMOTE" ;
+IMB = "SIMPLE" ;
 
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
@@ -83,7 +83,7 @@ else
    save(pdfile, "pdd") ;
 endif
 
-JVAR = [2 4] ;
+JVAR = [2 4 10] ;
 FILL = true ;
 ind = sprintf("%d%d", ind2log(JVAR, numel(VAR))) ;
 if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name), afile, pdfile)
@@ -131,6 +131,7 @@ write_H(pdd.c) ;
 %% write train (CAL) & test (VAL) data
 ptr.YCAL = [2001 5 1 0 ; 2010 8 31 23] ;
 ptr.YVAL = [2011 5 1 0 ; 2020 8 31 23] ;
+##ptr.YCAL = ptr.YVAL = [2001 5 1 0 ; 2020 8 31 23] ;
 
 if 0
    ## test with reduced major class
@@ -144,7 +145,7 @@ if isnewer(mfile = sprintf("data/%s.%02d/%s.%s.%s.ob", REG, NH, MODE, ptr.ind, p
    load(mfile) ;
 else
    varargin = {} ;
-##   varargin = {"lambdamax", 1e3, "lambdaminratio", 1e-3} ;
+##   varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
    lreg = run_lreg(ptr, pdd, [], "CVE", {"HSS" "GSS"}, varargin{:}) ;
    save(mfile, "lreg") ;
 endif
@@ -155,20 +156,26 @@ set(findall("type", "axes"), "fontsize", 24) ;
 set(findall("type", "text"), "fontsize", 22) ;
 
 ## nnet
-jNET = 3 ;
-NET = {"simple3" "cifar10" "SqueezeNet" "resnet" "lenet" "RCNN" "AlexNet" "GoogleNet" "resnet"}{jNET} ;
-RES = {[32 32] [32 32] [227 227] [32 32] [28 28] [227 227] [227 227] [224 224]}{jNET} ;
-ptr.img = center(arr2img(ptr.x, RES), 1) ;
+## out of memory: resnet Squeezenet
+jNET = 7 ;
+NET = {"simple1" "cuda-convnet" "SqueezeNet" "resnet" "Lenet-5" "RCNN" "AlexNet" "GoogleNet" "resnet" "Inception" "ALL-CNN" "DenseNet"}{jNET} ;
+RES = {[32 32] [32 32] [227 227] [32 32] [28 28] [224 224] [227 227] [224 224] [224 224] [224 224] [32 32] [32 32]}{jNET} ;
+ptr.img = arr2img(ptr.x, RES) ;
 ptr.img = ptr.x ;
 if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
    init_rnd() ;
    solverstate = "netonly" ;
-   solverstate = sprintf("models/%s/%s.%02d/cape_iter_4000.solverstate", NET, REG, NH) ;
-   solverstate = sprintf("models/%s/%s.%02d/%s_iter_100000.solverstate", NET, REG, NH, PDD) ;
-   [nnet ptr.prob] = run_caffe(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
-   strucdisp(nnet.skl) ;
+   solverstate = "" ;
+   solverstate = sprintf("models/%s/%s.%02d/cape_iter_1000.solverstate", NET, REG, NH) ;
+   solverstate = sprintf("models/%s/%s.%02d/%s_iter_5000.solverstate", NET, REG, NH, PDD) ;
+   for i = 2:20
+      [nnet ptr.prob] = run_caffe(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
+      skl(i,:) = [nnet.skl.VAL.GSS nnet.crossentropy.VAL] ;
+   endfor
+   strucdisp(nnet.skl.VAL) ;
+   plot_log(sprintf("models/%s/%s.%02d/%s.log", NET, REG, NH, PDD), :, iter = 0, pse = 5, plog = 0) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
    system(cmd) ;
    save(mfile, "nnet") ;

@@ -1,9 +1,4 @@
 name: "PROTO_tpl"
-state {
-  phase: TRAIN
-  level: 0
-  stage: ""
-}
 layer {
   name: "CAL"
   type: "HDF5Data"

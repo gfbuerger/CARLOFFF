@@ -92,9 +92,11 @@ function res = run_lreg (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
 	       source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
 	       model = glm_logistic(yy,xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
-	       ##	    plot_penalized(fit) ;
-	       ##	    title("LASSO logistic regression") ;
-	       ##	    print("nc/LASSO_lreg.png") ;
+	       if 0
+		  plot_penalized(fit) ;
+		  title("LASSO logistic regression") ;
+		  print("nc/LASSO_lreg.png") ;
+	       endif
 	       AIC = goodness_of_fit("aic", fit) ;
 	       BIC = goodness_of_fit("bic", fit, model) ;
 	       CV = fit.CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;

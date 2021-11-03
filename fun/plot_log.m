@@ -1,14 +1,14 @@
-## usage: varargout = plot_log (lfile, loss = "loss", pse = 5, plog = 0)
+## usage: varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog = 0)
 ##
 ##
-function varargout = plot_log (lfile, loss = "loss", pse = 5, plog = 0)
+function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog = 0)
 
    global COL
 
    phase = {"Train" "Test"} ;
    
    mtime = 0 ;
-##   clf ;
+   clf ;
    set(gca, "ygrid", "on", "NextPlot", "add", "colororder", [0 1 0 ; 0 0 1]) ;
    
    while stat(lfile).mtime > mtime
@@ -43,18 +43,16 @@ function varargout = plot_log (lfile, loss = "loss", pse = 5, plog = 0)
 
 	 n = min(numel(Iter), numel(x)) ;
 	 if plog set(gca, "yscale", "log") ; endif
-	 h = [h plot(Iter(1:n), x(1:n), "linestyle", "-")] ;
+	 h = [h plot(iter0 + Iter(1:n), x(1:n), "linestyle", "-", "linewidth", 1)] ;
 	 xlabel("iterations") ; ylabel(loss) ;
-
+	 set(gca, "ygrid", "on") ;
+	 
       endfor
       legend(phase, "box", "off") ;
       
-      pause(pse) ;
-      if plog set(gca, "yscale", "linear") ; endif
-      ##      drawnow ;
+      if plog set(gca, "yscale", "log", "yminorgrid", "on") ; endif
 
       pause(pse) ;
-##      delete(h) ;
       
    endwhile
 
