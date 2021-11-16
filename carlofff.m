@@ -3,7 +3,7 @@ global isoctave LON LAT REG NH MON MODE IMB
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
-addpath ~/oct/nc/borders ~/CARLOFFF/fun
+addpath ~/CARLOFFF/fun
 [~, ~] = mkdir("data/CARLOFFF")
 cd ~/CARLOFFF
 mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
@@ -27,11 +27,10 @@ IMB = "SIMPLE" ;
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
 if isoctave()
-   pkg load hdf5oct netcdf statistics
-##   addpath /opt/src/caffe/Build/octave ; # make
-   addpath /opt/caffe/matlab ; # cmake
-   addpath /opt/src/caffe/octave
-   addpath /opt/src/caffe/octave/+caffe/private
+   pkg load hdf5oct statistics
+   LOC = "/opt/caffe" ;
+   addpath(sprintf("%s/matlab", LOC)) ;
+   addpath(sprintf("%s/matlab/+caffe/private", LOC)) ;
    caffe.set_mode_gpu() ;
    caffe.set_device(0) ;
 else
@@ -42,6 +41,7 @@ mkdir(sprintf("data/%s.%02d", REG, NH)) ;
 if isnewer(afile = sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:})
    load(afile) ;
 else
+   pkg load netcdf
    F = glob("data/ind/*.nc")' ;
    lon = ncread(F{1}, "longitude") ;
    lat = ncread(F{1}, "latitude") ;
@@ -138,44 +138,49 @@ if 0
    [rptr rpdd] = redclass(ptr, pdd, 0.8) ;
 endif
 
-## logistic regression
-MODE = "lasso" ;
-MODE = "tree" ;
+## Shallow
+MODE = {"lasso" "tree" "nnet" "nlinfit"}{3} ;
 if isnewer(mfile = sprintf("data/%s.%02d/%s.%s.%s.ob", REG, NH, MODE, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
    varargin = {} ;
 ##   varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
-   lreg = run_lreg(ptr, pdd, [], "CVE", {"HSS" "GSS"}, varargin{:}) ;
-   save(mfile, "lreg") ;
+   for k = 1:10
+      for j = 1:5
+	 varargin{1} = [k j 1]
+	 shallow = Shallow(ptr, pdd, [], "CVE", {"HSS" "GSS"}, varargin{:}) ;
+	 S(k,j,:) = [shallow.skl.CAL.GSS shallow.skl.VAL.GSS] ;
+      endfor
+   endfor
+   save(mfile, "shallow") ;
 endif
-strucdisp(lreg.skl) ;
-plot_fit(lreg.fit) ;
+strucdisp(shallow.skl) ;
+plot_fit(shallow.fit) ;
 set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
 set(findall("type", "axes"), "fontsize", 24) ;
 set(findall("type", "text"), "fontsize", 22) ;
 
-## nnet
-## out of memory: resnet Squeezenet
-jNET = 7 ;
-NET = {"simple1" "cuda-convnet" "SqueezeNet" "resnet" "Lenet-5" "RCNN" "AlexNet" "GoogleNet" "resnet" "Inception" "ALL-CNN" "DenseNet"}{jNET} ;
-RES = {[32 32] [32 32] [227 227] [32 32] [28 28] [224 224] [227 227] [224 224] [224 224] [224 224] [32 32] [32 32]}{jNET} ;
+## Deep
+## out of memory: resnet Squeezenet DenseNet
+jNET = 1 ; RES = [] ;
+NET = {"simple1" "cuda-convnet" "SqueezeNet" "resnet" "Lenet-5" "RCNN" "AlexNet" "GoogleNet" "Inception" "ALL-CNN" "DenseNet" "simple1.1"}{jNET} ;
+RES = {[32 32] [32 32] [227 227] [32 32] [28 28] [224 224] [227 227] [224 224] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
 ptr.img = arr2img(ptr.x, RES) ;
-ptr.img = ptr.x ;
 if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
    init_rnd() ;
    solverstate = "netonly" ;
    solverstate = "" ;
-   solverstate = sprintf("models/%s/%s.%02d/cape_iter_1000.solverstate", NET, REG, NH) ;
-   solverstate = sprintf("models/%s/%s.%02d/%s_iter_5000.solverstate", NET, REG, NH, PDD) ;
-   for i = 2:20
-      [nnet ptr.prob] = run_caffe(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
-      skl(i,:) = [nnet.skl.VAL.GSS nnet.crossentropy.VAL] ;
+   solverstate = sprintf("models/%s/%s.%02d/cape_iter_5000.solverstate", NET, REG, NH) ;
+   solverstate = sprintf("models/%s/%s.%02d/%s_iter_1000.solverstate", NET, REG, NH, PDD) ;
+   clear skl ;
+   for i = 1:20
+      [deep ptr.prob] = Deep(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
+      skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
    endfor
-   strucdisp(nnet.skl.VAL) ;
-   plot_log(sprintf("models/%s/%s.%02d/%s.log", NET, REG, NH, PDD), :, iter = 0, pse = 5, plog = 0) ;
+   strucdisp(deep.skl.VAL) ;
+   plot_log(sprintf("models/%s/%s.%02d/%s.log", NET, REG, NH, PDD), :, iter = 0, pse = 5, plog = 1) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
    system(cmd) ;
    save(mfile, "nnet") ;
@@ -187,7 +192,7 @@ strucdisp(nnet.skl) ;
 ## June 2013
 clf ;
 D1 = [2013, 5, 15 ; 2013, 6, 15] ; d1 = [2013 5 30] ;
-plot_case(lreg.prob, pdd, D1, d1) ;
+plot_case(shallow.prob, pdd, D1, d1) ;
 set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
 print(sprintf("nc/%s.%02d/2013-06.png", REG, NH)) ;
 
@@ -216,14 +221,14 @@ endfor
 
 ## July 2014
 D1 = [2014 7 15 ; 2014 8 15] ; d1 = [2014 7 28] ;
-plot_case(ptr, pdd, lreg.prob, D1, d1, jVAR) ;
+plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR) ;
 
 ## May 2016
 D1 = [2016, 5, 15 ; 2016, 6, 15] ; d1 = [2016 5 29] ;
-plot_case(ptr, pdd, lreg.prob, D1, d1, jVAR) ;
+plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR) ;
 
 
-plot_case(lreg.prob, pdd, D1, d1) ;
+plot_case(shallow.prob, pdd, D1, d1) ;
 set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
 print(sprintf("nc/%s.%02d/2016-05.png", REG, NH)) ;
 
@@ -327,7 +332,7 @@ for jsim = 1 : length(SIM)
       endif
       eval(sprintf("%s.name = sim ;", NSIM{jsim})) ;
       eval(sprintf("%s.nnet.prob = apply_net(scale*%s.x, net) ;", sim, sim)) ;
-      eval(sprintf("%s.lreg.prob = run_lreg(%s, lreg, [], []) ;", sim, sim)) ;
+      eval(sprintf("%s.shallow.prob = Shallow(%s, shallow, [], []) ;", sim, sim)) ;
 
       save(ptfile, sim) ;
    endif
@@ -360,7 +365,7 @@ hgsave(sprintf("nc/plots/Eta.og")) ;
 print(sprintf("nc/plots/Eta.svg")) ;
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
-for mdl = {"lreg" "nnet"}
+for mdl = {"shallow" "nnet"}
    mdl = mdl{:} ;
    clf ; hold on ; clear h ; j = 0 ;
    h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 2, "linestyle", "--") ;
@@ -380,7 +385,7 @@ for mdl = {"lreg" "nnet"}
    endif
    ##   set(gca, "ygrid", "on") ;
    ylim([0.1 0.4]) ;
-   if strcmp(mdl, "lreg")
+   if strcmp(mdl, "shallow")
       loc = "northwest" ;
    else
       loc = "southeast" ;

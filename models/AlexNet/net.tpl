@@ -3,8 +3,14 @@ layer {
   type: "Convolution"
   bottom: "data"
   top: "conv1"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   convolution_param {
     num_output: 96
     kernel_size: 11
@@ -52,8 +58,14 @@ layer {
   type: "Convolution"
   bottom: "pool1"
   top: "conv2"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   convolution_param {
     num_output: 256
     pad: 2
@@ -102,8 +114,14 @@ layer {
   type: "Convolution"
   bottom: "pool2"
   top: "conv3"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   convolution_param {
     num_output: 384
     pad: 1
@@ -129,8 +147,14 @@ layer {
   type: "Convolution"
   bottom: "conv3"
   top: "conv4"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   convolution_param {
     num_output: 384
     pad: 1
@@ -157,8 +181,14 @@ layer {
   type: "Convolution"
   bottom: "conv4"
   top: "conv5"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   convolution_param {
     num_output: 256
     pad: 1
@@ -196,8 +226,14 @@ layer {
   type: "InnerProduct"
   bottom: "pool5"
   top: "fc6"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   inner_product_param {
     num_output: 4096
     weight_filler {
@@ -230,8 +266,14 @@ layer {
   type: "InnerProduct"
   bottom: "fc6"
   top: "fc7"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   inner_product_param {
     num_output: 4096
     weight_filler {
@@ -264,10 +306,16 @@ layer {
   type: "InnerProduct"
   bottom: "fc7"
   top: "out"
-  param { lr_mult: 1. decay_mult: 1}
-  param { lr_mult: 2. decay_mult: 0}
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
   inner_product_param {
-    num_output: 1000
+    num_output: 2
     weight_filler {
       type: "gaussian"
       std: 0.01

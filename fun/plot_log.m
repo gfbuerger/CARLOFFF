@@ -25,9 +25,9 @@ function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog =
 	 s = strsplit(s, "\n") ;
 
 	 if strcmp(phs, "Train")
-	    Ipat = sprintf(" Iteration [0-9]+, loss") ;
+	    Ipat = sprintf(" Iteration [0-9]+.*, loss") ;
 	 else
-	    Ipat = sprintf(" Iteration [0-9]+, Testing") ;
+	    Ipat = sprintf(" Iteration [0-9]+.*, Testing") ;
 	 endif
 	 
 	 [S, E, TE, M, T, NM, SP] = regexp(s, Ipat) ;

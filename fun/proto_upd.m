@@ -40,10 +40,10 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
    if ~isnewer(fss, wss)
       print_str(ptr, pdd, proto, ss, fss) ;
    endif
-   if ~isnewer(fsn, wsn2, wsn3, ds)  # FIXME
+   if ~isnewer(fsn, wsn2, wsn3)  # FIXME
       print_str(ptr, pdd, proto, sn, fsn) ;
    endif
-   if ~isnewer(fsd, wsn1, ds)
+   if ~isnewer(fsd, wsn1)
       print_str(ptr, pdd, proto, sd, fsd) ;
    endif
 

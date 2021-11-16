@@ -1,0 +1,165 @@
+name: "simple1.1"
+layer {
+  name: "CAL"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "data/DE.24/CatRaRE.CAL.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "VAL"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "data/DE.24/CatRaRE.VAL.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 32
+    pad: 2
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.0001
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "relu1"
+}
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "relu1"
+  top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 32
+    weight_filler {
+      type: "gaussian"
+      std: 0.1
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "ip2"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "out"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.1
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "out"
+  bottom: "label"
+  top: "accuracy"
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "out"
+  bottom: "label"
+  top: "loss"
+  loss_weight: 1
+}
+##layer {
+##  name: "Softmax"
+##  type: "Softmax"
+##  bottom: "out"
+##  top: "prob"
+##}
+##layer {
+##  bottom: "out"
+##  bottom: "label"
+###  bottom: "H"
+##  top: "infoGainLoss"
+##  name: "infoGainLoss"
+##  type: "InfogainLoss"
+##  loss_weight: 0
+##  infogain_loss_param {
+##    source: "data/infogainH.binaryproto"
+##  }
+##}
+##layer {
+##    name: "computeH"
+##    bottom: "label"
+##    top: "H"
+##    type: "Python"
+##    python_param {
+##        module: "computeH"
+##        layer: "ComputeH"
+##        param_str: '{"n_classes": 2}'
+##    }
+##    exclude { stage: "deploy" }
+##}
+##layer {
+##  name: "IGloss"
+##  type: "InfogainLoss"
+##  bottom: "prob"
+##  bottom: "label"
+##  bottom: "H"
+##  top: "IGloss"
+##  infogain_loss_param {
+##    axis: 1  # compute loss and probability along axis
+##  }
+##  loss_param {
+##      normalization: 0
+##  }
+##  exclude {
+##    stage: "deploy"
+##  }
+##  loss_weight: 1
+##}
