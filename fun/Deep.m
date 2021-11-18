@@ -3,9 +3,9 @@
 ## calibrate and apply caffe model
 function [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GSS" "HSS"})
 
-   global REG NH IMB
+   global REG NH IMB RES
    
-   if exist(sprintf("%s/%s.%02d/CAL_lmdb", proto, REG, NH), "dir") ~= 7 & 0
+   if exist(sprintf("%s/%s.%02d.%dx%d/CAL_lmdb", proto, REG, NH, RES), "dir") ~= 7 & 0
       str = fileread("tools/gen_lmdb.sh") ;
       str = strrep(str, "REG_tpl", REG) ;
       tt = tempname ;
@@ -16,7 +16,7 @@ function [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GS
       unlink(tt) ;
    endif
 
-   h5f = @(pddn, PHS) sprintf("data/%s.%02d/%s.%s.txt", REG, NH, pddn, PHS) ;
+   h5f = @(pddn, PHS) sprintf("data/%s.%02d.%dx%d/%s.%s.txt", REG, NH, RES, pddn, PHS) ;
 
    for PHS = {"CAL" "VAL"}
       PHS = PHS{:} ;
@@ -39,8 +39,8 @@ function [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GS
 	 endif
 	 
 	 if 0
-	    ifile = sprintf('data/%s.%02d/%s-images-idx3-ubyte', REG, NH, PHS) ;
-	    lfile = sprintf('data/%s.%02d/%s-labels-idx1-ubyte', REG, NH, PHS) ;
+	    ifile = sprintf('data/%s.%02d.%dx%d/%s-images-idx3-ubyte', REG, NH, RES, PHS) ;
+	    lfile = sprintf('data/%s.%02d.%dx%d/%s-labels-idx1-ubyte', REG, NH, RES, PHS) ;
 	    save_bin(images, ifile, labels, lfile) ;
 	 endif
 	 save_hdf5(of, ptr.scale * images, labels) ;

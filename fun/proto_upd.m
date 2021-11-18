@@ -3,7 +3,7 @@
 ## update proto files
 function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
 
-   global REG NH
+   global REG NH RES
 
    if exist(wss = sprintf("models/%s/solver.tpl", proto), "file") == 2
       ss = fileread(wss) ;
@@ -13,7 +13,11 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
    ss = [ss "net: \"models/PROTO_tpl/REG_tpl.NH_tpl/PDD_tpl.prototxt\"\n"] ;
    ss = [ss "snapshot_prefix: \"models/PROTO_tpl/REG_tpl.NH_tpl/PDD_tpl\"\n"] ;
    
-   sn1 = fileread(wsn1 = "models/data.tpl") ;
+   if exist(wsn1 = sprintf("models/%s/data.tpl", proto), "file") == 2
+      sn1 = fileread(wsn1) ;
+   else
+      sn1 = fileread(wsn1 = "models/data.tpl") ;
+   endif
    if exist(wsn2 = sprintf("models/%s/net.tpl", proto), "file") == 2
       sn2 = fileread(wsn2) ;
    else
@@ -35,12 +39,12 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto)
    fsn = sprintf("models/%s/%s.%02d/%s.prototxt", proto, REG, NH, pdd.name) ;
    fsd = sprintf("models/%s/%s.%02d/%s_deploy.prototxt", proto, REG, NH, pdd.name) ;
 
-   ds = sprintf("data/%s.%02d", REG, NH) ;
+   ds = sprintf("data/%s.%02d.%dx%d", REG, NH, RES) ;
 
    if ~isnewer(fss, wss)
       print_str(ptr, pdd, proto, ss, fss) ;
    endif
-   if ~isnewer(fsn, wsn2, wsn3)  # FIXME
+   if ~isnewer(fsn, wsn1, wsn2, wsn3)
       print_str(ptr, pdd, proto, sn, fsn) ;
    endif
    if ~isnewer(fsd, wsn1)
