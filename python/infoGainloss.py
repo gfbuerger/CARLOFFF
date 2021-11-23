@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/opt/src/caffe/python')
+sys.path.append('/pf/b/b324017/local/caffe_BVLC/python')
 import numpy as np
 import caffe
 

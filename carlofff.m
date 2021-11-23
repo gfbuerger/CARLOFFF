@@ -28,7 +28,7 @@ IMB = "SIMPLE" ;
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
 if isoctave()
    pkg load hdf5oct statistics
-   LOC = "/opt/caffe" ;
+   source("caffe_loc.m") ; # LOC = "/path/to/caffe"
    addpath(sprintf("%s/matlab", LOC)) ;
    addpath(sprintf("%s/matlab/+caffe/private", LOC)) ;
    caffe.set_mode_gpu() ;
@@ -126,7 +126,7 @@ endif
 w = pdd.x(:,1,:,:) ; # Eta
 pdd.q = quantile(w(:), Q0) ;
 pdd.c = any(any(w > pdd.q, 3), 4) ;
-write_H(pdd.c) ;
+if 0 write_H(pdd.c) ; endif
 
 %% write train (CAL) & test (VAL) data
 ptr.YCAL = [2001 5 1 0 ; 2010 8 31 23] ;
@@ -162,25 +162,25 @@ set(findall("type", "text"), "fontsize", 22) ;
 
 ## Deep
 ## out of memory: resnet Squeezenet DenseNet
-jNET = 4 ; global RES = [] ;
-NET = {"simple1" "cuda-convnet" "SqueezeNet" "resnet" "Lenet-5" "RCNN" "AlexNet" "GoogleNet" "Inception" "ALL-CNN" "DenseNet" "simple1.1"}{jNET} ;
-RES = {[32 32] [32 32] [227 227] [32 32] [28 28] [224 224] [227 227] [224 224] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
+jNET = 3 ; global RES = [] ;
+NET = {"simple1" "SqueezeNet" "resnet" "Lenet-5" "RCNN" "AlexNet" "GoogleNet" "Inception" "ALL-CNN" "DenseNet" "simple1.1"}{jNET} ;
+RES = {[32 32] [227 227] [32 32] [28 28] [224 224] [227 227] [224 224] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
 ptr.img = arr2img(ptr.x, RES) ;
 if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
 else
    init_rnd() ;
-   solverstate = "netonly" ;
-   solverstate = "" ;
-   solverstate = sprintf("models/%s/%s.%02d/cape_iter_5000.solverstate", NET, REG, NH) ;
-   solverstate = sprintf("models/%s/%s.%02d/%s_iter_1000.solverstate", NET, REG, NH, PDD) ;
+   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, NET, PDD) ;
+   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, NET, PDD) ;
+   solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_20000.solverstate", REG, NH, RES, NET) ;
+   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_20000.solverstate", REG, NH, RES, NET, PDD) ;
    clear skl ;
    for i = 1:20
-      [deep ptr.prob] = Deep(ptr, pdd, NET, solverstate, {"HSS" "GSS"}) ;
+      [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
       skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
    endfor
    strucdisp(deep.skl.VAL) ;
-   plot_log(sprintf("models/%s/%s.%02d/%s.log", NET, REG, NH, PDD), :, iter = 0, pse = 5, plog = 1) ;
+   plot_log(sprintf("models/%s/%s.%02d/%s.log", NET, REG, NH, PDD), :, iter = 0, pse = 5, plog = 0) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
    system(cmd) ;
    save(mfile, "nnet") ;

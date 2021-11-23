@@ -9,8 +9,11 @@ function write_H (c)
    f = sum(c(:) == cu) / numel(c) ;
    [~, j] = min(f) ;
 
+   source("caffe_loc.m") ; # LOC = "/path/to/caffe"
+   
    s = fileread("python/infoGainloss.tpl") ;
-   s = strrep(s, "WGT", num2str(1/f(j))) ;
+   s = strrep(s, "LOC_tpl", [LOC "/python"]) ;
+   s = strrep(s, "WGT_tpl", num2str(1/f(j))) ;
    fid = fopen("python/infoGainloss.py", "wt") ;
    fdisp(fid, s) ;
    fclose(fid) ;

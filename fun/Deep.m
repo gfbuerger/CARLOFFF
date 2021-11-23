@@ -1,11 +1,16 @@
-## usage: [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GSS" "HSS"})
+## usage: [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 ##
 ## calibrate and apply caffe model
-function [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GSS" "HSS"})
+function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
-   global REG NH IMB RES
-   
-   if exist(sprintf("%s/%s.%02d.%dx%d/CAL_lmdb", proto, REG, NH, RES), "dir") ~= 7 & 0
+   global IMB
+
+   [Dd Dn De] = fileparts(solverstate) ;
+   Dn = strsplit(Dn, ".") ;
+   proto = Dn{1} ; res = strsplit(Dd, "/"){3} ;
+   mkdir(Dd) ;
+
+   if exist(sprintf("%s/CAL_lmdb", Dd), "dir") ~= 7 & 0
       str = fileread("tools/gen_lmdb.sh") ;
       str = strrep(str, "REG_tpl", REG) ;
       tt = tempname ;
@@ -16,7 +21,7 @@ function [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GS
       unlink(tt) ;
    endif
 
-   h5f = @(pddn, PHS) sprintf("data/%s.%02d.%dx%d/%s.%s.txt", REG, NH, RES, pddn, PHS) ;
+   h5f = @(pddn, PHS) sprintf("%s/%s.%s.txt", Dd, pddn, PHS) ;
 
    for PHS = {"CAL" "VAL"}
       PHS = PHS{:} ;
@@ -39,25 +44,23 @@ function [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GS
 	 endif
 	 
 	 if 0
-	    ifile = sprintf('data/%s.%02d.%dx%d/%s-images-idx3-ubyte', REG, NH, RES, PHS) ;
-	    lfile = sprintf('data/%s.%02d.%dx%d/%s-labels-idx1-ubyte', REG, NH, RES, PHS) ;
+	    ifile = sprintf('%s/%s-images-idx3-ubyte', Dd, PHS) ;
+	    lfile = sprintf('%s/%s-labels-idx1-ubyte', Dd, PHS) ;
 	    save_bin(images, ifile, labels, lfile) ;
 	 endif
 	 save_hdf5(of, ptr.scale * images, labels) ;
       endif
    endfor
 
-   mkdir(D = sprintf("models/%s/%s.%02d", proto, REG, NH)) ;
-
-   [fss fsn fsd] = proto_upd(:, ptr, pdd, proto) ;
-   if strcmp(solverstate, "netonly")
+   [fss fsn fsd] = proto_upd(:, ptr, pdd, proto, Dd) ;
+   if strcmp(De, ".netonly")
       res = {fss fsn fsd} ; prob = NaN ;
       return ;
    endif
    
    ## train model
-   solver = caffe.Solver(sprintf("%s/%s_solver.prototxt", D, pdd.name)) ;
-   pat = sprintf("%s/%s_iter_*.solverstate*", D, pdd.name) ;
+   solver = caffe.Solver(sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.name)) ;
+   pat = sprintf("%s/%s.%s_iter_*.solverstate*", Dd, proto, pdd.name) ;
    if exist(solverstate, "file") == 2
       state = solverstate ;
    elseif ~ismember(solverstate, {"empty" "null" ""}) && ~isempty(glob(pat))
@@ -88,7 +91,7 @@ function [res prob] = Deep (ptr, pdd, proto = "test1", solverstate=[], SKL= {"GS
 
    ## apply model
    weights = strrep(state, "solverstate", "caffemodel") ;
-   model = sprintf("%s/%s_deploy.prototxt", D, pdd.name) ;
+   model = sprintf("%s/%s_deploy.prototxt", Dd, pdd.name) ;
    if exist(model, "file") == 2
       printf("<-- %s\n", model) ;
    else
