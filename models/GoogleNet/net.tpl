@@ -832,7 +832,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 1024
+    num_output: 2
     weight_filler {
       type: "xavier"
     }
@@ -871,7 +871,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 1000
+    num_output: 2
     weight_filler {
       type: "xavier"
     }
@@ -1595,7 +1595,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 1024
+    num_output: 2
     weight_filler {
       type: "xavier"
     }
@@ -1634,7 +1634,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 1000
+    num_output: 2
     weight_filler {
       type: "xavier"
     }
@@ -1649,7 +1649,7 @@ layer {
   type: "SoftmaxWithLoss"
   bottom: "loss2/classifier"
   bottom: "label"
-  top: "loss2/loss2"
+  top: "loss2/loss1"
   loss_weight: 0.3
 }
 layer {

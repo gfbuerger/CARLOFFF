@@ -6,7 +6,6 @@ set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 addpath ~/CARLOFFF/fun
 [~, ~] = mkdir("data/CARLOFFF")
 cd ~/CARLOFFF
-mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 [glat glon] = borders("germany") ;
 ##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
 GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ; GREG = "DE" ;
@@ -36,7 +35,7 @@ if isoctave()
 else
    addpath /opt/caffeML/matlab
 end
-mkdir(sprintf("data/%s.%02d", REG, NH)) ;
+mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 
 if isnewer(afile = sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:})
    load(afile) ;
@@ -162,7 +161,7 @@ set(findall("type", "text"), "fontsize", 22) ;
 
 ## Deep
 ## out of memory: resnet Squeezenet DenseNet
-jNET = 3 ; global RES = [] ;
+jNET = 10 ; global RES = [] ;
 NET = {"simple1" "SqueezeNet" "resnet" "Lenet-5" "RCNN" "AlexNet" "GoogleNet" "Inception" "ALL-CNN" "DenseNet" "simple1.1"}{jNET} ;
 RES = {[32 32] [227 227] [32 32] [28 28] [224 224] [227 227] [224 224] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
 ptr.img = arr2img(ptr.x, RES) ;
@@ -173,14 +172,14 @@ else
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, NET, PDD) ;
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, NET, PDD) ;
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_20000.solverstate", REG, NH, RES, NET) ;
-   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_20000.solverstate", REG, NH, RES, NET, PDD) ;
+   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_5000.solverstate", REG, NH, RES, NET, PDD) ;
    clear skl ;
    for i = 1:20
       [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
       skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
    endfor
    strucdisp(deep.skl.VAL) ;
-   plot_log(sprintf("models/%s/%s.%02d/%s.log", NET, REG, NH, PDD), :, iter = 0, pse = 5, plog = 0) ;
+   plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, NET, PDD), :, iter = 0, pse = 5, plog = 0) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
    system(cmd) ;
    save(mfile, "nnet") ;

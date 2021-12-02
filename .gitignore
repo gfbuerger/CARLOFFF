@@ -14,3 +14,10 @@
 /solver/*.prototxt
 /models/*/*.caffemode*
 /models/*/*.solverstat*
+/models/DenseNet/DE.24/CatRaRE.prototxt
+/models/DenseNet/DE.24/CatRaRE_deploy.prototxt
+/models/DenseNet/DE.24/CatRaRE_solver.prototxt
+/models/Inception/NW.24/CatRaRE.prototxt
+/models/Inception/NW.24/CatRaRE_deploy.prototxt
+/models/Inception/NW.24/CatRaRE_solver.prototxt
+/models/DenseNet/DE.24/CatRaRE.prototxt

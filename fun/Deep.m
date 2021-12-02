@@ -91,7 +91,7 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    ## apply model
    weights = strrep(state, "solverstate", "caffemodel") ;
-   model = sprintf("%s/%s_deploy.prototxt", Dd, pdd.name) ;
+   model = sprintf("%s/%s.%s_deploy.prototxt", Dd, proto, pdd.name) ;
    if exist(model, "file") == 2
       printf("<-- %s\n", model) ;
    else

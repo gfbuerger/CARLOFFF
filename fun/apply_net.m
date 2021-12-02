@@ -16,7 +16,7 @@ function prob = apply_net (x, net, I=[])
    for i = find(I)'
       data = Data(:,:,:,i) ;
       phat = net.forward({data}) ;
-      prob(++ii,:) = phat{1} ;
+      prob(++ii,:) = phat{1}(1:2) ;
    endfor
 
 endfunction

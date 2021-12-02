@@ -1,3 +1,5 @@
+## https://github.com/mateuszbuda/ALL-CNN
+
 layer {
   name: "drop1"
   type: "Dropout"
@@ -311,3 +313,4 @@ layer {
     global_pooling: true
   }
 }
+
