@@ -7,8 +7,15 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    [Dd Dn De] = fileparts(solverstate) ;
    Dn = strsplit(Dn, ".") ;
-   proto = Dn{1} ; res = strsplit(Dd, "/"){3} ;
-   mkdir(Dd) ;
+   proto = Dn{1} ; area = strsplit(Dd, "/"){2} ; res = strsplit(Dd, "/"){3} ;
+   if exist(Dd, "dir") ~= 7
+      mkdir(Dd) ;
+   endif
+   Sa = sprintf("models/%s/%s", proto, area) ;
+   if exist(Sa, "file") ~= 7 || ~S_ISLNK(lstat(Sa).mode)
+      symlink(fullfile(pwd, Dd), Sa) ;
+      printf("%s --> %s\n", fullfile(pwd, Dd), Sa) ;
+   endif
 
    if exist(sprintf("%s/CAL_lmdb", Dd), "dir") ~= 7 & 0
       str = fileread("tools/gen_lmdb.sh") ;
