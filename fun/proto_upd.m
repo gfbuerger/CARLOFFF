@@ -45,7 +45,7 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    if ~isnewer(fsn, wsn1, wsn2, wsn3)
       print_str(ptr, pdd, proto, Dd, sn, fsn) ;
    endif
-   if ~isnewer(fsd, wsn1)
+   if ~isnewer(fsd, wsn1, wsn2)
       print_str(ptr, pdd, proto, Dd, sd, fsd) ;
    endif
 

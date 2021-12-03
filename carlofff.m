@@ -3,9 +3,9 @@ global isoctave LON LAT REG NH MON MODE IMB
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
-addpath ~/CARLOFFF/fun
-[~, ~] = mkdir("data/CARLOFFF")
-cd ~/CARLOFFF
+addpath ~/carlofff/fun
+[~, ~] = mkdir("data")
+cd ~/carlofff
 [glat glon] = borders("germany") ;
 ##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
 GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ; GREG = "DE" ;
@@ -69,7 +69,7 @@ else
    save(afile, VAR{:}, "VAR", "LVAR") ;
 endif
 
-PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{1} ;
+PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
 if exist(pdfile = sprintf("data/%s.%s.ob", REG, PDD), "file") == 2
    load(pdfile) ;
 else
@@ -172,13 +172,13 @@ else
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, NET, PDD) ;
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, NET, PDD) ;
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_20000.solverstate", REG, NH, RES, NET) ;
-   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_5000.solverstate", REG, NH, RES, NET, PDD) ;
+   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_50000.solverstate", REG, NH, RES, NET, PDD) ;
    clear skl ;
    for i = 1:20
       [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
       skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
    endfor
-   strucdisp(deep.skl.VAL) ;
+   strucdisp(deep) ;
    plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, NET, PDD), :, iter = 0, pse = 5, plog = 0) ;
    cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
    system(cmd) ;
