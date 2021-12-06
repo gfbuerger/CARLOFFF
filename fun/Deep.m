@@ -67,14 +67,14 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    
    ## train model
    solver = caffe.Solver(sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.name)) ;
-   pat = sprintf("%s/%s.%s_iter_*.solverstate*", Dd, proto, pdd.name) ;
-   if exist(solverstate, "file") == 2
+   pat = sprintf("%s/%s.%s_iter_*.solverstate", Dd, proto, pdd.name) ;
+   if regexp(solverstate, "\\*") && ~isempty(pat = glob(solverstate))
+      state = strtrim(ls("-1t", pat{end})(1,:)) ;
+   elseif exist(solverstate, "file") == 2
       state = solverstate ;
-   elseif ~ismember(solverstate, {"empty" "null" ""}) && ~isempty(glob(pat))
-      state = strtrim(ls("-1t", pat)(1,:)) ;
    endif
    
-   if exist("state", "var") == 0 || exist(state, "file") ~= 2
+   if exist("state", "var") == 0
       solver.solve() ;
    else
       solver.restore(state) ;

@@ -69,7 +69,7 @@ else
    save(afile, VAR{:}, "VAR", "LVAR") ;
 endif
 
-PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
+PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{1} ;
 if exist(pdfile = sprintf("data/%s.%s.ob", REG, PDD), "file") == 2
    load(pdfile) ;
 else
@@ -161,9 +161,9 @@ set(findall("type", "text"), "fontsize", 22) ;
 
 ## Deep
 ## out of memory: resnet Squeezenet DenseNet
-jNET = 10 ; global RES = [] ;
-NET = {"simple1" "SqueezeNet" "resnet" "Lenet-5" "RCNN" "AlexNet" "GoogleNet" "Inception" "ALL-CNN" "DenseNet" "simple1.1"}{jNET} ;
-RES = {[32 32] [227 227] [32 32] [28 28] [224 224] [227 227] [224 224] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
+jNET = 4 ; global RES = [] ;
+NET = {"simple1" "SqueezeNet" "resnet" "LeNet" "RCNN" "AlexNet" "GoogLeNet" "Inception" "ALL-CNN" "DenseNet" "simple1.1"}{jNET} ;
+RES = {[32 32] [32 32] [32 32] [32 32] [224 224] [227 227] [32 32] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
 ptr.img = arr2img(ptr.x, RES) ;
 if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
    load(mfile) ;
@@ -172,7 +172,7 @@ else
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, NET, PDD) ;
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, NET, PDD) ;
    solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_20000.solverstate", REG, NH, RES, NET) ;
-   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_50000.solverstate", REG, NH, RES, NET, PDD) ;
+   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, NET, PDD) ;
    clear skl ;
    for i = 1:20
       [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;

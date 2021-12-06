@@ -1,3 +1,5 @@
+# https://github.com/zhanglaplace/caffe-cifar10/tree/master/SqeezeNet_v1.1
+
 layer {
   name: "conv1"
   type: "Convolution"
@@ -6,7 +8,10 @@ layer {
   convolution_param {
     num_output: 64
     kernel_size: 3
-    stride: 2
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -34,6 +39,9 @@ layer {
   convolution_param {
     num_output: 16
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -50,6 +58,9 @@ layer {
   convolution_param {
     num_output: 64
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -67,6 +78,9 @@ layer {
     num_output: 64
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -90,6 +104,9 @@ layer {
   convolution_param {
     num_output: 16
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -106,6 +123,9 @@ layer {
   convolution_param {
     num_output: 64
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -123,6 +143,9 @@ layer {
     num_output: 64
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -157,6 +180,9 @@ layer {
   convolution_param {
     num_output: 32
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -173,6 +199,9 @@ layer {
   convolution_param {
     num_output: 128
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -190,6 +219,9 @@ layer {
     num_output: 128
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -213,6 +245,9 @@ layer {
   convolution_param {
     num_output: 32
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -229,6 +264,9 @@ layer {
   convolution_param {
     num_output: 128
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -246,6 +284,9 @@ layer {
     num_output: 128
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -262,24 +303,16 @@ layer {
   top: "fire5/concat"
 }
 layer {
-  name: "pool5"
-  type: "Pooling"
-  bottom: "fire5/concat"
-  top: "pool5"
-  pooling_param {
-    pool: MAX
-    kernel_size: 3
-    stride: 2
-  }
-}
-layer {
   name: "fire6/squeeze1x1"
   type: "Convolution"
-  bottom: "pool5"
+  bottom: "fire5/concat"
   top: "fire6/squeeze1x1"
   convolution_param {
     num_output: 48
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -296,6 +329,9 @@ layer {
   convolution_param {
     num_output: 192
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -313,6 +349,9 @@ layer {
     num_output: 192
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -336,6 +375,9 @@ layer {
   convolution_param {
     num_output: 48
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -352,6 +394,9 @@ layer {
   convolution_param {
     num_output: 192
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -369,6 +414,9 @@ layer {
     num_output: 192
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -392,6 +440,9 @@ layer {
   convolution_param {
     num_output: 64
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -408,6 +459,9 @@ layer {
   convolution_param {
     num_output: 256
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -425,6 +479,9 @@ layer {
     num_output: 256
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -448,6 +505,9 @@ layer {
   convolution_param {
     num_output: 64
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -464,6 +524,9 @@ layer {
   convolution_param {
     num_output: 256
     kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -481,6 +544,9 @@ layer {
     num_output: 256
     pad: 1
     kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
   }
 }
 layer {
@@ -513,6 +579,11 @@ layer {
   convolution_param {
     num_output: 2
     kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+      mean: 0.0
+      std: 0.01
+    }
   }
 }
 layer {
