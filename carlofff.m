@@ -4,7 +4,7 @@ global isoctave LON LAT REG NH MON MODE IMB
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
 addpath ~/carlofff/fun
-[~, ~] = mkdir("data")
+[~, ~] = pmkdir("data")
 cd ~/carlofff
 [glat glon] = borders("germany") ;
 ##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
@@ -35,7 +35,7 @@ if isoctave()
 else
    addpath /opt/caffeML/matlab
 end
-mkdir(sprintf("data/%s.%02d", REG, NH)) ; mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
+pmkdir(sprintf("data/%s.%02d", REG, NH)) ; pmkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 
 if isnewer(afile = sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:})
    load(afile) ;
@@ -69,7 +69,7 @@ else
    save(afile, VAR{:}, "VAR", "LVAR") ;
 endif
 
-PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{1} ;
+PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
 if exist(pdfile = sprintf("data/%s.%s.ob", REG, PDD), "file") == 2
    load(pdfile) ;
 else
@@ -138,54 +138,71 @@ if 0
 endif
 
 ## Shallow
-MODE = {"lasso" "tree" "nnet" "nlinfit"}{3} ;
-if isnewer(mfile = sprintf("data/%s.%02d/%s.%s.%s.ob", REG, NH, MODE, ptr.ind, pdd.name), ptfile)
-   load(mfile) ;
-else
-   varargin = {} ;
-##   varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
-   for k = 1:10
-      for j = 1:5
-	 varargin{1} = [k j 1]
-	 shallow = Shallow(ptr, pdd, [], "CVE", {"HSS" "GSS"}, varargin{:}) ;
-	 S(k,j,:) = [shallow.skl.CAL.GSS shallow.skl.VAL.GSS] ;
+if 0
+   MODE = {"lasso" "tree" "nnet" "nlinfit"}{3} ;
+   if isnewer(mfile = sprintf("data/%s.%02d/%s.%s.%s.ob", REG, NH, MODE, ptr.ind, pdd.name), ptfile)
+      load(mfile) ;
+   else
+      varargin = {} ;
+      ##   varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
+      for k = 1:10
+	 for j = 1:5
+	    varargin{1} = [k j 1]
+	    shallow = Shallow(ptr, pdd, [], "CVE", {"HSS" "GSS"}, varargin{:}) ;
+	    S(k,j,:) = [shallow.skl.CAL.GSS shallow.skl.VAL.GSS] ;
+	 endfor
       endfor
-   endfor
-   save(mfile, "shallow") ;
+      save(mfile, "shallow") ;
+   endif
+   strucdisp(shallow.skl) ;
+   plot_fit(shallow.fit) ;
+   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+   set(findall("type", "axes"), "fontsize", 24) ;
+   set(findall("type", "text"), "fontsize", 22) ;
 endif
-strucdisp(shallow.skl) ;
-plot_fit(shallow.fit) ;
-set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
-set(findall("type", "axes"), "fontsize", 24) ;
-set(findall("type", "text"), "fontsize", 22) ;
 
 ## Deep
-## out of memory: resnet Squeezenet DenseNet
-jNET = 4 ; global RES = [] ;
-NET = {"simple1" "SqueezeNet" "resnet" "LeNet" "RCNN" "AlexNet" "GoogLeNet" "Inception" "ALL-CNN" "DenseNet" "simple1.1"}{jNET} ;
-RES = {[32 32] [32 32] [32 32] [32 32] [224 224] [227 227] [32 32] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
-ptr.img = arr2img(ptr.x, RES) ;
-if isnewer(mfile = sprintf("data/%s.%02d/nnet.%s.%s.%s.ob", REG, NH, NET, ptr.ind, pdd.name), ptfile)
-   load(mfile) ;
-else
-   init_rnd() ;
-   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, NET, PDD) ;
-   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, NET, PDD) ;
-   solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_20000.solverstate", REG, NH, RES, NET) ;
-   solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, NET, PDD) ;
-   clear skl ;
-   for i = 1:20
-      [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
-      skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
-   endfor
-   strucdisp(deep) ;
-   plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, NET, PDD), :, iter = 0, pse = 5, plog = 0) ;
-   cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", NET, PDD, NET) ;
-   system(cmd) ;
-   save(mfile, "nnet") ;
-   save(ptr.ptfile, "ptr") ;
-endif
-strucdisp(nnet.skl) ;
+## divergent: SqueezeNet
+## shape mismatch: Inception-v4
+NET = {"Simple1" "ResNet" "Lenet-5" "RCNN" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet"} ;
+global RES = [] ;
+for jNET = 1 : length(NET)
+
+   net = NET{jNET} ;
+   RES = {[32 32] [32 32] [28 28] [224 224] [227 227] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
+
+   if isnewer(mfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ob", REG, NH, net, ptr.ind, pdd.name), ptfile)
+      load(mfile) ;
+      S(jNET) = mean(skl(:,1)) ;
+   else
+      init_rnd() ;
+      ptr.img = arr2img(ptr.x, RES) ;
+      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, net, PDD) ;
+      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, net, PDD) ;
+      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_*.solverstate", REG, NH, RES, net) ;
+      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, net, PDD) ;
+      clear skl ;
+      for i = 1:20
+	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.%d.ob", REG, NH, net, ptr.ind, pdd.name, i))
+	    load(sfile) ;
+	 else
+	    [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
+	    caffe.reset_all ;
+	    skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
+	    save(sfile, "skl") ;
+	 endif
+      endfor
+      ##plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, net, PDD), :, iter = 0, pse = 5, plog = 0) ;
+      ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
+      ##system(cmd) ;
+      save(mfile, "skl") ;
+      rm(glob(sprintf("data/%s.%02d/skl.%s.%s.%s.*.ob", REG, NH, net, ptr.ind, pdd.name))) ;
+      ##save(ptr.ptfile, "ptr") ;
+   endif
+
+endfor
+exit
+strucdisp(deep.skl) ;
 
 ## cases
 ## June 2013
@@ -349,8 +366,8 @@ set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 22, "defa
 clf ;
 h = plot_log("models/simple1/CatRaRE.log", {"Train" "Test"}, "loss") ;
 set(h(1), "linewidth", 1) ; set(h(2), "linewidth", 4) ;
-hgsave(sprintf("nc/plots/%s.loss.og", NET)) ;
-print(sprintf("nc/plots/%s.loss.png", NET)) ;
+hgsave(sprintf("nc/plots/%s.loss.og", net)) ;
+print(sprintf("nc/plots/%s.loss.png", net)) ;
 
 # 
 I = pdd.id(:,1) == 2016 & ismember(pdd.id(:,2), MON) ;

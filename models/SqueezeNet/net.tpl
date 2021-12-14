@@ -1,4 +1,4 @@
-# https://github.com/zhanglaplace/caffe-cifar10/tree/master/SqeezeNet_v1.1
+# https://github.com/forresti/SqueezeNet/tree/master/SqueezeNet_v1.1
 
 layer {
   name: "conv1"
@@ -8,7 +8,7 @@ layer {
   convolution_param {
     num_output: 64
     kernel_size: 3
-    stride: 1
+    stride: 2
     weight_filler {
       type: "xavier"
     }
@@ -303,9 +303,20 @@ layer {
   top: "fire5/concat"
 }
 layer {
+  name: "pool5"
+  type: "Pooling"
+  bottom: "fire5/concat"
+  top: "pool5"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+  }
+}
+layer {
   name: "fire6/squeeze1x1"
   type: "Convolution"
-  bottom: "fire5/concat"
+  bottom: "pool5"
   top: "fire6/squeeze1x1"
   convolution_param {
     num_output: 48
