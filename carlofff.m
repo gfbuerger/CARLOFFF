@@ -164,12 +164,12 @@ endif
 ## Deep
 ## divergent: SqueezeNet
 ## shape mismatch: Inception-v4
-NET = {"Simple1" "ResNet" "Lenet-5" "RCNN" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet"} ;
+NET = {"Simple1" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "RCNN"} ;
 global RES = [] ;
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ;
-   RES = {[32 32] [32 32] [28 28] [224 224] [227 227] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
+   RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32] [227 227]}{jNET} ;
 
    if isnewer(mfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ob", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
@@ -196,7 +196,7 @@ for jNET = 1 : length(NET)
       ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
       save(mfile, "skl") ;
-      rm(glob(sprintf("data/%s.%02d/skl.%s.%s.%s.*.ob", REG, NH, net, ptr.ind, pdd.name))) ;
+      unlink(glob(sprintf("data/%s.%02d/skl.%s.%s.%s.*.ob", REG, NH, net, ptr.ind, pdd.name))) ;
       ##save(ptr.ptfile, "ptr") ;
    endif
 
