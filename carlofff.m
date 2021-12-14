@@ -196,7 +196,7 @@ for jNET = 1 : length(NET)
       ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
       save(mfile, "skl") ;
-      unlink(glob(sprintf("data/%s.%02d/skl.%s.%s.%s.*.ob", REG, NH, net, ptr.ind, pdd.name))) ;
+      delete(sprintf("data/%s.%02d/skl.%s.%s.%s.*.ob", REG, NH, net, ptr.ind, pdd.name)) ;
       ##save(ptr.ptfile, "ptr") ;
    endif
 
