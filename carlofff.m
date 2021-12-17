@@ -164,12 +164,12 @@ endif
 ## Deep
 ## divergent: SqueezeNet
 ## shape mismatch: Inception-v4
-NET = {"Simple1" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "RCNN"} ;
+NET = {"Simple1" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet"} ;
 global RES = [] ;
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ;
-   RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32] [227 227]}{jNET} ;
+   RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32]}{jNET} ;
 
    if isnewer(mfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ob", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
@@ -191,6 +191,7 @@ for jNET = 1 : length(NET)
 	    skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
 	    save(sfile, "skl") ;
 	 endif
+	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endfor
       ##plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, net, PDD), :, iter = 0, pse = 5, plog = 0) ;
       ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
