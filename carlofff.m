@@ -171,7 +171,7 @@ for jNET = 1 : length(NET)
    net = NET{jNET} ;
    RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32]}{jNET} ;
 
-   if isnewer(mfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ob", REG, NH, net, ptr.ind, pdd.name), ptfile)
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
       S(jNET) = mean(skl(:,1)) ;
    else
@@ -180,24 +180,24 @@ for jNET = 1 : length(NET)
       ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, net, PDD) ;
       solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, net, PDD) ;
       ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_*.solverstate", REG, NH, RES, net) ;
-      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, net, PDD) ;
+##      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, net, PDD) ;
       clear skl ;
       for i = 1:20
-	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.%d.ob", REG, NH, net, ptr.ind, pdd.name, i))
+	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.tmp.ob", REG, NH, net, ptr.ind, pdd.name))
 	    load(sfile) ;
-	 else
-	    [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
-	    caffe.reset_all ;
-	    skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
-	    save(sfile, "skl") ;
+	    if rows(skl) >= i continue ; endif
 	 endif
+	 [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
+	 caffe.reset_all ;
+	 skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
+	 save(sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endfor
       ##plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, net, PDD), :, iter = 0, pse = 5, plog = 0) ;
       ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
-      save(mfile, "skl") ;
-      delete(sprintf("data/%s.%02d/skl.%s.%s.%s.*.ob", REG, NH, net, ptr.ind, pdd.name)) ;
+      save("-text", mfile, "skl") ;
+      delete(sprintf("data/%s.%02d/skl.%s.%s.%s.tmp.ob", REG, NH, net, ptr.ind, pdd.name)) ;
       ##save(ptr.ptfile, "ptr") ;
    endif
 

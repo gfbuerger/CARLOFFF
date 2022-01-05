@@ -3,7 +3,7 @@
 ## calibrate and apply caffe model
 function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
-   global IMB
+   global IMB BATCH
 
    [Dd Dn De] = fileparts(solverstate) ;
    Dn = strsplit(Dn, ".") ;
@@ -80,7 +80,7 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       solver.restore(state) ;
       iter = solver.iter ;
       printf("solver at iteration: %d\n", iter) ;
-      if ~isnewer(state, fss, fsn, fsd, h5f(pdd.name, "CAL"))
+      if ~isnewer(state, fss, fsn, fsd, h5f(pdd.name, "CAL")) && ~BATCH
 	 n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
 	 if ~isempty(n)
 	    switch n > 0
