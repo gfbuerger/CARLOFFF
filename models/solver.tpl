@@ -4,7 +4,7 @@
 # test_iter specifies how many forward passes the test should carry out.
 # In the case of CIFAR10, we have test batch size 100 and 100 test iterations,
 # covering the full 10,000 testing images.
-random_seed: 1
+# random_seed: 1
 average_loss: 20
 debug_info: false
 test_iter: 100
