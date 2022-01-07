@@ -188,7 +188,6 @@ for jNET = 1 : length(NET)
 	    if rows(skl) >= i continue ; endif
 	 endif
 	 [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
-	 caffe.reset_all ;
 	 skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;

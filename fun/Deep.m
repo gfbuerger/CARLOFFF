@@ -95,7 +95,7 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       endif
    endif
    state = strtrim(ls("-1t", pat)(1,:)) ;
-
+   
    ## apply model
    weights = strrep(state, "solverstate", "caffemodel") ;
    model = sprintf("%s/%s.%s_deploy.prototxt", Dd, proto, pdd.name) ;
@@ -104,9 +104,10 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    else
       error("file not found: %s", model)
    endif
-
    net = caffe.Net(model, weights, 'test') ;
+
    for PHS = {"CAL" "VAL"}
+
       PHS = PHS{:} ;
 
       if 0
