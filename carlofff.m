@@ -166,7 +166,7 @@ endif
 ## Deep
 ## divergent: SqueezeNet
 ## shape mismatch: Inception-v4
-NET = {"Simple1" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
+NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 global RES = [] ;
 for jNET = 1 : length(NET)
 
