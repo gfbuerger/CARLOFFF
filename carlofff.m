@@ -168,8 +168,7 @@ endif
 ## shape mismatch: Inception-v4
 NET = {"Simple1" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 global RES = [] ;
-##for jNET = 1 : length(NET)
-for jNET = 9
+for jNET = 1 : length(NET)
 
    net = NET{jNET} ;
    RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
