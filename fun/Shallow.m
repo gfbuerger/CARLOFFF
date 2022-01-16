@@ -1,9 +1,9 @@
-## usage: res = Shallow (ptr, pdd, PCA, TRC="AIC", SKL={"GSS" "HSS"}, varargin)
+## usage: res = Shallow (ptr, pdd, PCA, TRC="AIC", mdl, SKL={"GSS" "HSS"}, varargin)
 ##
 ## calibrate and apply Shallow models
-function res = Shallow (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
+function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, varargin)
 
-   global MODE REG NH IMB
+   global REG NH IMB
    if strcmp(class(PCA), "char") ; pkg load tisean ; endif
 
    Lfun = @(beta, x) beta(1) + x * beta(2:end) ;
@@ -84,7 +84,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
 	       [xx yy] = oversmpl(x, y) ;
 	 endswitch
 	 
-	 switch MODE
+	 switch mdl
 
 	    case "lasso"
 
@@ -125,11 +125,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
 
 	       pkg load nnet
 	       Pr = [min(xx) ; max(xx)]' ;
-	       if ~isempty(varargin)
-		  SS = varargin{1} ;
-	       else
-		  SS = [7 3 1] ; # based on some tests
-	       endif
+	       SS = [7 3 1] ; # based on some tests
 	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
 ##	       Net.trainParam.show = Inf ;
 	       Net.trainParam.goal = 0 ;
@@ -185,7 +181,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", SKL={"GSS" "HSS"}, varargin)
       
    endfor
 
-   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl) ;
+   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce) ;
 
 endfunction
 
