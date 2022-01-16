@@ -168,12 +168,13 @@ endif
 ## shape mismatch: Inception-v4
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 global RES = [] ;
-for jNET = 1 : length(NET)
+##for jNET = 1 : length(NET)
+for jNET = [1 9]
 
    net = NET{jNET} ;
    RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
 
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.new.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
       S(jNET) = mean(skl(:,1)) ;
    else
@@ -203,7 +204,7 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
-
+exit
 source plots.m ;
 
 ### historical and future simulations
