@@ -139,8 +139,8 @@ endif
 
 ## Shallow
 MDL = {"lasso" "tree" "nnet" "nlinfit"} ;
-if isnewer(sfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
-   load(sfile) ;
+if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
+   load(mfile) ;
 else
    for jMDL = 1 : length(MDL)
       mdl = {"lasso" "tree" "nnet" "nlinfit"}{jMDL} ;
@@ -160,7 +160,7 @@ else
 ##      set(findall("type", "text"), "fontsize", 22) ;
    endfor
    S = real(S) ;
-   save("-text", sfile, "S") ;
+   save("-text", mfile, "S") ;
 endif
 
 ## Deep
