@@ -12,50 +12,33 @@ function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1)
    clf ;
    plot_prob(prob, pdd, D, d) ;
    set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
+   printf("--> nc/%s.%02d/%s.png\n", REG, NH, ds) ;
    print(sprintf("nc/%s.%02d/%s.png", REG, NH, ds)) ;
 
    h2 = figure("position", [0.7 0.4 0.3 0.6]) ;
-   clf ;
+   clf ; hold on
 
    I = sdate(ptr.id, d) ;
-   xm = zscore(squeeze(ptr.x(:,jVAR,:,:))) ;
-   xm = squeeze(xm(I,:,:)) ;
+   xm = squeeze(ptr.x(I,jVAR,:,:)) ;
    imagesc(ptr.lon, ptr.lat, xm') ;
-   set(gca, "ydir", "normal", "clim", [-3 3], "xtick", [], "ytick", [], "xticklabel", [], "yticklabel", [])
-##   title(sprintf("normalized %s for %s", toupper(ptr.vars{jVAR}), ds)) ;
-##   xlabel("longitude") ; ylabel("latitude") ;
+   set(gca, "ydir", "normal") ;
+   xlabel("longitude") ; ylabel("latitude") ;
+   colormap(brewermap(9, "Blues"))
    hc = colorbar ;
-   colormap(redblue)
-   
-   hold on
+   pos = get(get(hc, "label"), "extent")(2) ;
+   set(get(hc, "label"), "string", "cape  [J/kg]", "position", [0.5 2.1*pos], "rotation", 0) ;
+
    hb = borders("germany", "color", "black") ;
 
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
-   set(findall("type", "axes"), "fontsize", 30) ;
-   set(findall("type", "text"), "fontsize", 22) ;
+   I = sdate(pdd.ts.id, d) ;
+   h = scatter(pdd.ts.lon(I), pdd.ts.lat(I), 24, "r", "o", "filled") ;
 
+   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+   set(findall("type", "axes"), "fontsize", 24) ;
+   set(findall("type", "text"), "fontsize", 24) ;
+
+   printf("--> nc/%s.%s.png\n", ptr.vars{jVAR}, ds) ;
    hgsave(sprintf("nc/%s.%s.og", ptr.vars{jVAR}, ds)) ;
    print(sprintf("nc/%s.%s.png", ptr.vars{jVAR}, ds)) ;
-
-   clf ;
-   I = sdate(pdd.id, d) ;
-   w = pdd.x(I,1,:,:) ;
-   xm = squeeze(any(w > pdd.q, 1)) ;
-   imagesc(pdd.lon-0.125, pdd.lat-0.125, xm') ;
-##   xticks(pdd.lon) ; yticks(pdd.lat) ; 
-   colormap(flip(gray(5)))
-##   title(sprintf("%s > 0 for %s", toupper(pdd.vars{1}), ds)) ;
-   set(gca, "ydir", "normal", "clim", [0 1], "xtick", [], "ytick", [], "xticklabel", [], "yticklabel", [])
-   ##xlabel("longitude") ; ylabel("latitude") ;
-   
-   hold on
-   hb = borders("germany", "color", "black") ;
-
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
-   set(findall("type", "axes"), "fontsize", 30) ;
-   set(findall("type", "text"), "fontsize", 22) ;
-
-   hgsave(sprintf("nc/%s.%02d/%s.%s.og", REG, NH, pdd.vars{1}, ds)) ;
-   print(sprintf("nc/%s.%02d/%s.%s.png", REG, NH, pdd.vars{1}, ds)) ;
 
 endfunction

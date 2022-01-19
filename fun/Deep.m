@@ -9,8 +9,9 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    Dn = strsplit(Dn, ".") ;
    proto = Dn{1} ; area = strsplit(Dd, "/"){2} ; res = strsplit(Dd, "/"){3} ;
    if exist(Dd, "dir") ~= 7
-      mkdir(Dd) ;
+      pmkdir(Dd) ;
    endif
+   pmkdir(sprintf("models/%s", proto)) ;
    Sa = sprintf("models/%s/%s", proto, area) ;
    if exist(Sa, "file") ~= 7 || ~S_ISLNK(lstat(Sa).mode)
       symlink(fullfile(pwd, Dd), Sa) ;

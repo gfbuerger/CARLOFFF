@@ -34,7 +34,7 @@ if isoctave()
    caffe.set_device(0) ;
 else
    addpath /opt/caffeML/matlab
-end
+endif
 pmkdir(sprintf("data/%s.%02d", REG, NH)) ; pmkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 
 if isnewer(afile = sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:})
@@ -168,8 +168,7 @@ endif
 ## shape mismatch: Inception-v4
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 global RES = [] ;
-##for jNET = 1 : length(NET)
-for jNET = [1 9]
+for jNET = 1 : length(NET)
 
    net = NET{jNET} ;
    RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
@@ -195,7 +194,7 @@ for jNET = [1 9]
 	 save("-text", sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endfor
-      ##plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, net, PDD), :, iter = 0, pse = 5, plog = 0) ;
+      plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, net, PDD), :, iter = 0, pse = 5, plog = 0) ;
       ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
       save("-text", mfile, "skl") ;

@@ -27,9 +27,11 @@ function pdd = selpdd (PDD, LON, LAT, ID, Q0, s)
    endswitch
 
    pdd.name = PDD ;
+   org = pdd ;
    pdd = togrid(pdd, s.lon, s.lat) ;
    pdd = unifid(pdd, ID, MON) ;
-
+   pdd.ts = org ;
+   
    ## plot pdd statistics
    if 0
       for jVAR = JVAR

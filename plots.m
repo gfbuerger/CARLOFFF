@@ -1,5 +1,3 @@
-1 ;
-
 reset(0) ;
 set(0, "defaultfigureunits", "normalized", "defaultfigurepapertype", "A4") ;
 set(0, "defaultfigurepaperunits", "normalized", "defaultfigurepaperpositionmode", "auto") ;
@@ -9,26 +7,29 @@ set(0, "defaultaxesgridalpha", 0.3)
 set(0, "defaultaxesfontname", "Liberation Sans", "defaultaxesfontsize", 14) ;
 set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 14, "defaultlinelinewidth", 2) ;
 
+
 addpath ~/oct/nc/maxdistcolor
 col = maxdistcolor(rows(S) + length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 
 ## Shallow
-figure(1) ;
+figure(1) ; sz = 70 ;
 clf ; hold on ;
-for jNET = 1 : rows(S)
-   hgS(jNET) = scatter(S(jNET,1), S(jNET,2), 80, col(jNET,:), "s") ;
+for jMDL = 1 : rows(S)
+   hgS(jMDL) = scatter(S(jMDL,1), S(jMDL,2), sz, col(jMDL,:), "filled", "s") ;
 endfor
 hS = legend(hgS, upper(MDL), "box", "off", "location", "northeast") ;
 
 figure(2) ;
 clf ; hold on ;
+jPLT = 0 ;
 for jNET = 1 : rows(S)
-   hgS(jNET) = scatter(S(jNET,1), S(jNET,2), 80, col(jNET,:), "s") ;
+   jPLT++ ;
+   hgS(jPLT) = scatter(S(jNET,1), S(jNET,2), sz, col(jPLT,:), "filled", "s") ;
 endfor
 
 JNET = false(length(NET), 1) ;
 for jNET = 1 : length(NET)
-
+   jPLT++ ;
    net = NET{jNET} ;
 
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name) ;
@@ -36,9 +37,8 @@ for jNET = 1 : length(NET)
    load(mfile) ;
    I = skl(:,1) > 0.1 ;
    hg = hggroup() ;
-   scatter(skl(I,1), skl(I,2), 5, col(jNET,:), "o", "filled", "parent", hg) ;
-   hgD(jNET) = scatter(mean(skl(I,1)), mean(skl(I,2)), 80, col(jNET,:), "d", "filled", "parent", hg) ;
-
+   scatter(skl(I,1), skl(I,2), 5, col(jPLT,:), "o", "filled", "parent", hg) ;
+   hgD(jNET) = scatter(mean(skl(I,1)), mean(skl(I,2)), sz, col(jPLT,:), "d", "filled", "parent", hg) ;
 endfor
 xlabel("ETS") ; ylabel("crossentropy") ;
 legend(hgD(JNET), NET(JNET), "box", "off", "location", "southwest") ;
@@ -135,6 +135,30 @@ set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 
 hgsave(sprintf("nc/%s.%02d/%s.2016-05.og", REG, NH, pdd.vars{1})) ;
 print(sprintf("nc/%s.%02d/%s.2016-05.png", REG, NH, pdd.vars{1})) ;
 ##}
+
+
+addpath ~/oct/mmap
+
+borders germany
+
+[Y X] = meshgrid(ptr.lat, ptr.lon) ;
+%create the list of text
+string = mat2cell(num2str([1:10*10]'),ones(10*10,1));
+%display the background
+imagesc(I)
+hold on
+%insert the labels
+text(Y(:)-.5,X(:)+.25,string,'HorizontalAlignment','left')
+%calculte the grid lines
+grid = .5:1:10.5;
+grid1 = [grid;grid];
+grid2 = repmat([.5;10.5],1,length(grid))
+%plot the grid lines
+plot(grid1,grid2,'k')
+plot(grid2,grid1,'k')
+
+
+
 
 
 ### plots
