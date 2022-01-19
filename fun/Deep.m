@@ -1,7 +1,7 @@
-## usage: [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
+## usage: [res prob] = Deep (ptr, pdd, solverstate=[], Llog={}, SKL= {"GSS" "HSS"})
 ##
 ## calibrate and apply caffe model
-function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
+function [res prob] = Deep (ptr, pdd, solverstate=[], Llog={}, SKL= {"GSS" "HSS"})
 
    global IMB BATCH
 
@@ -67,14 +67,15 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    endif
    
    ## train model
-   solver = caffe.Solver(sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.name)) ;
-   pat = sprintf("%s/%s.%s_iter_*.solverstate", Dd, proto, pdd.name) ;
+   sfx = sprintf("%s/%s.%s", Dd, proto, pdd.name) ;
+   solver = caffe.Solver(sprintf("%s_solver.prototxt", sfx)) ;
+   pat = sprintf("%s_iter_*.solverstate", sfx) ;
    if regexp(solverstate, "\\*") && ~isempty(lst = glob(solverstate))
       state = strtrim(ls("-1t", lst{end})(1,:)) ;
    elseif exist(solverstate, "file") == 2
       state = solverstate ;
    endif
-   
+
    if exist("state", "var") == 0
       solver.solve() ;
    else
@@ -95,11 +96,14 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 	 endif
       endif
    endif
+   if exist(Llog, "var") == 1 && iscell(Llog)
+      plot_log("/tmp/caffe.INFO", :, Llog{:}) ;
+   endif
    state = strtrim(ls("-1t", pat)(1,:)) ;
    
    ## apply model
    weights = strrep(state, "solverstate", "caffemodel") ;
-   model = sprintf("%s/%s.%s_deploy.prototxt", Dd, proto, pdd.name) ;
+   model = sprintf("%s_deploy.prototxt", sfx) ;
    if exist(model, "file") == 2
       printf("<-- %s\n", model) ;
    else
