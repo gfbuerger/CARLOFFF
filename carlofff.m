@@ -189,11 +189,12 @@ for jNET = 1 : length(NET)
 	    load(sfile) ;
 	    if rows(skl) >= i continue ; endif
 	 endif
-	 [deep ptr.prob] = Deep(ptr, pdd, solverstate, {}, {"HSS" "GSS"}) ;
+	 [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
 	 skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endfor
+      plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, net, PDD), :, iter = 0, pse = 5, plog = 0) ;
       ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
       save("-text", mfile, "skl") ;

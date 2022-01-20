@@ -1,7 +1,7 @@
-## usage: [res prob] = Deep (ptr, pdd, solverstate=[], Llog={}, SKL= {"GSS" "HSS"})
+## usage: [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 ##
 ## calibrate and apply caffe model
-function [res prob] = Deep (ptr, pdd, solverstate=[], Llog={}, SKL= {"GSS" "HSS"})
+function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    global IMB BATCH
 
@@ -95,9 +95,6 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], Llog={}, SKL= {"GSS" "HSS"
 	    endswitch
 	 endif
       endif
-   endif
-   if exist(Llog, "var") == 1 && iscell(Llog)
-      plot_log("/tmp/caffe.INFO", :, Llog{:}) ;
    endif
    state = strtrim(ls("-1t", pat)(1,:)) ;
    
