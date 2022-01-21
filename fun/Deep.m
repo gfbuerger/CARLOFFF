@@ -99,8 +99,8 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    state = strtrim(ls("-1t", pat)(1,:)) ;
    
    ## apply model
-   weights = strrep(state, "solverstate", "caffemodel") ;
    model = sprintf("%s_deploy.prototxt", sfx) ;
+   weights = strrep(state, "solverstate", "caffemodel") ;
    if exist(model, "file") == 2
       printf("<-- %s\n", model) ;
    else

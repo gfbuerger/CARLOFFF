@@ -30,11 +30,7 @@ function s = read_klamex (fin)
    d = t2 - t1 ; t = (t1 + t2) / 2 ;
 
    if ~issorted(t)
-      if strcmp(version()(1), "5")
-	 [t, Is] = unique(t) ;
-      else
-	 [t, Is] = unique(t, 'sorted') ;
-      endif
+      [~, Is] = sort(t) ;
       D = D(Is,:) ;
    endif
 

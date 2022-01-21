@@ -87,7 +87,6 @@ plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR) ;
 D1 = [2016, 5, 15 ; 2016, 6, 15] ; d1 = [2016 5 29] ;
 plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR) ;
 
-
 plot_case(shallow.prob, pdd, D1, d1) ;
 set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
 print(sprintf("nc/%s.%02d/2016-05.png", REG, NH)) ;

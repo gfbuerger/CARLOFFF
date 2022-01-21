@@ -48,6 +48,10 @@ function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog =
 	 set(gca, "ygrid", "on") ;
 	 
       endfor
+      if numel(get(gca, "children")) < 2
+	 mtime = 0 ;
+	 continue ;
+      endif
       legend(phase, "box", "off") ;
       
       if plog set(gca, "yscale", "log", "yminorgrid", "on") ; endif

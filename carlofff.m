@@ -162,6 +162,7 @@ else
    S = real(S) ;
    save("-text", mfile, "S") ;
 endif
+SKL.(["Shallow_" ptr.ind]) = real(S) ;
 
 ## Deep
 ## divergent: SqueezeNet
@@ -175,7 +176,7 @@ for jNET = 1 : length(NET)
 
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
-      S(jNET) = mean(skl(:,1)) ;
+      SKL.(["Deep_" ptr.ind])(jNET,:) = mean(skl) ;
    else
       init_rnd() ;
       ptr.img = arr2img(ptr.x, RES) ;
@@ -194,7 +195,7 @@ for jNET = 1 : length(NET)
 	 save("-text", sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endfor
-      plot_log(sprintf("data/%s.%02d/%dx%d/%s.%s.log", REG, NH, RES, net, PDD), :, iter = 0, pse = 5, plog = 0) ;
+      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
       ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
       save("-text", mfile, "skl") ;

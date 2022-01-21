@@ -7,7 +7,7 @@ function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1)
 
    ds = datestr(datenum(d), "yyyy-mm") ;
    
-   h1 = figure() ;
+   h1 = figure(1) ;
 
    clf ;
    plot_prob(prob, pdd, D, d) ;
@@ -15,7 +15,7 @@ function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1)
    printf("--> nc/%s.%02d/%s.png\n", REG, NH, ds) ;
    print(sprintf("nc/%s.%02d/%s.png", REG, NH, ds)) ;
 
-   h2 = figure("position", [0.7 0.4 0.3 0.6]) ;
+   h2 = figure(2, "position", [0.7 0.4 0.3 0.6]) ;
    clf ; hold on
 
    I = sdate(ptr.id, d) ;
@@ -26,12 +26,13 @@ function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1)
    colormap(brewermap(9, "Blues"))
    hc = colorbar ;
    pos = get(get(hc, "label"), "extent")(2) ;
-   set(get(hc, "label"), "string", "cape  [J/kg]", "position", [0.5 2.1*pos], "rotation", 0) ;
+   set(get(hc, "label"), "string", "cape  [J/kg]", "position", [0.5 2.15*pos], "rotation", 0) ;
 
    hb = borders("germany", "color", "black") ;
 
    I = sdate(pdd.ts.id, d) ;
-   h = scatter(pdd.ts.lon(I), pdd.ts.lat(I), 24, "r", "o", "filled") ;
+   h = scatter(pdd.ts.lon(I), pdd.ts.lat(I), 3*pdd.ts.x(I,jVAR), "r", "o", "filled") ;
+   legend(h, "Eta", "box", "off", "location", "northeast")
 
    set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
    set(findall("type", "axes"), "fontsize", 24) ;
