@@ -195,8 +195,8 @@ for jNET = 1 : length(NET)
 	 save("-text", sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endfor
-      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
-      ##cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
+##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
+##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
       save("-text", mfile, "skl") ;
       delete(sprintf("data/%s.%02d/skl.%s.%s.%s.tmp.ot", REG, NH, net, ptr.ind, pdd.name)) ;

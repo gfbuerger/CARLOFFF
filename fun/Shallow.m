@@ -127,7 +127,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       Pr = [min(xx) ; max(xx)]' ;
 	       SS = [7 3 1] ; # based on some tests
 	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
-##	       Net.trainParam.show = Inf ;
+	       Net.trainParam.show = NaN ;
 	       Net.trainParam.goal = 0 ;
 	       Net.trainParam.epochs = 100 ;
 	       Net.trainParam.mu_max = 1e12 ;
