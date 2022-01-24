@@ -1,7 +1,7 @@
-## usage: [fss fsn fsd] = proto_upd (BLD = true, ptr, pdd, proto, Dd)
+## usage: [solver deploy] = proto_upd (BLD = true, ptr, pdd, proto, Dd)
 ##
 ## update proto files
-function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
+function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
 
    global REG NH RES
 
@@ -35,18 +35,18 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    sn = strcat(sn1, sn2, sn3) ;
    sd = strcat(sd1, sn2, sd2) ;
 
-   fss = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.name) ;
-   fsn = sprintf("%s/%s.%s.prototxt", Dd, proto, pdd.name) ;
-   fsd = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.name) ;
+   solver = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.name) ;
+   net = sprintf("%s/%s.%s.prototxt", Dd, proto, pdd.name) ;
+   deploy = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.name) ;
 
-   if ~isnewer(fss, wss)
-      print_str(ptr, pdd, proto, Dd, ss, fss) ;
+   if ~isnewer(solver, wss)
+      print_str(ptr, pdd, proto, Dd, ss, solver) ;
    endif
-   if ~isnewer(fsn, wsn1, wsn2, wsn3)
-      print_str(ptr, pdd, proto, Dd, sn, fsn) ;
+   if ~isnewer(net, wsn1, wsn2, wsn3)
+      print_str(ptr, pdd, proto, Dd, sn, net) ;
    endif
-   if ~isnewer(fsd, wsn1, wsn2)
-      print_str(ptr, pdd, proto, Dd, sd, fsd) ;
+   if ~isnewer(deploy, wsn1, wsn2)
+      print_str(ptr, pdd, proto, Dd, sd, deploy) ;
    endif
 
 endfunction

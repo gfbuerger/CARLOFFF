@@ -60,7 +60,7 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       endif
    endfor
 
-   [fss fsn fsd] = proto_upd(:, ptr, pdd, proto, Dd) ;
+   [solver deploy] = proto_upd(:, ptr, pdd, proto, Dd) ;
    if strcmp(De, ".netonly")
       res = {fss fsn fsd} ; prob = NaN ;
       return ;
@@ -68,7 +68,6 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    
    ## train model
    sfx = sprintf("%s/%s.%s", Dd, proto, pdd.name) ;
-   solver = caffe.Solver(sprintf("%s_solver.prototxt", sfx)) ;
    pat = sprintf("%s_iter_*.solverstate", sfx) ;
    if regexp(solverstate, "\\*") && ~isempty(lst = glob(solverstate))
       state = strtrim(ls("-1t", lst{end})(1,:)) ;
@@ -99,14 +98,13 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    state = strtrim(ls("-1t", pat)(1,:)) ;
    
    ## apply model
-   model = sprintf("%s_deploy.prototxt", sfx) ;
    weights = strrep(state, "solverstate", "caffemodel") ;
-   if exist(model, "file") == 2
-      printf("<-- %s\n", model) ;
+   if exist(deploy, "file") == 2
+      printf("<-- %s\n", deploy) ;
    else
-      error("file not found: %s", model)
+      error("file not found: %s", deploy)
    endif
-   net = caffe.Net(model, weights, 'test') ;
+   net = caffe.Net(deploy, weights, 'test') ;
 
    for PHS = {"CAL" "VAL"}
 
@@ -120,7 +118,6 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 	 prb.(PHS) = nan(n, 2) ;
 	 for i = 1 : n
 	    data = squeeze(images(i,1,:,:))' ;
-	    data_h5(:,:,i) = data ;
 	    phat = net.forward({single(data)}) ;
 	    prb.(PHS)(i,:) = phat{1} ;
 	 end
