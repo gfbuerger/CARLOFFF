@@ -37,7 +37,7 @@ function [fss fsn fsd] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
 
    fss = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.name) ;
    fsn = sprintf("%s/%s.%s.prototxt", Dd, proto, pdd.name) ;
-   fsd = sprintf("%s/%s.%s_deploy.prototxt", Dd, proto, pdd.name) ;
+   fsd = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.name) ;
 
    if ~isnewer(fss, wss)
       print_str(ptr, pdd, proto, Dd, ss, fss) ;
