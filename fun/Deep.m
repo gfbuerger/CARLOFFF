@@ -62,12 +62,13 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    [solver deploy] = proto_upd(:, ptr, pdd, proto, Dd) ;
    if strcmp(De, ".netonly")
-      res = {fss fsn fsd} ; prob = NaN ;
+      res = {solver deploy} ; prob = NaN ;
       return ;
    endif
    
    ## train model
    sfx = sprintf("%s/%s.%s", Dd, proto, pdd.name) ;
+   solver = caffe.Solver(solver) ;
    pat = sprintf("%s_iter_*.solverstate", sfx) ;
    if regexp(solverstate, "\\*") && ~isempty(lst = glob(solverstate))
       state = strtrim(ls("-1t", lst{end})(1,:)) ;
