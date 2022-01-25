@@ -47,6 +47,33 @@ set(findall(h, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
 
 print("nc/paper/skl_scatter.svg") ;
 
+clf ; hold on ; clear SKL ;
+## without EOFs
+JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
+SKL(:,1) = S(:,1) ;
+JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
+SKL(:,2) = S(:,1) ;
+## with EOFs
+JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
+SKL(:,3) = S(:,1) ;
+JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
+SKL(:,4) = S(:,1) ;
+
+sn = min(SKL(:)) ; sx = max(SKL(:)) ;
+plot([sn sx], [sn sx], "k--") ;
+axis square ;
+for jMDL = 1 : rows(S)
+   hg(jMDL) = scatter(SKL(jMDL,1), SKL(jMDL,2), sz, col(jMDL,:), "", "s") ;
+   hgE(jMDL) = scatter(SKL(jMDL,3), SKL(jMDL,4), sz, col(jMDL,:), "filled", "s") ;
+endfor
+xlabel("ETS without cape") ; ylabel("ETS with cape") ;
+hlE = legend(hgE, upper(MDL), "box", "off", "location", "southeast") ;
+print("nc/paper/ETS_use_cape.svg") ;
+
 
 ## cases
 ## June 2013
