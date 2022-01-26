@@ -14,6 +14,7 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    pmkdir(sprintf("models/%s", proto)) ;
    Sa = sprintf("models/%s/%s", proto, area) ;
    if exist(Sa, "file") ~= 7 || ~S_ISLNK(lstat(Sa).mode)
+      unlink(Sa) ;
       symlink(fullfile(pwd, Dd), Sa) ;
       printf("%s --> %s\n", fullfile(pwd, Dd), Sa) ;
    endif
@@ -68,30 +69,30 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    
    ## train model
    sfx = sprintf("%s/%s.%s", Dd, proto, pdd.name) ;
-   solver = caffe.Solver(solver) ;
+   Solver = caffe.Solver(solver) ;
    pat = sprintf("%s_iter_*.solverstate", sfx) ;
    if regexp(solverstate, "\\*") && ~isempty(lst = glob(solverstate))
-      state = strtrim(ls("-1t", lst{end})(1,:)) ;
+      state = strtrim(ls("-1t", lst{:})(1,:)) ;
    elseif exist(solverstate, "file") == 2
       state = solverstate ;
    endif
 
    if exist("state", "var") == 0
-      solver.solve() ;
+      Solver.solve() ;
    else
-      solver.restore(state) ;
-      iter = solver.iter ;
-      printf("solver at iteration: %d\n", iter) ;
-      if ~isnewer(state, fss, fsn, fsd, h5f(pdd.name, "CAL")) && ~BATCH
+      Solver.restore(state) ;
+      iter = Solver.iter ;
+      printf("Solver at iteration: %d\n", iter) ;
+      if ~isnewer(state, solver, deploy, h5f(pdd.name, "CAL")) && ~BATCH
 	 n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
 	 if ~isempty(n)
 	    switch n > 0
 	       case 0
 		  printf("from scratch\n") ;
-		  solver.solve() ;
+		  Solver.solve() ;
 	       otherwise
 		  printf("<-- %s\n", state) ;
-		  solver.step(n) ;
+		  Solver.step(n) ;
 	    endswitch
 	 endif
       endif
