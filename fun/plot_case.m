@@ -1,7 +1,7 @@
-## usage: [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1)
+## usage: [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1, cx = 1)
 ##
 ## plot pattern and probs for D, d
-function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1)
+function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1, cx = 1)
 
    global REG NH
 
@@ -31,8 +31,13 @@ function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1)
    hb = borders("germany", "color", "black") ;
 
    I = sdate(pdd.ts.id, d) ;
-   h = scatter(pdd.ts.lon(I), pdd.ts.lat(I), 3*pdd.ts.x(I,jVAR), "r", "o", "filled") ;
-   legend(h, "Eta", "box", "off", "location", "northeast")
+   x = pdd.ts.x(I,jVAR) ;
+   h = scatter(pdd.ts.lon(I), pdd.ts.lat(I), cx*x, "r", "o", "filled") ;
+   [xn in] = min(x) ; [xx ix] = max(x) ;
+   hn = scatter(pdd.ts.lon(I)(in), pdd.ts.lat(I)(in), cx*x(in), "r", "o", "filled") ;
+   hx = scatter(pdd.ts.lon(I)(ix), pdd.ts.lat(I)(ix), cx*x(ix), "r", "o", "filled") ;
+   sn = sprintf("{\\it{E_{T,A}}} = %.0f", xn) ; sx = sprintf("{\\it{E_{T,A}}} = %.0f", xx) ;
+   legend([hx hn], {sx sn}, "box", "off", "location", "northeast") ;
 
    set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
    set(findall("type", "axes"), "fontsize", 24) ;

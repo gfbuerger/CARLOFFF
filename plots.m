@@ -1,3 +1,4 @@
+
 reset(0) ;
 set(0, "defaultfigureunits", "normalized", "defaultfigurepapertype", "A4") ;
 set(0, "defaultfigurepaperunits", "normalized", "defaultfigurepaperpositionmode", "auto") ;
@@ -9,45 +10,13 @@ set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 14, "defa
 
 
 addpath ~/oct/nc/maxdistcolor
-col = maxdistcolor(rows(S) + length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
+col = maxdistcolor(ncol = length(MDL) + length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
+##col = col(randperm(ncol),:) ;
 
 ## Shallow
-figure(1) ; sz = 70 ;
-clf ; hold on ;
-for jMDL = 1 : rows(S)
-   hgS(jMDL) = scatter(S(jMDL,1), S(jMDL,2), sz, col(jMDL,:), "filled", "s") ;
-endfor
-hS = legend(hgS, upper(MDL), "box", "off", "location", "northeast") ;
-
-figure(2) ;
-clf ; hold on ;
-jPLT = 0 ;
-for jNET = 1 : rows(S)
-   jPLT++ ;
-   hgS(jPLT) = scatter(S(jNET,1), S(jNET,2), sz, col(jPLT,:), "filled", "s") ;
-endfor
-
-JNET = false(length(NET), 1) ;
-for jNET = 1 : length(NET)
-   jPLT++ ;
-   net = NET{jNET} ;
-
-   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name) ;
-   if ~(JNET(jNET) = exist(mfile) == 2) continue ; endif
-   load(mfile) ;
-   I = skl(:,1) > 0.1 ;
-   hg = hggroup() ;
-   scatter(skl(I,1), skl(I,2), 5, col(jPLT,:), "o", "filled", "parent", hg) ;
-   hgD(jNET) = scatter(mean(skl(I,1)), mean(skl(I,2)), sz, col(jPLT,:), "d", "filled", "parent", hg) ;
-endfor
-xlabel("ETS") ; ylabel("crossentropy") ;
-legend(hgD(JNET), NET(JNET), "box", "off", "location", "southwest") ;
-h = copyobj(hS, gcf) ;
-set(findall(h, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
-
-print("nc/paper/skl_scatter.svg") ;
-
-clf ; hold on ; clear SKL ;
+figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
+clf ; clear SKL ;
+subplot(1, 2, 1) ; hold on ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
@@ -67,123 +36,58 @@ sn = min(SKL(:)) ; sx = max(SKL(:)) ;
 plot([sn sx], [sn sx], "k--") ;
 axis square ;
 for jMDL = 1 : rows(S)
-   hg(jMDL) = scatter(SKL(jMDL,1), SKL(jMDL,2), sz, col(jMDL,:), "", "s") ;
-   hgE(jMDL) = scatter(SKL(jMDL,3), SKL(jMDL,4), sz, col(jMDL,:), "filled", "s") ;
+   hg(jMDL) = scatter(SKL(jMDL,2), SKL(jMDL,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
+   hgE(jMDL) = scatter(SKL(jMDL,4), SKL(jMDL,3), sz, col(jMDL,:), "filled", "s") ;
 endfor
-xlabel("ETS without cape") ; ylabel("ETS with cape") ;
-hlE = legend(hgE, upper(MDL), "box", "off", "location", "southeast") ;
-print("nc/paper/ETS_use_cape.svg") ;
+xlabel("ETS with cape") ; ylabel("ETS without cape") ;
+hlE = legend(hgE, upper(MDL), "box", "off", "location", "northwest") ;
+xl = xlim() ;
+
+## Deep
+subplot(1, 2, 2) ; hold on ;
+jPLT = 0 ;
+for jNET = 1 : rows(S)
+   jPLT++ ;
+   hgS(jPLT) = scatter(S(jNET,1), S(jNET,2), sz, col(jPLT,:), "filled", "s") ;
+endfor
+
+JNET = false(length(NET), 1) ;
+for jNET = 1 : length(NET)
+   jPLT++ ;
+   net = NET{jNET} ;
+
+   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name) ;
+   if ~(JNET(jNET) = exist(mfile) == 2) continue ; endif
+   printf("<-- %s\n", mfile) ;
+   load(mfile) ;
+   I = skl(:,1) > 0.1 ;
+   hg = hggroup() ;
+   scatter(skl(I,1), skl(I,2), 5, col(jPLT,:), "o", "filled", "parent", hg) ;
+   hgD(jNET) = scatter(mean(skl(I,1)), mean(skl(I,2)), sz, col(jPLT,:), "d", "filled", "parent", hg) ;
+endfor
+xlim(xl) ;
+xlabel("ETS (with cape)") ; ylabel("crossentropy (with cape)") ;
+legend(hgD(JNET), NET(JNET), "box", "off", "location", "southwest") ;
+h = copyobj(hlE, gcf) ;
+set(findall(h, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
+set(h, "position", [0.85 0.65 0.10 0.24])
+
+print("nc/paper/skl_scatter.svg") ;
 
 
 ## cases
 ## June 2013
-clf ;
+clf ; jVAR = 1 ;
 D1 = [2013, 5, 15 ; 2013, 6, 15] ; d1 = [2013 5 30] ;
 plot_case(shallow.prob, pdd, D1, d1) ;
-set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
-print(sprintf("nc/%s.%02d/2013-06.png", REG, NH)) ;
-
-for jVAR = 1 : numel(ptr.vars)
-   clf ;
-   ds = datestr(datenum(d1), "yyyy-mm-dd") ;
-   I = sdate(ptr.id, d1) ;
-   xm = zscore(squeeze(ptr.x(:,jVAR,:,:))) ;
-   xm = squeeze(xm(I,:,:)) ;
-   imagesc(ptr.lon, ptr.lat, xm') ;
-   set(gca, "ydir", "normal", "clim", [-3 3]) ;
-   ##title(sprintf("normalized %s for %s", toupper(ptr.vars{jVAR}), ds)) ;
-   hc = colorbar ;
-   colormap(redblue)
-   xlabel("longitude") ; ylabel("latitude") ;
-   
-   hold on
-   hb = borders("germany", "color", "black") ;
-
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
-   set(findall("type", "axes"), "fontsize", 14) ;
-   set(findall("type", "text"), "fontsize", 22) ;
-   hgsave(sprintf("nc/%s.2013-06.og", ptr.vars{jVAR})) ;
-   print(sprintf("nc/%s.2013-06.png", ptr.vars{jVAR})) ;
-endfor
 
 ## July 2014
 D1 = [2014 7 15 ; 2014 8 15] ; d1 = [2014 7 28] ;
-plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR) ;
+plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR, cx = 3) ;
 
 ## May 2016
 D1 = [2016, 5, 15 ; 2016, 6, 15] ; d1 = [2016 5 29] ;
 plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR) ;
-
-plot_case(shallow.prob, pdd, D1, d1) ;
-set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
-print(sprintf("nc/%s.%02d/2016-05.png", REG, NH)) ;
-
-clf ; jVAR = 1 ;
-ds = datestr(datenum(d1), "yyyy-mm-dd") ;
-
-I = sdate(ptr.id, d1) ;
-xm = zscore(squeeze(ptr.x(:,jVAR,:,:))) ;
-xm = squeeze(xm(I,:,:)) ;
-imagesc(ptr.lon, ptr.lat, xm') ;
-set(gca, "ydir", "normal", "clim", [-3 3]) ;
-##title(sprintf("normalized %s for %s", toupper(ptr.vars{jVAR}), ds)) ;
-hc = colorbar ;
-colormap(redblue)
-xlabel("longitude") ; ylabel("latitude") ;
-##   set(get(hc, "Title"), "string", "[%]") ;
-   
-hold on
-hb = borders("germany", "color", "black") ;
-
-set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
-set(findall("type", "axes"), "fontsize", 14) ;
-set(findall("type", "text"), "fontsize", 22) ;
-hgsave(sprintf("nc/%s.2016-05.og", ptr.vars{jVAR})) ;
-print(sprintf("nc/%s.2016-05.png", ptr.vars{jVAR})) ;
-
-
-clf ;
-I = sdate(pdd.id, d1) ;
-w = pdd.x(I,1,:,:) ;
-xm = squeeze(any(w > pdd.q, 1)) ;
-imagesc(pdd.lon-0.125, pdd.lat-0.125, xm') ;
-xticks(pdd.lon) ; yticks(pdd.lat) ; 
-set(gca, "ydir", "normal") ;
-colormap(flip(gray(5)))
-title(sprintf("%s > 0 for %s", toupper(pdd.vars{1}), ds)) ;
-set(gca, "xtick", [], "ytick", [], "xticklabel", [], "yticklabel", [])
-##xlabel("longitude") ; ylabel("latitude") ;
-   
-hold on
-hb = borders("germany", "color", "black") ;
-
-set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 30) ;
-hgsave(sprintf("nc/%s.%02d/%s.2016-05.og", REG, NH, pdd.vars{1})) ;
-print(sprintf("nc/%s.%02d/%s.2016-05.png", REG, NH, pdd.vars{1})) ;
-##}
-
-
-addpath ~/oct/mmap
-
-borders germany
-
-[Y X] = meshgrid(ptr.lat, ptr.lon) ;
-%create the list of text
-string = mat2cell(num2str([1:10*10]'),ones(10*10,1));
-%display the background
-imagesc(I)
-hold on
-%insert the labels
-text(Y(:)-.5,X(:)+.25,string,'HorizontalAlignment','left')
-%calculte the grid lines
-grid = .5:1:10.5;
-grid1 = [grid;grid];
-grid2 = repmat([.5;10.5],1,length(grid))
-%plot the grid lines
-plot(grid1,grid2,'k')
-plot(grid2,grid1,'k')
-
-
 
 
 
