@@ -13,6 +13,22 @@ addpath ~/oct/nc/maxdistcolor
 col = maxdistcolor(ncol = length(MDL) + length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 ##col = col(randperm(ncol),:) ;
 
+### cases
+## June 2013
+clf ; jVAR = 1 ;
+D1 = [2013, 5, 15 ; 2013, 6, 15] ; d1 = [2013 5 30] ;
+plot_case(ptr, pdd, :, pdd, D1, d1) ;
+
+## July 2014
+D1 = [2014 7 15 ; 2014 8 15] ; d1 = [2014 7 28] ;
+plot_case(ptr, pdd, :, D1, d1, jVAR, cx = 5) ;
+
+## May 2016
+D1 = [2016, 5, 15 ; 2016, 6, 15] ; d1 = [2016 5 29] ;
+plot_case(ptr, pdd, :, D1, d1, jVAR) ;
+
+
+### performance
 ## Shallow
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ; clear SKL ;
@@ -73,21 +89,6 @@ set(findall(h, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
 set(h, "position", [0.85 0.65 0.10 0.24])
 
 print("nc/paper/skl_scatter.svg") ;
-
-
-## cases
-## June 2013
-clf ; jVAR = 1 ;
-D1 = [2013, 5, 15 ; 2013, 6, 15] ; d1 = [2013 5 30] ;
-plot_case(shallow.prob, pdd, D1, d1) ;
-
-## July 2014
-D1 = [2014 7 15 ; 2014 8 15] ; d1 = [2014 7 28] ;
-plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR, cx = 3) ;
-
-## May 2016
-D1 = [2016, 5, 15 ; 2016, 6, 15] ; d1 = [2016 5 29] ;
-plot_case(ptr, pdd, shallow.prob, D1, d1, jVAR) ;
 
 
 

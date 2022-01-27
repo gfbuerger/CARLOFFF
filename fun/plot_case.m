@@ -1,20 +1,22 @@
-## usage: [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1, cx = 1)
+## usage: [h1, h2] = plot_case (ptr, pdd, prob = [], D, d, jVAR = 1, cx = 1)
 ##
 ## plot pattern and probs for D, d
-function [h1, h2] = plot_case (ptr, pdd, prob, D, d, jVAR = 1, cx = 1)
+function [h1, h2] = plot_case (ptr, pdd, prob = [], D, d, jVAR = 1, cx = 1)
 
    global REG NH
 
    ds = datestr(datenum(d), "yyyy-mm") ;
+
+   if ~isempty(prob)
+
+      h1 = figure(1) ;
+      clf ;
+      plot_prob(prob, pdd, D, d) ;
+      set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
+      printf("--> nc/%s.%02d/%s.png\n", REG, NH, ds) ;
+      print(sprintf("nc/%s.%02d/%s.png", REG, NH, ds)) ;
+   endif
    
-   h1 = figure(1) ;
-
-   clf ;
-   plot_prob(prob, pdd, D, d) ;
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
-   printf("--> nc/%s.%02d/%s.png\n", REG, NH, ds) ;
-   print(sprintf("nc/%s.%02d/%s.png", REG, NH, ds)) ;
-
    h2 = figure(2, "position", [0.7 0.4 0.3 0.6]) ;
    clf ; hold on
 

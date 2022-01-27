@@ -138,14 +138,14 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nnet" "nlinfit"} ;
+MDL = {"lasso" "tree" "nnet" "logr"} ;
 PCA = {{} []}{2} ;
 if iscell(PCA) ptr.ind = sprintf("R%s", ind) ; endif
 if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
    load(mfile) ;
 else
    for jMDL = 1 : length(MDL)
-      mdl = {"lasso" "tree" "nnet" "nlinfit"}{jMDL} ;
+      mdl = MDL{jMDL} ;
       if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name), ptfile)
 	 load(sfile) ;
       else
