@@ -30,24 +30,25 @@ plot_case(ptr, pdd, :, D1, d1, jVAR) ;
 
 ### performance
 ## Shallow
-figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
-clf ; clear SKL ;
-subplot(1, 2, 1) ; hold on ;
+clear SKL ;
 ## without EOFs
-JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+JVAR = [2 4] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
 SKL(:,1) = S(:,1) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
 SKL(:,2) = S(:,1) ;
 ## with EOFs
-JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+JVAR = [2 4] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
 SKL(:,3) = S(:,1) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
 SKL(:,4) = S(:,1) ;
 
+figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
+clf ;
+ax1 = subplot(1, 2, 1) ; hold on ;
 sn = min(SKL(:)) ; sx = max(SKL(:)) ;
 plot([sn sx], [sn sx], "k--") ;
 axis square ;
@@ -57,36 +58,41 @@ for jMDL = 1 : rows(S)
 endfor
 xlabel("ETS with cape") ; ylabel("ETS without cape") ;
 hlE = legend(hgE, upper(MDL), "box", "off", "location", "northwest") ;
-xl = xlim() ;
+xl = xlim() ; grid on
 
 ## Deep
-subplot(1, 2, 2) ; hold on ;
+ax2 = subplot(1, 2, 2) ; hold on ;
 jPLT = 0 ;
 for jNET = 1 : rows(S)
    jPLT++ ;
    hgS(jPLT) = scatter(S(jNET,1), S(jNET,2), sz, col(jPLT,:), "filled", "s") ;
 endfor
 
-JNET = false(length(NET), 1) ;
 for jNET = 1 : length(NET)
    jPLT++ ;
    net = NET{jNET} ;
 
-   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name) ;
-   if ~(JNET(jNET) = exist(mfile) == 2) continue ; endif
+   JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name) ;
    printf("<-- %s\n", mfile) ;
    load(mfile) ;
-   I = skl(:,1) > 0.1 ;
    hg = hggroup() ;
-   scatter(skl(I,1), skl(I,2), 5, col(jPLT,:), "o", "filled", "parent", hg) ;
-   hgD(jNET) = scatter(mean(skl(I,1)), mean(skl(I,2)), sz, col(jPLT,:), "d", "filled", "parent", hg) ;
+   scatter(skl(:,1), skl(:,2), 5, col(jPLT,:), "o", "filled", "parent", hg) ;
+   hgD(jNET) = scatter(mean(skl(:,1)), mean(skl(:,2)), sz, col(jPLT,:), "d", "filled", "parent", hg) ;
+   JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name) ;
+   printf("<-- %s\n", mfile) ;
+   w = load(mfile) ;
+   scatter(ax1, mean(skl(:,1)), mean(w.skl(:,1)), sz, col(jPLT,:), "d", "filled") ;
+   axes(ax2) ;
 endfor
-xlim(xl) ;
-xlabel("ETS (with cape)") ; ylabel("crossentropy (with cape)") ;
-legend(hgD(JNET), NET(JNET), "box", "off", "location", "southwest") ;
-h = copyobj(hlE, gcf) ;
-set(findall(h, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
-set(h, "position", [0.85 0.65 0.10 0.24])
+xlim(xl) ; grid on
+xlabel("ETS") ; ylabel("crossentropy") ;
+hlD = legend(hgD, NET, "box", "off", "location", "southwest") ;
+hlE = copyobj(hlE, gcf) ;
+set(findall(hlE, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
+set(hlE, "position", [0.88 0.65 0.10 0.24])
+set(hlD, "position", [0.884 0.15 0.10 0.5])
 
 print("nc/paper/skl_scatter.svg") ;
 

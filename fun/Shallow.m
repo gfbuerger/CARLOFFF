@@ -29,24 +29,31 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
 
 	 if strcmp(ptr.vars{j}, "prc") ptr.vars{j} = "cp" ; endif
-	 if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), "data/atm.ob")
-	    load(efile)
-	    printf("<-- %s [%d]\n", efile, columns(E)) ;
-	 else
-	    x = squeeze(X(ptr.CAL,j,:)) ;
-	    switch class(PCA)
-	       case "char"
-		  [ev, E] = pca(x) ;
-	       case {"function_handle" "double"}
-		  E = gpca(x, PCA) ;
-	       otherwise
-		  E = eye(columns(x)) ;
-	    endswitch
-	    printf("[%d] --> %s\n", columns(E), efile) ;
-	    save(efile, "E") ;
-	 endif
 
+	 if isequal(PCA, {})
+
+	    E = eye(size(X, 3)) ;
+
+	 else
+
+	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), "data/atm.ob")
+	       load(efile)
+	       printf("<-- %s [%d]\n", efile, columns(E)) ;
+	    else
+	       x = squeeze(X(ptr.CAL,j,:)) ;
+	       switch class(PCA)
+		  case "char"
+		     [ev, E] = pca(x) ;
+		  case {"function_handle" "double"}
+		     E = gpca(x, PCA) ;
+	       endswitch
+	       printf("[%d] --> %s\n", columns(E), efile) ;
+	       save(efile, "E") ;
+	    endif
+	 endif
+	 
 	 PC = [PC, nanmult(X(:,j,:), E)] ;
+
       endfor
 
       if ~isempty(PCA) && PCA > size(PC, 2)
@@ -74,15 +81,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       
       if Lcv && strcmp(phs, "CAL")
 
-	 switch IMB
-	    case "SMOTE"
-	       printf("imbalance handling using: %s\n", IMB) ;
-	       [xx yy] = smote(x, y) ;
-	    case ""
-	    otherwise
-	       printf("imbalance handling using: %s\n", IMB) ;
-	       [xx yy] = oversmpl(x, y) ;
-	 endswitch
+	 ## oversampling
+	 [xx yy] = oversmpl(x, y, IMB) ;
 	 
 	 switch mdl
 

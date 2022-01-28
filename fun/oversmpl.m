@@ -1,7 +1,19 @@
-## usage: [iout, lout] = oversmpl (i, l)
+## usage: [iout, lout] = oversmpl (i, l, IMB)
 ##
-## oversample i, l
-function [iout, lout] = oversmpl (i, l)
+## oversample i, l using IMB
+function [iout, lout] = oversmpl (i, l, IMB)
+
+   printf("oversampling with: %s\n", IMB) ;
+
+   if isempty(IMB)
+      [iout lout] = deal(i, l) ;
+      return ;
+   endif
+   
+   if strcmp(IMB, "SMOTE")
+      [iout lout] = smote(i, l) ;
+      return ;
+   endif
 
    N = size(i) ;
    

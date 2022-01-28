@@ -42,14 +42,7 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
 	 if strcmp(PHS, "CAL")
 	    ## oversampling
-	    switch IMB
-	       case "SMOTE"
-		  [images labels] = smote(images, labels) ;
-	       case "SIMPLE"
-		  [images labels] = oversmpl(images, labels) ;
-	       otherwise
-	    endswitch
-	    printf("oversampling with: %s\n", IMB) ;
+	    [images labels] = oversmpl(images, labels, IMB) ;
 	 endif
 	 
 	 if 0

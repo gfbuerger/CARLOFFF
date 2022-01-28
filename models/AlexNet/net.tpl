@@ -1,3 +1,4 @@
+## https://github.com/BVLC/caffe/tree/master/models/bvlc_alexnet
 layer {
   name: "conv1"
   type: "Convolution"

@@ -151,7 +151,7 @@ else
       else
 	 varargin = {} ;
 ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
-	 shallow = Shallow(ptr, pdd, [], "CVE", mdl, {"HSS" "GSS"}, varargin{:}) ;
+	 shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, {"HSS" "GSS"}, varargin{:}) ;
 	 S(jMDL,:) = [shallow.skl.VAL.GSS shallow.crossentropy.VAL] ;
 	 save("-text", sfile, "S", "shallow") ;
       endif
@@ -185,17 +185,19 @@ for jNET = 1 : length(NET)
       solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, net, PDD) ;
       ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_*.solverstate", REG, NH, RES, net) ;
 ##      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, net, PDD) ;
-      clear skl ;
-      for i = 1:20
-	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.tmp.ot", REG, NH, net, ptr.ind, pdd.name))
+      clear skl ; i = 0 ;
+      while i < 20
+	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name))
 	    load(sfile) ;
-	    if rows(skl) >= i continue ; endif
+	    if rows(skl) > i continue ; endif
 	 endif
 	 [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
+	 if deep.skl.VAL.GSS < 0.1 continue ; endif # no convergence, repeat
+	 i++ ;
 	 skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
-      endfor
+      endwhile
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
