@@ -185,16 +185,20 @@ for jNET = 1 : length(NET)
       solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, net, PDD) ;
       ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_*.solverstate", REG, NH, RES, net) ;
 ##      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, net, PDD) ;
-      clear skl ; i = 0 ;
-      while i < 20
+      clear skl ; i = 1 ;
+      while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name))
 	    load(sfile) ;
-	    if rows(skl) > i continue ; endif
+	    if rows(skl) > i && skl(i,1) > 0.1
+	       i++ ;
+	       continue ;
+	    endif
 	 endif
 	 [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
-	 if deep.skl.VAL.GSS < 0.1 continue ; endif # no convergence, repeat
-	 i++ ;
-	 skl(i,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
+	 if deep.skl.VAL.GSS <= 0.1 # no convergence, repeat
+	    continue ;
+	 endif
+	 skl(i++,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
@@ -202,7 +206,7 @@ for jNET = 1 : length(NET)
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
       save("-text", mfile, "skl") ;
-      delete(sprintf("data/%s.%02d/skl.%s.%s.%s.tmp.ot", REG, NH, net, ptr.ind, pdd.name)) ;
+      delete(sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name)) ;
       ##save(ptr.ptfile, "ptr") ;
    endif
 
