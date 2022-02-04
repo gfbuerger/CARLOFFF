@@ -144,7 +144,7 @@ endif
 
 ## Shallow
 MDL = {"lasso" "tree" "nnet" "logr"} ;
-PCA = {{} []}{2} ;
+PCA = {{} []}{1} ;
 if iscell(PCA) ptr.ind = sprintf("R%s", ind) ; endif
 if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
    load(mfile) ;
@@ -203,7 +203,8 @@ for jNET = 1 : length(NET)
 	    continue ;
 	 endif
 	 skl(i++,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
-	 save("-text", sfile, "skl") ;
+	 net = deep.net ;
+	 save("-text", sfile, "skl", "net") ;
 	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
@@ -225,8 +226,10 @@ SIM = {"ptr" "historical" "rcp85"}([2 3]) ;
 NSIM = {"ANA" "HIST" "RCP85"}([2 3]) ;
 
 jS = 2 ; mdl = MDL{jS} ;
-load(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name)) ;
-jD = 7 ; net = NET{jD} ; res = RES{jD} ;
+PCA = {{} []}{1} ;
+if iscell(PCA) Sind = sprintf("R%s", ind) ; endif
+load(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, Sind, pdd.name)) ;
+jD = 9 ; net = NET{jD} ; res = RES{jD} ;
 
 model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
 weights = ls("-1t", sprintf("models/%s/%s.%02d/%s.%s_iter_*.caffemodel", net, REG, NH, net, pdd.name))(1,:) ;

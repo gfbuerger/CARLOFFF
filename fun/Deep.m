@@ -130,7 +130,7 @@ function [res prob] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       
    endfor
 
-   res = struct("crossentropy", ce, "th", th, "skl", skl) ;
+   res = struct("crossentropy", ce, "th", th, "skl", skl, "net", net) ;
 
    t = [datenum(pdd.id(pdd.CAL,:)) ; datenum(pdd.id(pdd.VAL,:))] ;
    [~, Is] = sort(t) ;
