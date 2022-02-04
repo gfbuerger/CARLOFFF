@@ -32,14 +32,14 @@ plot_case(ptr, pdd, :, D1, d1, jVAR) ;
 ## Shallow
 clear SKL ;
 ## without EOFs
-JVAR = [2 4] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
 SKL(:,1) = S(:,1) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
 SKL(:,2) = S(:,1) ;
 ## with EOFs
-JVAR = [2 4] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
 SKL(:,3) = S(:,1) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
@@ -49,9 +49,9 @@ SKL(:,4) = S(:,1) ;
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ;
 ax1 = subplot(1, 2, 1) ; hold on ;
+axis square ;
 sn = min(SKL(:)) ; sx = max(SKL(:)) ;
 plot([sn sx], [sn sx], "k--") ;
-axis square ;
 for jMDL = 1 : rows(S)
    hg(jMDL) = scatter(SKL(jMDL,2), SKL(jMDL,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
    hgE(jMDL) = scatter(SKL(jMDL,4), SKL(jMDL,3), sz, col(jMDL,:), "filled", "s") ;
@@ -59,9 +59,12 @@ endfor
 xlabel("ETS with cape") ; ylabel("ETS without cape") ;
 hlE = legend(hgE, upper(MDL), "box", "off", "location", "northwest") ;
 xl = xlim() ; grid on
+xl = [0.34 0.52] ;
+xlim(xl) ; ylim(xl) ;
 
 ## Deep
 ax2 = subplot(1, 2, 2) ; hold on ;
+axis square ;
 jPLT = 0 ;
 for jNET = 1 : rows(S)
    jPLT++ ;
@@ -89,10 +92,13 @@ endfor
 xlim(xl) ; grid on
 xlabel("ETS") ; ylabel("crossentropy") ;
 hlD = legend(hgD, NET, "box", "off", "location", "southwest") ;
-hlE = copyobj(hlE, gcf) ;
-set(findall(hlE, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
-set(hlE, "position", [0.88 0.65 0.10 0.24])
-set(hlD, "position", [0.884 0.15 0.10 0.5])
+hlS = copyobj(hlE, gcf) ;
+delete(hlE) ;
+set(findall(hlS, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
+pos = get(ax1, "position") ; pos(1) -= 0.05 ; set(ax1, "position", pos)
+pos = get(ax2, "position") ; pos(1) += 0.05 ; set(ax2, "position", pos)
+set(hlD, "position", [0.45 0.15 0.10 0.5])
+set(hlS, "position", [0.45 0.65 0.10 0.24])
 
 print("nc/paper/skl_scatter.svg") ;
 
@@ -124,32 +130,36 @@ hgsave(sprintf("nc/plots/Eta.og")) ;
 print(sprintf("nc/plots/Eta.svg")) ;
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
-for mdl = {"shallow" "nnet"}
+for mdl = {"Shallow" "Deep"}
    mdl = mdl{:} ;
    clf ; hold on ; clear h ; j = 0 ;
-   h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 2, "linestyle", "--") ;
+   h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
    for sim = SIM
-      eval(sprintf("sim = %s ;", sim{:})) ; j++ ;
+      j++ ;
+      eval(sprintf("sim = %s ;", sim{:})) ;
       eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", mdl)) ;
       scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL(j,:), "filled") ; axis tight
       [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
       stats(j,:) = STATS ;
       yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j,:), "linewidth", 5) ;
+      h(j) = plot(s.id(:,1), yf, "color", COL(j,:), "linewidth", 4) ;
 ##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
-      xlabel("year") ; ylabel(sprintf("prob (WS {\\geq 3})", 0.3)) ;
+      xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
    endfor
-   if stats(3,3) < alpha
-      text(2040, 0.4, "p<0.05", "color", COL(3,:)) ;
-   endif
    ##   set(gca, "ygrid", "on") ;
-   ylim([0.1 0.4]) ;
-   if strcmp(mdl, "shallow")
+   ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
+   xt = mean(get(h(j), "xdata")) ;
+   for j = 2:3
+      if stats(j,3) < alpha
+	 text(xt, 0.7, "p<0.05", "color", COL(j,:)) ;
+      endif
+   endfor
+   if strcmp(mdl, "Deep")
       loc = "northwest" ;
    else
       loc = "southeast" ;
    endif
    legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", loc) ;
    hgsave(sprintf("nc/plots/%s.sim.og", mdl)) ;
-   print(sprintf("nc/plots/%s.sim.png", mdl)) ;
+   print(sprintf("nc/plots/%s.sim.svg", mdl)) ;
 endfor

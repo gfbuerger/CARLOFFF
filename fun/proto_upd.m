@@ -3,7 +3,7 @@
 ## update proto files
 function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
 
-   global REG NH RES
+   global REG NH
 
    if exist(wss = sprintf("models/%s/solver.tpl", proto), "file") == 2
       ss = fileread(wss) ;
@@ -57,7 +57,7 @@ endfunction
 ## print suitable string to ofile
 function print_str (ptr, pdd, proto, Dd, str, ofile)
 
-   global REG NH RES
+   global REG NH
 
    N = size(ptr.img) ;
    if length(N) < 3

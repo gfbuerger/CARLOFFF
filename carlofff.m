@@ -95,7 +95,10 @@ else
    str = sprintf("%s,", VAR{JVAR}) ; str = str(1:end-1) ;
    eval(sprintf("ptr = selptr(scale, ind, ptfile, ID, FILL, %s) ;", str))
    ptr.name = "ptr" ;
-   
+
+   ## normalize with mean and std
+   ptr.x = nrm_ptr(ptr.x) ;
+
    save(ptfile, "ptr") ;
    
 endif
@@ -122,9 +125,11 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
-w = pdd.x(:,1,:,:) ; # Eta
+w = squeeze(pdd.x(:,1,:,:)) ; # Eta
 pdd.q = quantile(w(:), Q0) ;
-pdd.c = any(any(w > pdd.q, 3), 4) ;
+pdd.c = any(any(w > pdd.q, 2), 3) ;
+printf("class rates: %.1f %%\n", 100 * [sum(w(:) > 0) sum(w(:) == 0)] / numel(w)) ;
+printf("class rates: %.1f %%\n", 100 * [sum(pdd.c) sum(~pdd.c)] / rows(pdd.c)) ;
 if 0 write_H(pdd.c) ; endif
 
 %% write train (CAL) & test (VAL) data
@@ -169,22 +174,21 @@ endif
 ## divergent: SqueezeNet
 ## shape mismatch: Inception-v4
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
-global RES = [] ;
+RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]} ;
 for jNET = 1 : length(NET)
 
-   net = NET{jNET} ;
-   RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}{jNET} ;
+   net = NET{jNET} ; res = RES{jNET} ;
 
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
       SKL.(["Deep_" ptr.ind])(jNET,:) = mean(skl) ;
    else
       init_rnd() ;
-      ptr.img = arr2img(ptr.x, RES) ;
-      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, RES, net, PDD) ;
-      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, RES, net, PDD) ;
-      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_*.solverstate", REG, NH, RES, net) ;
-##      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, RES, net, PDD) ;
+      ptr.img = arr2img(ptr.x, res) ;
+      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, res, net, PDD) ;
+      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, res, net, PDD) ;
+      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_*.solverstate", REG, NH, res, net) ;
+##      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, res, net, PDD) ;
       clear skl ; i = 1 ;
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name))
@@ -211,20 +215,22 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
-exit
-source plots.m ;
 
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 ID = [1961 1 1 ; 1990 12 31] ;
-SVAR = {"cape" "prc"} ;
+SVAR = {"cape" "prc" "prw"} ;
 SIM = {"ptr" "historical" "rcp85"}([2 3]) ;
 NSIM = {"ANA" "HIST" "RCP85"}([2 3]) ;
 
-model = "models/simple1/CatRaRE_deploy.prototxt" ;
-weights = "models/simple1/CatRaRE_iter_10000.caffemodel" ;
-net = caffe.Net(model, weights, 'test') ;
+jS = 2 ; mdl = MDL{jS} ;
+load(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name)) ;
+jD = 7 ; net = NET{jD} ; res = RES{jD} ;
+
+model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
+weights = ls("-1t", sprintf("models/%s/%s.%02d/%s.%s_iter_*.caffemodel", net, REG, NH, net, pdd.name))(1,:) ;
+deploy = caffe.Net(model, weights, 'test') ;
 
 for jsim = 1 : length(SIM)
 
@@ -249,7 +255,7 @@ for jsim = 1 : length(SIM)
 
    endfor
 
-   if exist(ptfile = sprintf("esgf/%s.ob", sim), "file") == 2
+   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glob(sprintf("esgf/*.%s.ob", sim)){:}) && 0
 
       load(ptfile) ;
 
@@ -257,22 +263,24 @@ for jsim = 1 : length(SIM)
       
       ## select predictors
       str = sprintf("%s,", SVAR{:}) ; str = str(1:end-1) ;
-      if strcmp(sim, "historical")
-	 eval(sprintf("[%s %s] = selptr(scale, ind, ptfile, ID, FILL, %s) ;", sim, str, str))   
-	 for svar = SVAR
-	    eval(sprintf("ref.%s.xm = %s.xm ; ref.%s.xs = %s.xs ;", svar{:}, svar{:}, svar{:}, svar{:})) ;
-	 endfor
-      else
-	 for svar = SVAR
-	    eval(sprintf("%s.xm = ref.%s.xm ; %s.xs = ref.%s.xs ;", svar{:}, svar{:}, svar{:}, svar{:})) ;
-	 endfor
-	 eval(sprintf("%s = selptr(scale, ind, ptfile, ID=[], FILL, %s) ;", sim, str))   
-      endif
+      eval(sprintf("%s = selptr(scale, ind, ptfile, ID=[], FILL, %s) ;", sim, str))   
       eval(sprintf("%s.name = sim ;", NSIM{jsim})) ;
-      eval(sprintf("%s.nnet.prob = apply_net(scale*%s.x, net) ;", sim, sim)) ;
-      eval(sprintf("%s.shallow.prob = Shallow(%s, shallow, [], []) ;", sim, sim)) ;
+
+      ## normalize with mean and std	 
+      if strcmp(sim, "historical")
+	 eval(sprintf("[%s.x %s.xm %s.xs] = nrm_ptr(%s.x) ;", sim, sim, sim, sim)) ;
+      else
+	 eval(sprintf("%s.x = nrm_ptr(%s.x, historical.xm, historical.xs) ;", sim, sim)) ;
+      endif
+      eval(sprintf("%s.img = arr2img(%s.x, res) ;", sim, sim)) ;
+
+      eval(sprintf("%s.Shallow.prob = Shallow(%s, shallow, PCA, [], mdl) ;", sim, sim)) ;
+      eval(sprintf("%s.Deep.prob = apply_net(scale*%s.img, deploy) ;", sim, sim)) ;
 
       save(ptfile, sim) ;
+
    endif
 
 endfor
+
+source plots.m ;

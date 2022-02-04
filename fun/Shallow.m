@@ -1,10 +1,11 @@
-## usage: res = Shallow (ptr, pdd, PCA, TRC="AIC", mdl, SKL={"GSS" "HSS"}, varargin)
+## usage: res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, varargin)
 ##
 ## calibrate and apply Shallow models
 function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, varargin)
 
    global REG NH IMB
    if strcmp(class(PCA), "char") ; pkg load tisean ; endif
+   init_mdl(mdl) ;	 
 
    Lfun = @(beta, x) beta(1) + x * beta(2:end) ;
 
@@ -26,9 +27,9 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       X = reshape(X, N(1), N(2), prod(N(3:end))) ;
       PC = [] ;
       for j = 1 : size(X, 2)
-	 X(:,j,:) = (X(:,j,:) - nanmean(X(:,j,:)(:))) ./ nanstd(X(:,j,:)(:)) ;
 
 	 if strcmp(ptr.vars{j}, "prc") ptr.vars{j} = "cp" ; endif
+	 if strcmp(ptr.vars{j}, "prw") ptr.vars{j} = "tcw" ; endif
 
 	 if isequal(PCA, {})
 
@@ -83,12 +84,11 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	 ## oversampling
 	 [xx yy] = oversmpl(x, y, IMB) ;
-	 
+
 	 switch mdl
 
 	    case "lasso"
 
-	       source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
 	       model = glm_logistic(yy,xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
 	       if 0
@@ -123,7 +123,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       I = all(~isnan([xx yy]), 2) ;
 	       xx = xx(I,:) ; yy = yy(I,:) ;
 
-	       pkg load nnet
 	       Pr = [min(xx) ; max(xx)]' ;
 	       SS = [7 3 1] ; # based on some tests
 	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
@@ -140,7 +139,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       I = all(~isnan([xx yy]), 2) ;
 	       xx = xx(I,:) ; yy = yy(I,:) ;
 
-	       addpath ~/oct/nc/M5PrimeLab ;
 	       trainParamsEnsemble = m5pparamsensemble(50) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
 	       fit.par = m5pbuild(xx, yy, [], [], trainParamsEnsemble) ;
@@ -155,7 +153,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       I = all(~isnan([xx yy]), 2) ;
 	       xx = xx(I,:) ; yy = yy(I,:) ;
 
-	       pkg load optim
 	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(columns(xx)+1, 1) ;
 	       opt = optimset("Display", "iter") ;
@@ -229,3 +226,22 @@ grad = (1/m)*X'*(h - y);
 % =============================================================
 
 end
+
+
+## usage: init_mdl (mdl)
+##
+## initialize model
+function init_mdl (mdl)
+
+   switch mdl
+      case "lasso"
+	 source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
+      case "nnet"
+	 pkg load nnet
+      case "tree"
+	 addpath ~/oct/nc/M5PrimeLab ;
+      otherwise
+	 pkg load optim
+   endswitch
+   
+endfunction

@@ -1,7 +1,7 @@
-## usage: [ptr varargout] = selptr (scale, ind=[], ptfile, ID=[], FILL=false, varargin)
+## usage: ptr = selptr (scale, ind=[], ptfile, ID=[], FILL=false, varargin)
 ##
 ## select predictors
-function [ptr varargout] = selptr (scale, ind=[], ptfile, ID=[], FILL=false, varargin)
+function ptr = selptr (scale, ind=[], ptfile, ID=[], FILL=false, varargin)
 
    ptr = varargin{1} ;
    N = size(ptr.x) ;
@@ -25,17 +25,8 @@ function [ptr varargout] = selptr (scale, ind=[], ptfile, ID=[], FILL=false, var
 	 endif
       endif      
 
-      if ~isfield(v, "xm") || ~isfield(v, "xs")
-	 if ~any(x(:) < 0)
-	    v.xm = 0 ;
-	 else
-	    v.xm = nanmean(x(:)) ;
-	 endif
-	 v.xs = nanstd(x(:)) ;
-      endif
-      ptr.x(:,i,:,:) = (x - v.xm) ./ v.xs ;
+      ptr.x(:,i,:,:) = x ;
       ptr.vars{i} = v.name ;
-      varargout{i} = v ;
    endfor
 
    ptr.scale = scale ;
