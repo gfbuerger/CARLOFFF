@@ -198,14 +198,14 @@ for jNET = 1 : length(NET)
 	       continue ;
 	    endif
 	 endif
-	 [deep ptr.prob] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
+	 [deep ptr.prob weights] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
 	 if deep.skl.VAL.GSS <= 0.1 # no convergence, repeat
 	    continue ;
 	 endif
+	 rename(weights, sprintf("data/%s.%02d/weights.%s.%s.%s.%02d.caffemodel", REG, NH, net, ptr.ind, pdd.name, i)) ;
 	 skl(i++,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
-	 net = deep.net ;
-	 save("-text", sfile, "skl", "net") ;
-	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
+	 save("-text", sfile, "skl") ;
+##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
