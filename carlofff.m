@@ -181,18 +181,18 @@ NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "D
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]} ;
 for jNET = 1 : length(NET)
 
-   net = NET{jNET} ; res = RES{jNET} ;
+   net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
 
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
       SKL.(["Deep_" ptr.ind])(jNET,:) = mean(skl) ;
    else
       init_rnd() ;
-      ptr.img = arr2img(ptr.x, res) ;
-      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s.netonly", REG, NH, res, net, PDD) ;
-      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_0.solverstate", REG, NH, res, net, PDD) ;
-      ##solverstate = sprintf("data/%s.%02d/%dx%d/%s.cape_iter_*.solverstate", REG, NH, res, net) ;
-##      solverstate = sprintf("data/%s.%02d/%dx%d/%s.%s_iter_*.solverstate", REG, NH, res, net, PDD) ;
+      ptr.img = arr2img(ptr.x, RES{jNET}) ;
+      ##solverstate = sprintf("%s/%s.%s.netonly", sfx, net, PDD) ;
+      solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, PDD) ;
+      ##solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
+##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
       clear skl ; i = 1 ;
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name))
@@ -206,7 +206,7 @@ for jNET = 1 : length(NET)
 	 if deep.skl.VAL.GSS <= 0.1 # no convergence, repeat
 	    continue ;
 	 endif
-	 rename(weights, sprintf("data/%s.%02d/weights.%s.%s.%s.%02d.caffemodel", REG, NH, net, ptr.ind, pdd.name, i)) ;
+	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ptr.ind, pdd.name, i)) ;
 	 skl(i++,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
@@ -214,6 +214,10 @@ for jNET = 1 : length(NET)
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
+      [~, i] = max(skl(:,1)) ;
+      wfile = sprintf("%s/%s/%s.%s.%s.%02d.caffemodel", pwd, sfx, net, ptr.ind, pdd.name, i) ;
+      unlink(lfile = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ptr.ind, pdd.name)) ;
+      symlink(wfile, lfile) ;
       save("-text", mfile, "skl") ;
       delete(sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name)) ;
       ##save(ptr.ptfile, "ptr") ;
