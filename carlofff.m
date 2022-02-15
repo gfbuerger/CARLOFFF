@@ -288,7 +288,7 @@ for jSIM = 1 : length(SIM)
 	 net = NET{jNET} ; res = RES{jNET} ;
 	 model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
 	 if exist(model, "file") ~= 2 continue ; endif
-	 weights = strtrim(ls("-1t", sprintf("models/%s/%s.%02d/%s.%s_iter_*.caffemodel", net, REG, NH, net, pdd.name))(1,:)) ;
+	 weights = sprintf("data/%s.%02d/%dx%d/%s.%s.%s.caffemodel", REG, NH, RES{jNET}, net, ptr.ind, pdd.name) ;
 	 if exist(weights, "file") ~= 2 continue ; endif
 	 deploy = caffe.Net(model, weights, 'test') ;      
 	 eval(sprintf("%s.img = arr2img(%s.x, res) ;", sim, sim)) ;
