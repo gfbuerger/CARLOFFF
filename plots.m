@@ -34,32 +34,31 @@ clear SKL ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
-SKL(:,1) = S(:,1) ;
+SKL(:,:,1) = S ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
-SKL(:,2) = S(:,1) ;
+SKL(:,:,2) = S ;
 ## with EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
-SKL(:,3) = S(:,1) ;
+SKL(:,:,3) = S ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
-SKL(:,4) = S(:,1) ;
+SKL(:,:,4) = S ;
 
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ;
 ax1 = subplot(1, 2, 1) ; hold on ;
 axis square ;
-sn = min(SKL(:)) ; sx = max(SKL(:)) ;
+sn = min(SKL(:,1,:)) ; sx = max(SKL(:,1,:)) ;
 plot([sn sx], [sn sx], "k--") ;
-for jMDL = 1 : rows(S)
-   hg(jMDL) = scatter(SKL(jMDL,2), SKL(jMDL,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
-   hgE(jMDL) = scatter(SKL(jMDL,4), SKL(jMDL,3), sz, col(jMDL,:), "filled", "s") ;
+for jMDL = 1 : size(SKL, 1)
+   hg(jMDL) = scatter(SKL(jMDL,1,2), SKL(jMDL,1,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
+   hgE(jMDL) = scatter(SKL(jMDL,1,4), SKL(jMDL,1,3), sz, col(jMDL,:), "filled", "s") ;
 endfor
 xlabel("ETS with cape") ; ylabel("ETS without cape") ;
 hlE = legend(hgE, upper(MDL), "box", "off", "location", "northwest") ;
-xl = xlim() ; grid on
-xl = [0.34 0.52] ;
+xl = [xlim()(1) xlim()(2)] ; grid on
 xlim(xl) ; ylim(xl) ;
 
 ## Deep
@@ -68,14 +67,15 @@ axis square ;
 jPLT = 0 ;
 for jNET = 1 : rows(S)
    jPLT++ ;
-   hgS(jPLT) = scatter(S(jNET,1), S(jNET,2), sz, col(jPLT,:), "filled", "s") ;
+   hgS(jPLT) = scatter(SKL(jNET,1,4), SKL(jNET,2,4), sz, col(jPLT,:), "filled", "s") ;
 endfor
 
+JVAR = [2 4] ;
 for jNET = 1 : length(NET)
    jPLT++ ;
    net = NET{jNET} ;
 
-   JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
+   ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name) ;
    printf("<-- %s\n", mfile) ;
    load(mfile) ;
@@ -106,6 +106,7 @@ print("nc/paper/skl_scatter.svg") ;
 
 ### plots
 alpha = 0.05 ;
+qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
 global COL
 COL = [0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([3 2],:) ;
 set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 24) ;
@@ -120,7 +121,6 @@ print(sprintf("nc/plots/%s.loss.png", net)) ;
 
 # 
 I = pdd.id(:,1) == 2016 & ismember(pdd.id(:,2), MON) ;
-qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
 printf("average rate Eta > 0: %7.0f%%\n", 100*qEta) ;
 scatter(datenum(pdd.id(I,:)), nanmean(nanmean(pdd.x(I,1,:,:), 3), 4), 60, "k", "filled") ; axis tight
 set(gca, "ytick", [0 0.01 0.02])
@@ -130,7 +130,7 @@ hgsave(sprintf("nc/plots/Eta.og")) ;
 print(sprintf("nc/plots/Eta.svg")) ;
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
-for mdl = {"Shallow" "Deep"}
+for mdl = {"Shallow.tree" "Deep.Simple"}
    mdl = mdl{:} ;
    clf ; hold on ; clear h ; j = 0 ;
    h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
@@ -154,7 +154,7 @@ for mdl = {"Shallow" "Deep"}
 	 text(xt, 0.7, "p<0.05", "color", COL(j,:)) ;
       endif
    endfor
-   if strcmp(mdl, "Deep")
+   if strcmp(mdl, "Deep.Simple")
       loc = "northwest" ;
    else
       loc = "southeast" ;
@@ -163,3 +163,39 @@ for mdl = {"Shallow" "Deep"}
    hgsave(sprintf("nc/plots/%s.sim.og", mdl)) ;
    print(sprintf("nc/plots/%s.sim.svg", mdl)) ;
 endfor
+
+COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
+set(0, "defaultaxesfontsize", 18) ;
+set(0, "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
+MDL = {"Shallow.lasso" "Deep.Simple"} ; 
+clf ; jMDL = 0 ;
+for iMDL = [2 1]
+   jMDL++ ;
+   ax(jMDL) = subplot(1, 2, jMDL) ; hold on ; clear h ;
+   mdl = MDL{iMDL} ;
+   h(1) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
+   for jSIM = 1 : length(SIM)
+      eval(sprintf("sim = %s ;", SIM{jSIM})) ;
+      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", mdl)) ;
+      scatter(s.id(:,1), s.x(:,2), 6, 0.8*COL(jSIM+1,:), "filled") ; axis tight
+      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      stats(jSIM,:) = STATS ;
+      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
+      h(1+jSIM) = plot(s.id(:,1), yf, "color", COL(1+jSIM,:), "linewidth", 4) ;
+      ##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
+      xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
+   endfor
+   ##   set(gca, "ygrid", "on") ;
+   for jSIM = 1 : 2
+      if stats(jSIM,3) < alpha
+	 xt = mean(get(h(1+jSIM), "xdata")) ;
+	 text(xt, 0.72, {"\\it p<0.05"}, "color", COL(j,:)) ;
+      endif
+   endfor
+   title(toupper(mdl)) ;
+   legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", "southeast") ;
+endfor
+set(ax, "ylim", [0.35 0.75]) ;
+
+hgsave(sprintf("nc/plots/Shallow.sim.og")) ;
+print(sprintf("nc/plots/Shallow.sim.svg")) ;

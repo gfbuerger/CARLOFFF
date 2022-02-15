@@ -144,8 +144,12 @@ endif
 
 ## Shallow
 MDL = {"lasso" "tree" "nnet" "logr"} ;
-PCA = {{} []}{1} ;
-if iscell(PCA) ptr.ind = sprintf("R%s", ind) ; endif
+PCA = {{} []}{2} ;
+if iscell(PCA)
+   ptr.ind = sprintf("R%s", ind) ;
+else
+   ptr.ind = sprintf("%s", ind) ;
+endif
 if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
    load(mfile) ;
 else
@@ -157,9 +161,9 @@ else
 	 varargin = {} ;
 ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
 	 shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, {"HSS" "GSS"}, varargin{:}) ;
-	 S(jMDL,:) = [shallow.skl.VAL.GSS shallow.crossentropy.VAL] ;
-	 save("-text", sfile, "S", "shallow") ;
+	 save("-text", sfile, "shallow") ;
       endif
+      S(jMDL,:) = [shallow.skl.VAL.GSS shallow.crossentropy.VAL] ;
 ##      strucdisp(shallow.skl) ;
 ##      plot_fit(shallow.fit) ;
 ##      set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
@@ -221,24 +225,18 @@ endfor
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 ID = [1961 1 1 ; 1990 12 31] ;
-SVAR = {"cape" "prc" "prw"} ;
+SVAR = trl_atm("atmvar.lst", JVAR) ;
 SIM = {"ptr" "historical" "rcp85"}([2 3]) ;
 NSIM = {"ANA" "HIST" "RCP85"}([2 3]) ;
 
-jS = 2 ; mdl = MDL{jS} ;
-PCA = {{} []}{1} ;
-if iscell(PCA) Sind = sprintf("R%s", ind) ; endif
-load(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, Sind, pdd.name)) ;
-jD = 9 ; net = NET{jD} ; res = RES{jD} ;
+PCA = {{} []}{2} ;
+if iscell(PCA) ptr.ind = sprintf("R%s", ind) ; endif
 
-model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
-weights = ls("-1t", sprintf("models/%s/%s.%02d/%s.%s_iter_*.caffemodel", net, REG, NH, net, pdd.name))(1,:) ;
-deploy = caffe.Net(model, weights, 'test') ;
+for jSIM = 1 : length(SIM)
 
-for jsim = 1 : length(SIM)
+   sim = SIM{jSIM} ;
 
-   sim = SIM{jsim} ;
-
+   ## load atmospheric variables
    for svar = SVAR
       svar = svar{:} ;
 
@@ -263,11 +261,11 @@ for jsim = 1 : length(SIM)
       load(ptfile) ;
 
    else
-      
+
       ## select predictors
       str = sprintf("%s,", SVAR{:}) ; str = str(1:end-1) ;
       eval(sprintf("%s = selptr(scale, ind, ptfile, ID=[], FILL, %s) ;", sim, str))   
-      eval(sprintf("%s.name = sim ;", NSIM{jsim})) ;
+      eval(sprintf("%s.name = sim ;", NSIM{jSIM})) ;
 
       ## normalize with mean and std	 
       if strcmp(sim, "historical")
@@ -275,10 +273,23 @@ for jsim = 1 : length(SIM)
       else
 	 eval(sprintf("%s.x = nrm_ptr(%s.x, historical.xm, historical.xs) ;", sim, sim)) ;
       endif
-      eval(sprintf("%s.img = arr2img(%s.x, res) ;", sim, sim)) ;
 
-      eval(sprintf("%s.Shallow.prob = Shallow(%s, shallow, PCA, [], mdl) ;", sim, sim)) ;
-      eval(sprintf("%s.Deep.prob = apply_net(scale*%s.img, deploy) ;", sim, sim)) ;
+      for jMDL = 1 : length(MDL)
+	 mdl = MDL{jMDL} ;
+	 load(sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name)) ;
+	 eval(sprintf("%s.Shallow.%s.prob = Shallow(%s, shallow, PCA, [], mdl) ;", sim, mdl, sim)) ;
+      endfor
+      
+      for jNET = 1 : length(NET)
+	 net = NET{jNET} ; res = RES{jNET} ;
+	 model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
+	 if exist(model, "file") ~= 2 continue ; endif
+	 weights = strtrim(ls("-1t", sprintf("models/%s/%s.%02d/%s.%s_iter_*.caffemodel", net, REG, NH, net, pdd.name))(1,:)) ;
+	 if exist(weights, "file") ~= 2 continue ; endif
+	 deploy = caffe.Net(model, weights, 'test') ;      
+	 eval(sprintf("%s.img = arr2img(%s.x, res) ;", sim, sim)) ;
+	 eval(sprintf("%s.Deep.%s.prob = apply_net(scale*%s.img, deploy) ;", sim, strrep(net, "-", "_"), sim)) ;
+      endfor
 
       save(ptfile, sim) ;
 

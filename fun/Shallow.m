@@ -156,7 +156,12 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(columns(xx)+1, 1) ;
 	       opt = optimset("Display", "iter") ;
-	       fit.par = nlinfit (xx, yy, modelfun, beta0, opt) ;
+
+##	       fit.par = nlinfit (xx, yy, modelfun, beta0, opt) ;
+##	       F = @(beta) sumsq(modelfun(beta,xx) - yy) ;
+##	       [fit.par resid cvg outp] = nonlin_residmin(F, beta0, opt) ;
+	       [fit.par resid cvg outp] = nonlin_curvefit(modelfun, beta0, xx, yy, opt) ;
+
 	       fit.model = @(beta, x) modelfun(beta, x) ;
 	       
 	 endswitch
