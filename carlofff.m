@@ -206,6 +206,7 @@ for jNET = 1 : length(NET)
 	 if deep.skl.VAL.GSS <= 0.1 # no convergence, repeat
 	    continue ;
 	 endif
+	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.log", sfx, net, ptr.ind, pdd.name, i))) ;
 	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ptr.ind, pdd.name, i)) ;
 	 skl(i++,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
