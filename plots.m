@@ -167,7 +167,7 @@ endfor
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
 set(0, "defaultaxesfontsize", 18) ;
 set(0, "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
-MDL = {"Shallow.lasso" "Deep.Simple"} ; 
+MDL = {"Shallow.tree" "Deep.CIFAR_10"} ; 
 clf ; jMDL = 0 ;
 for iMDL = [2 1]
    jMDL++ ;
@@ -189,10 +189,10 @@ for iMDL = [2 1]
    for jSIM = 1 : 2
       if stats(jSIM,3) < alpha
 	 xt = mean(get(h(1+jSIM), "xdata")) ;
-	 text(xt, 0.72, {"\\it p<0.05"}, "color", COL(j,:)) ;
+	 text(xt, 0.72, {"\\it p<0.05"}, "color", COL(1+jSIM,:)) ;
       endif
    endfor
-   title(toupper(mdl)) ;
+   title(toupper(strrep(mdl, "_", "\\_"))) ;
    legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", "southeast") ;
 endfor
 set(ax, "ylim", [0.35 0.75]) ;
