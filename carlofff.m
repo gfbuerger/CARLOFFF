@@ -186,6 +186,12 @@ for jNET = 1 : length(NET)
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
       load(mfile) ;
       SKL.(["Deep_" ptr.ind])(jNET,:) = mean(skl) ;
+      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
+      weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ptr.ind, pdd.name) ;
+      deploy = caffe.Net(model, weights, 'test') ;
+      ptr.img = arr2img(ptr.x, RES{jNET}) ;
+      printf("<-- %s\n", weights) ; continue ;
+      ptr.Deep.(net).prob = apply_net(scale*ptr.img, deploy) ;
    else
       init_rnd() ;
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
@@ -261,7 +267,7 @@ for jSIM = 1 : length(SIM)
 
    endfor
 
-   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glob(sprintf("esgf/*.%s.ob", sim)){:}) && 0
+   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glob(sprintf("esgf/*.%s.ob", sim)){:})
 
       load(ptfile) ;
 
@@ -291,7 +297,7 @@ for jSIM = 1 : length(SIM)
 	 if exist(model, "file") ~= 2 continue ; endif
 	 weights = sprintf("data/%s.%02d/%dx%d/%s.%s.%s.caffemodel", REG, NH, RES{jNET}, net, ptr.ind, pdd.name) ;
 	 if exist(weights, "file") ~= 2 continue ; endif
-	 deploy = caffe.Net(model, weights, 'test') ;      
+	 deploy = caffe.Net(model, weights, 'test') ;
 	 eval(sprintf("%s.img = arr2img(%s.x, res) ;", sim, sim)) ;
 	 eval(sprintf("%s.Deep.%s.prob = apply_net(scale*%s.img, deploy) ;", sim, strrep(net, "-", "_"), sim)) ;
       endfor
