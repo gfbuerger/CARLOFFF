@@ -128,8 +128,8 @@ endif
 w = squeeze(pdd.x(:,1,:,:)) ; # Eta
 pdd.q = quantile(w(:), Q0) ;
 pdd.c = any(any(w > pdd.q, 2), 3) ;
-printf("class rates: %.1f %%\n", 100 * [sum(w(:) > 0) sum(w(:) == 0)] / numel(w)) ;
-printf("class rates: %.1f %%\n", 100 * [sum(pdd.c) sum(~pdd.c)] / rows(pdd.c)) ;
+printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(w(:) > 0) sum(w(:) == 0)] / numel(w)) ;
+printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(pdd.c) sum(~pdd.c)] / rows(pdd.c)) ;
 if 0 write_H(pdd.c) ; endif
 
 %% write train (CAL) & test (VAL) data
@@ -184,15 +184,11 @@ for jNET = 1 : length(NET)
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
 
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
+
       load(mfile) ;
-      SKL.(["Deep_" ptr.ind])(jNET,:) = mean(skl) ;
-      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
-      weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ptr.ind, pdd.name) ;
-      deploy = caffe.Net(model, weights, 'test') ;
-      ptr.img = arr2img(ptr.x, RES{jNET}) ;
-      printf("<-- %s\n", weights) ; continue ;
-      ptr.Deep.(net).prob = apply_net(scale*ptr.img, deploy) ;
+
    else
+
       init_rnd() ;
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
       ##solverstate = sprintf("%s/%s.%s.netonly", sfx, net, PDD) ;
@@ -201,35 +197,49 @@ for jNET = 1 : length(NET)
 ##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
       clear skl ; i = 1 ;
       while i <= 20    ## UGLY
-	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name))
+	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name)) && 0
 	    load(sfile) ;
 	    if rows(skl) > i && skl(i,1) > 0.1
 	       i++ ;
 	       continue ;
 	    endif
 	 endif
-	 [deep ptr.prob weights] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
-	 if deep.skl.VAL.GSS <= 0.1 # no convergence, repeat
+	 [deep(i) weights] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
+	 if deep(i).skl.VAL.GSS <= 0.1 # no convergence, repeat
 	    continue ;
 	 endif
 	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.log", sfx, net, ptr.ind, pdd.name, i))) ;
 	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ptr.ind, pdd.name, i)) ;
-	 skl(i++,:) = [deep.skl.VAL.GSS deep.crossentropy.VAL] ;
-	 save("-text", sfile, "skl") ;
+	 skl(i,:) = [deep(i).skl.VAL.GSS deep(i).crossentropy.VAL] ;
+	 save("-text", sfile, "skl") ; i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
       ##system(cmd) ;
-      [~, i] = max(skl(:,1)) ;
-      wfile = sprintf("%s/%s/%s.%s.%s.%02d.caffemodel", pwd, sfx, net, ptr.ind, pdd.name, i) ;
-      unlink(lfile = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ptr.ind, pdd.name)) ;
-      symlink(wfile, lfile) ;
-      save("-text", mfile, "skl") ;
-      delete(sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name)) ;
-      ##save(ptr.ptfile, "ptr") ;
+
    endif
 
+   ## find best model and apply
+   [~, i] = max(skl(:,1)) ;
+   deep = deep(i) ;
+   cd(sfx) ;
+   wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ptr.ind, pdd.name, i) ;
+   unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ptr.ind, pdd.name)) ;
+   symlink(wfile, lfile) ;
+   cd ~/carlofff
+
+   if 0
+      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
+      weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ptr.ind, pdd.name) ;
+      printf("<-- %s\n", weights) ;
+      deploy = caffe.Net(model, weights, 'test') ;
+      ptr.img = arr2img(ptr.x, RES{jNET}) ;
+      deep.prob = apply_net(scale*ptr.img, deploy) ;
+   endif
+
+   save("-text", sprintf("data/%s.%02d/Deep.%s.%s.%s.ob", REG, NH, net, ind, pdd.name), "deep") ;
+   
 endfor
 
 ### historical and future simulations
@@ -251,9 +261,9 @@ for jSIM = 1 : length(SIM)
    for svar = SVAR
       svar = svar{:} ;
 
-      if exist(ptfile = sprintf("esgf/%s.%s.ob", svar, sim), "file") == 2
+      if exist(sfile = sprintf("esgf/%s.%s.ob", svar, sim), "file") == 2
 
-	 load(ptfile) ;
+	 load(sfile) ;
 
       else
 
@@ -261,7 +271,7 @@ for jSIM = 1 : length(SIM)
 	 
 	 ## aggregate
 	 eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
-	 save(ptfile, svar) ;
+	 save(sfile, svar) ;
 
       endif
 

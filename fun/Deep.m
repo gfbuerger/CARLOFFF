@@ -1,7 +1,7 @@
-## usage: [res prob weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
+## usage: [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 ##
 ## calibrate and apply caffe model
-function [res prob weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
+function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    global IMB BATCH
 
@@ -130,10 +130,11 @@ function [res prob weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}
       
    endfor
 
-   res = struct("crossentropy", ce, "th", th, "skl", skl) ;
-
    t = [datenum(pdd.id(pdd.CAL,:)) ; datenum(pdd.id(pdd.VAL,:))] ;
    [~, Is] = sort(t) ;
-   prob = [prb.CAL ; prb.VAL](Is) ;
+   prob.id = datevec(t(Is)) ;
+   prob.x = [prb.CAL ; prb.VAL](Is,:) ;
+   
+   res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob) ;
    
 endfunction

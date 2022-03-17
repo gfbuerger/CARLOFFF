@@ -7,6 +7,10 @@ function [h1, h2] = plot_case (ptr, pdd, prob = [], D, d, jVAR = 1, cx = 1)
 
    ds = datestr(datenum(d), "yyyy-mm") ;
 
+   if isfield(ptr, "prob") && isempty(prob)
+      prob = ptr.prob ;
+   endif
+   
    if ~isempty(prob)
 
       h1 = figure(1) ;
