@@ -223,6 +223,7 @@ for jNET = 1 : length(NET)
    ## find best model and apply
    [~, i] = max(skl(:,1)) ;
    deep = deep(i) ;
+   deep.name = net ;
    cd(sfx) ;
    wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ptr.ind, pdd.name, i) ;
    unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ptr.ind, pdd.name)) ;
@@ -239,8 +240,10 @@ for jNET = 1 : length(NET)
    endif
 
    save("-text", sprintf("data/%s.%02d/Deep.%s.%s.%s.ob", REG, NH, net, ind, pdd.name), "deep") ;
+   load(sprintf("data/%s.%02d/Deep.%s.%s.%s.ob", REG, NH, net, ind, pdd.name), "deep") ;
    
 endfor
+
 
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;

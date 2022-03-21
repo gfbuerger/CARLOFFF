@@ -17,15 +17,15 @@ col = maxdistcolor(ncol = length(MDL) + length(NET), @(m) sRGB_to_OSAUCS (m, tru
 ## June 2013
 clf ; jVAR = 1 ;
 D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 30] ;
-plot_case(ptr, pdd, :, pdd, D, d) ;
+plot_case(ptr, pdd, deep, pdd, D, d) ;
 
 ## July 2014
 D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
-plot_case(ptr, pdd, deep.prob, D, d, jVAR, cx = 5) ;
+plot_case(cape, pdd, deep, D, d, jVAR, cx = 5) ;
 
 ## May 2016
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
-plot_case(ptr, pdd, :, D, d, jVAR) ;
+plot_case(ptr, pdd, deep, D, d, jVAR) ;
 
 
 ### performance
