@@ -21,7 +21,7 @@ MON = 5 : 8 ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
-IMB = "SIMPLE" ;
+IMB = "NONE" ;
 
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;

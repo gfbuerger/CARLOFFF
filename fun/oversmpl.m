@@ -10,15 +10,21 @@ function [iout, lout] = oversmpl (i, l, IMB)
       return ;
    endif
    
-   if strcmp(IMB, "SMOTE")
-      [iout lout] = smote(i, l) ;
-      return ;
-   endif
-
    N = size(i) ;
    
    lu = unique(l) ;
    I = l == lu' ;
+
+   if strcmp(IMB, "SMOTE")
+      if Lnan = (exist("knnsearch", "file") ~= 2), pkg load nan ; endif
+      options.Class = l ;
+      ii = reshape(i, N(1), []) ;
+      [iout lout] = smote(ii, rows(I)./sum(I), 5, options) ;
+      iout = reshape(iout, [], num2cell(N){2:end}) ;
+      if Lnan, pkg unload nan ; endif
+      return ;
+   endif
+
    [~, j] = min(sum(I)) ;
    I = I(:,j) ;
 
