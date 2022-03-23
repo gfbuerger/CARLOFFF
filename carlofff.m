@@ -179,6 +179,7 @@ endif
 ## shape mismatch: Inception-v4
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]} ;
+SKL = {"HSS" "GSS"} ;
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
@@ -195,28 +196,31 @@ for jNET = 1 : length(NET)
       solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, PDD) ;
       ##solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
 ##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
-      clear skl ; i = 1 ;
+      clear skl deep ; i = 1 ;
       while i <= 20    ## UGLY
-	 if exist(sfile = sprintf("data/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name)) && 0
+	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ptr.ind, pdd.name))
 	    load(sfile) ;
 	    if rows(skl) > i && skl(i,1) > 0.1
 	       i++ ;
 	       continue ;
 	    endif
 	 endif
-	 [deep(i) weights] = Deep(ptr, pdd, solverstate, {"HSS" "GSS"}) ;
-	 if deep(i).skl.VAL.GSS <= 0.1 # no convergence, repeat
+	 [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
+	 if deep(i).skl.VAL.SKL{end} <= 0.1 # no convergence, repeat
 	    continue ;
 	 endif
 	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.log", sfx, net, ptr.ind, pdd.name, i))) ;
 	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ptr.ind, pdd.name, i)) ;
-	 skl(i,:) = [deep(i).skl.VAL.GSS deep(i).crossentropy.VAL] ;
+	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ; i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
+
+      rename(sfile, mfile) ;
+      save(strrep(strrep(sfile, "skl.", "Deep."), ".ot", ".ob"), "deep") ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
-      ##system(cmd) ;
+##      system(cmd) ;
 
    endif
 
