@@ -17,7 +17,7 @@ col = maxdistcolor(ncol = length(MDL) + length(NET), @(m) sRGB_to_OSAUCS (m, tru
 ## June 2013
 clf ; jVAR = 1 ;
 D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 30] ;
-plot_case(ptr, pdd, deep, pdd, D, d) ;
+plot_case(cape, pdd, deep, pdd, D, d) ;
 
 ## July 2014
 D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
@@ -25,7 +25,7 @@ plot_case(cape, pdd, deep, D, d, jVAR, cx = 5) ;
 
 ## May 2016
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
-plot_case(ptr, pdd, deep, D, d, jVAR) ;
+plot_case(cape, pdd, deep, D, d, jVAR) ;
 
 
 ### performance
@@ -51,11 +51,11 @@ figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ;
 ax1 = subplot(1, 2, 1) ; hold on ;
 axis square ;
-sn = min(Pskl(:,1,:)) ; sx = max(Pskl(:,1,:)) ;
+sn = min(Pskl(:,jSKL,:)) ; sx = max(Pskl(:,jSKL,:)) ;
 plot([sn sx], [sn sx], "k--") ;
 for jMDL = 1 : size(Pskl, 1)
-   hg(jMDL) = scatter(Pskl(jMDL,1,2), Pskl(jMDL,1,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
-   hgE(jMDL) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,1,3), sz, col(jMDL,:), "filled", "s") ;
+   hg(jMDL) = scatter(Pskl(jMDL,jSKL,2), Pskl(jMDL,jSKL,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
+   hgE(jMDL) = scatter(Pskl(jMDL,jSKL,4), Pskl(jMDL,jSKL,3), sz, col(jMDL,:), "filled", "s") ;
 endfor
 xlabel([SKL{jSKL} " with cape"]) ; ylabel([SKL{jSKL} " without cape"]) ;
 hlE = legend(hgE, upper(MDL), "box", "off", "location", "northwest") ;
@@ -68,7 +68,7 @@ axis square ;
 jPLT = 0 ;
 for jNET = 1 : rows(S)
    jPLT++ ;
-   hgS(jPLT) = scatter(Pskl(jNET,1,4), Pskl(jNET,2,4), sz, col(jPLT,:), "filled", "s") ;
+   hgS(jPLT) = scatter(Pskl(jNET,jSKL,4), Pskl(jNET,end,4), sz, col(jPLT,:), "filled", "s") ;
 endfor
 
 JVAR = [2 4 10] ;
