@@ -21,7 +21,7 @@ MON = 5 : 8 ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
-IMB = "NONE" ;
+IMB = "SIMPLE" ;
 
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
@@ -143,6 +143,7 @@ if 0
 endif
 
 ## Shallow
+SKL = {"HSS" "GSS"} ;
 MDL = {"lasso" "tree" "nnet" "logr"} ;
 PCA = {{} []}{2} ;
 if iscell(PCA)
@@ -153,6 +154,7 @@ endif
 if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
    load(mfile) ;
 else
+   clear skl ;
    for jMDL = 1 : length(MDL)
       mdl = MDL{jMDL} ;
       if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name), ptfile)
@@ -160,18 +162,18 @@ else
       else
 	 varargin = {} ;
 ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
-	 shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, {"HSS" "GSS"}, varargin{:}) ;
+	 shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, SKL, varargin{:}) ;
 	 save("-text", sfile, "shallow") ;
       endif
-      S(jMDL,:) = [shallow.skl.VAL.GSS shallow.crossentropy.VAL] ;
+      skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
 ##      strucdisp(shallow.skl) ;
 ##      plot_fit(shallow.fit) ;
 ##      set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
 ##      set(findall("type", "axes"), "fontsize", 24) ;
 ##      set(findall("type", "text"), "fontsize", 22) ;
    endfor
-   S = real(S) ;
-   save("-text", mfile, "S") ;
+   skl = real(skl) ;
+   save("-text", mfile, "skl") ;
 endif
 
 ## Deep
@@ -179,7 +181,6 @@ endif
 ## shape mismatch: Inception-v4
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]} ;
-SKL = {"HSS" "GSS"} ;
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
@@ -187,6 +188,7 @@ for jNET = 1 : length(NET)
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
 
       load(mfile) ;
+      load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ptr.ind, pdd.name))
 
    else
 
@@ -243,9 +245,6 @@ for jNET = 1 : length(NET)
       deep.prob = apply_net(scale*ptr.img, deploy) ;
    endif
 
-   save("-text", sprintf("data/%s.%02d/Deep.%s.%s.%s.ob", REG, NH, net, ind, pdd.name), "deep") ;
-   load(sprintf("data/%s.%02d/Deep.%s.%s.%s.ob", REG, NH, net, ind, pdd.name), "deep") ;
-   
 endfor
 
 

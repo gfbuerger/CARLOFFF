@@ -5,7 +5,7 @@ function [iout, lout] = oversmpl (i, l, IMB)
 
    printf("oversampling with: %s\n", IMB) ;
 
-   if isempty(IMB)
+   if isempty(IMB) || strcmpi("IMB", "NONE")
       [iout lout] = deal(i, l) ;
       return ;
    endif
