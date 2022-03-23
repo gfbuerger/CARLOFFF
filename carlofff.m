@@ -206,7 +206,7 @@ for jNET = 1 : length(NET)
 	    endif
 	 endif
 	 [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	 if deep(i).skl.VAL.SKL{end} <= 0.1 # no convergence, repeat
+	 if deep(i).skl.VAL.(SKL{end}) <= 0.1 # no convergence, repeat
 	    continue ;
 	 endif
 	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.log", sfx, net, ptr.ind, pdd.name, i))) ;
