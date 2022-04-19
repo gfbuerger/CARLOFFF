@@ -144,8 +144,8 @@ endif
 
 ## Shallow
 SKL = {"HSS" "GSS"} ;
-MDL = {"lasso" "tree" "nnet" "logr"} ;
-PCA = {{} []}{2} ;
+MDL = {"lasso" "tree" "logr"} ;
+PCA = {{} []}{1} ;
 if iscell(PCA)
    ptr.ind = sprintf("R%s", ind) ;
 else
@@ -158,11 +158,13 @@ else
    for jMDL = 1 : length(MDL)
       mdl = MDL{jMDL} ;
       if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name), ptfile)
+	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
       else
 	 varargin = {} ;
 ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
 	 shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, SKL, varargin{:}) ;
+	 printf("--> %s\n", sfile) ;
 	 save("-text", sfile, "shallow") ;
       endif
       skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
@@ -209,6 +211,7 @@ for jNET = 1 : length(NET)
 	 endif
 	 [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
 	 if deep(i).skl.VAL.(SKL{end}) <= 0.1 # no convergence, repeat
+	    warning("no convergence, repeating %d for %s", i, net) ;
 	    continue ;
 	 endif
 	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.log", sfx, net, ptr.ind, pdd.name, i))) ;
@@ -304,18 +307,23 @@ for jSIM = 1 : length(SIM)
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
 	 load(sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name)) ;
-	 eval(sprintf("%s.Shallow.%s.prob = Shallow(%s, shallow, PCA, [], mdl) ;", sim, mdl, sim)) ;
+	 out = sprintf("%s.Shallow.%s.prob = Shallow(%s, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
+	 printf("%s\n", out) ;
+	 eval(out) ;
       endfor
       
-      for jNET = 1 : length(NET)
-	 net = NET{jNET} ; res = RES{jNET} ;
-	 model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
+      for jNET = 1 : length(NET(JNET))
+	 net = NET(JNET){jNET} ; res = RES(JNET){jNET} ;
+	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ptr.ind, pdd.name) ;
+	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2 continue ; endif
-	 weights = sprintf("data/%s.%02d/%dx%d/%s.%s.%s.caffemodel", REG, NH, RES{jNET}, net, ptr.ind, pdd.name) ;
+	 weights = sprintf("%s.caffemodel", pfx) ;
 	 if exist(weights, "file") ~= 2 continue ; endif
 	 deploy = caffe.Net(model, weights, 'test') ;
 	 eval(sprintf("%s.img = arr2img(%s.x, res) ;", sim, sim)) ;
-	 eval(sprintf("%s.Deep.%s.prob = apply_net(scale*%s.img, deploy) ;", sim, strrep(net, "-", "_"), sim)) ;
+	 out = sprintf("%s.Deep.%s.prob = apply_net(scale*%s.img, deploy) ;", sim, strrep(net, "-", "_"), sim) ;
+	 printf("%s\n", out) ;
+	 eval(out) ;
       endfor
 
       save(ptfile, sim) ;

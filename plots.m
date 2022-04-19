@@ -14,18 +14,16 @@ col = maxdistcolor(ncol = length(MDL) + length(NET), @(m) sRGB_to_OSAUCS (m, tru
 ##col = col(randperm(ncol),:) ;
 
 ### cases
-## June 2013
+load(sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:}) ;
 clf ; jVAR = 1 ;
-D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 30] ;
-plot_case(cape, pdd, deep, pdd, D, d) ;
-
+## June 2013
+D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 31] ;
 ## July 2014
 D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
-plot_case(cape, pdd, deep, D, d, jVAR, cx = 5) ;
-
 ## May 2016
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
-plot_case(cape, pdd, deep, D, d, jVAR) ;
+
+plot_case(cape, pdd, deep, D, d, jVAR, cx = 5) ;
 
 
 ### performance
@@ -66,7 +64,7 @@ xlim(xl) ; ylim(xl) ;
 ax2 = subplot(1, 2, 2) ; hold on ;
 axis square ;
 jPLT = 0 ;
-for jNET = 1 : rows(S)
+for jNET = 1 : rows(Pskl)
    jPLT++ ;
    hgS(jPLT) = scatter(Pskl(jNET,jSKL,4), Pskl(jNET,end,4), sz, col(jPLT,:), "filled", "s") ;
 endfor
@@ -131,14 +129,14 @@ hgsave(sprintf("nc/plots/Eta.og")) ;
 print(sprintf("nc/plots/Eta.svg")) ;
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
-for mdl = {"Shallow.tree" "Deep.Simple"}
+for mdl = {"Shallow.tree" "Deep.LeNet-5"}
    mdl = mdl{:} ;
    clf ; hold on ; clear h ; j = 0 ;
    h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
    for sim = SIM
       j++ ;
       eval(sprintf("sim = %s ;", sim{:})) ;
-      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", mdl)) ;
+      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL(j,:), "filled") ; axis tight
       [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
       stats(j,:) = STATS ;

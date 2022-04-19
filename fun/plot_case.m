@@ -30,14 +30,15 @@ function [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, cx = 1, sfx = "svg")
    hb = borders("germany", "color", "black") ;
 
    I = sdate(pdd.ts.id, d) ;
-   x = pdd.ts.x(I,jVAR) ;
-   h = scatter(pdd.ts.lon(I), pdd.ts.lat(I), cx*x, "r", "o", "filled") ;
-   [xn in] = min(x) ; [xx ix] = max(x) ;
-   hn = scatter(pdd.ts.lon(I)(in), pdd.ts.lat(I)(in), cx*x(in), "r", "o", "filled") ;
-   hx = scatter(pdd.ts.lon(I)(ix), pdd.ts.lat(I)(ix), cx*x(ix), "r", "o", "filled") ;
-   sn = sprintf("{\\it{E_{T,A}}} = %.0f", xn) ; sx = sprintf("{\\it{E_{T,A}}} = %.0f", xx) ;
-   legend([hx hn], {sx sn}, "box", "off", "location", "northeast") ;
-
+   if any(I)
+      x = pdd.ts.x(I,jVAR) ;
+      h = scatter(pdd.ts.lon(I), pdd.ts.lat(I), cx*x, "r", "o", "filled") ;
+      [xn in] = min(x) ; [xx ix] = max(x) ;
+      hn = scatter(pdd.ts.lon(I)(in), pdd.ts.lat(I)(in), cx*x(in), "r", "o", "filled") ;
+      hx = scatter(pdd.ts.lon(I)(ix), pdd.ts.lat(I)(ix), cx*x(ix), "r", "o", "filled") ;
+      sn = sprintf("{\\it{E_{T,A}}} = %.0f", xn) ; sx = sprintf("{\\it{E_{T,A}}} = %.0f", xx) ;
+      legend([hx hn], {sx sn}, "box", "off", "location", "northeast") ;
+   endif
    set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
    set(findall("type", "axes"), "fontsize", 24) ;
    set(findall("type", "text"), "fontsize", 24) ;
