@@ -4,7 +4,7 @@ global isoctave LON LAT REG NH MON IMB
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
 addpath ~/carlofff/fun
-[~, ~] = pmkdir("data")
+pmkdir("data")
 cd ~/carlofff
 [glat glon] = borders("germany") ;
 ##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
