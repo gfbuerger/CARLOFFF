@@ -144,7 +144,7 @@ endif
 
 ## Shallow
 SKL = {"HSS" "GSS"} ;
-MDL = {"lasso" "tree" "logr"} ;
+MDL = {"lasso" "tree" "nnet" "logr"} ;
 PCA = {{} []}{1} ;
 if iscell(PCA)
    ptr.ind = sprintf("R%s", ind) ;
@@ -183,14 +183,15 @@ endif
 ## shape mismatch: Inception-v4
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]} ;
+jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
 
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ptr.ind, pdd.name), ptfile)
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name), ptfile)
 
       load(mfile) ;
-      load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ptr.ind, pdd.name))
+      load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.name))
 
    else
 
@@ -230,18 +231,18 @@ for jNET = 1 : length(NET)
    endif
 
    ## find best model and apply
-   [~, i] = max(skl(:,1)) ;
+   [~, i] = max(skl(:,jSKL)) ;
    deep = deep(i) ;
    deep.name = net ;
    cd(sfx) ;
-   wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ptr.ind, pdd.name, i) ;
-   unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ptr.ind, pdd.name)) ;
+   wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ind, pdd.name, i) ;
+   unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ind, pdd.name)) ;
    symlink(wfile, lfile) ;
    cd ~/carlofff
 
    if 0
-      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ptr.ind, pdd.name) ;
-      weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ptr.ind, pdd.name) ;
+      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ind, pdd.name) ;
+      weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ind, pdd.name) ;
       printf("<-- %s\n", weights) ;
       deploy = caffe.Net(model, weights, 'test') ;
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
@@ -286,7 +287,11 @@ for jSIM = 1 : length(SIM)
 
    endfor
 
-   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glob(sprintf("esgf/*.%s.ob", sim)){:})
+   glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.name)) ;
+   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ptr.ind, pdd.name))) ;
+   glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
+
+   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glb{:}) && 0
 
       load(ptfile) ;
 

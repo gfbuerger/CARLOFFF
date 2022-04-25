@@ -10,11 +10,12 @@ set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 14, "defa
 
 
 addpath ~/oct/nc/maxdistcolor
-col = maxdistcolor(ncol = length(MDL) + length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
+JMDL = 1 : 3 ;
+col = maxdistcolor(ncol = length(JMDL) + length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 ##col = col(randperm(ncol),:) ;
 
 ### cases
-load(sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:}) ;
+load(sprintf("data/atm.%s.ob", GREG)) ;
 clf ; jVAR = 1 ;
 ## June 2013
 D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 31] ;
@@ -24,10 +25,20 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
 plot_case(cape, pdd, deep, D, d, jVAR, cx = 5) ;
+if 0 		    # Eta for case
+   clf ;
+   I = pdd.id(:,1) == 2016 & ismember(pdd.id(:,2), MON) ;
+   printf("average rate Eta > 0: %7.0f%%\n", 100*qEta) ;
+   scatter(datenum(pdd.id(I,:)), nanmean(nanmean(pdd.x(I,1,:,:), 3), 4), 60, "k", "filled") ; axis tight
+   set(gca, "ytick", [0 0.01 0.02])
+   xlabel("") ; ylabel("Eta") ;
+   datetick("mmm") ;
+   hgsave(sprintf("nc/paper/Eta.og")) ;
+   print(sprintf("nc/paper/Eta.svg")) ;
+endif
 
 
 ### performance
-jSKL = 2 ; 	    # ETS
 ## Shallow
 clear Pskl ;
 ## without EOFs
@@ -45,18 +56,19 @@ JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
 Pskl(:,:,4) = skl(:,[jSKL end]) ;
 
+Pskl = Pskl(JMDL,:,:) ;
+
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ;
 ax1 = subplot(1, 2, 1) ; hold on ;
 axis square ;
-sn = min(Pskl(:,jSKL,:)) ; sx = max(Pskl(:,jSKL,:)) ;
+sn = min(Pskl(:,1,:)) ; sx = max(Pskl(:,1,:)) ;
 plot([sn sx], [sn sx], "k--") ;
 for jMDL = 1 : size(Pskl, 1)
-   hg(jMDL) = scatter(Pskl(jMDL,jSKL,2), Pskl(jMDL,jSKL,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
-   hgE(jMDL) = scatter(Pskl(jMDL,jSKL,4), Pskl(jMDL,jSKL,3), sz, col(jMDL,:), "filled", "s") ;
+   hg(jMDL) = scatter(Pskl(jMDL,1,2), Pskl(jMDL,1,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
+   hgE(jMDL) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,1,3), sz, col(jMDL,:), "filled", "s") ;
 endfor
 xlabel([SKL{jSKL} " with cape"]) ; ylabel([SKL{jSKL} " without cape"]) ;
-hlE = legend(hgE, upper(MDL), "box", "off", "location", "northwest") ;
 xl = [xlim()(1) xlim()(2)] ; grid on
 xlim(xl) ; ylim(xl) ;
 
@@ -66,40 +78,40 @@ axis square ;
 jPLT = 0 ;
 for jNET = 1 : rows(Pskl)
    jPLT++ ;
-   hgS(jPLT) = scatter(Pskl(jNET,jSKL,4), Pskl(jNET,end,4), sz, col(jPLT,:), "filled", "s") ;
+   hgS(jPLT) = scatter(Pskl(jNET,1,4), Pskl(jNET,end,4), sz, col(jPLT,:), "filled", "s") ;
 endfor
 
-JVAR = [2 4 10] ;
 for jNET = 1 : length(NET)
    jPLT++ ;
    net = NET{jNET} ;
 
+   JVAR = [2 4 10] ;
    ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name) ;
    printf("<-- %s\n", mfile) ;
    load(mfile) ;
-   hg = hggroup() ;
-   scatter(skl(:,2), skl(:,end), 5, col(jPLT,:), "o", "filled", "parent", hg) ;
-   hgD(jNET) = scatter(mean(skl(:,1)), mean(skl(:,2)), sz, col(jPLT,:), "d", "filled", "parent", hg) ;
+   hg(jNET) = hggroup() ;
+   scatter(skl(:,jSKL), skl(:,end), sz/5, col(jPLT,:), "o", "filled", "parent", hg(jNET)) ;
+   hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, col(jPLT,:), "d", "filled", "parent", hg(jNET)) ;
+
    JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name) ;
    printf("<-- %s\n", mfile) ;
    w = load(mfile) ;
-   scatter(ax1, mean(skl(:,1)), mean(w.skl(:,1)), sz, col(jPLT,:), "d", "filled") ;
+   scatter(ax1, mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, col(jPLT,:), "d", "filled") ;
    axes(ax2) ;
 endfor
 xlim(xl) ; grid on
 xlabel(SKL{jSKL}) ; ylabel("crossentropy") ;
+hlS = legend(ax1, hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
 hlD = legend(hgD, NET, "box", "off", "location", "southwest") ;
-hlS = copyobj(hlE, gcf) ;
-delete(hlE) ;
 set(findall(hlS, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
 pos = get(ax1, "position") ; pos(1) -= 0.05 ; set(ax1, "position", pos)
 pos = get(ax2, "position") ; pos(1) += 0.05 ; set(ax2, "position", pos)
 set(hlD, "position", [0.45 0.15 0.10 0.5])
 set(hlS, "position", [0.45 0.65 0.10 0.24])
 
-print("nc/paper/skl_scatter.svg") ;
+print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
 
 
@@ -115,21 +127,13 @@ set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 22, "defa
 clf ;
 h = plot_log("models/simple1/CatRaRE.log", {"Train" "Test"}, "loss") ;
 set(h(1), "linewidth", 1) ; set(h(2), "linewidth", 4) ;
-hgsave(sprintf("nc/plots/%s.loss.og", net)) ;
-print(sprintf("nc/plots/%s.loss.png", net)) ;
+hgsave(sprintf("nc/paper/%s.loss.og", net)) ;
+print(sprintf("nc/paper/%s.loss.png", net)) ;
 
-# 
-I = pdd.id(:,1) == 2016 & ismember(pdd.id(:,2), MON) ;
-printf("average rate Eta > 0: %7.0f%%\n", 100*qEta) ;
-scatter(datenum(pdd.id(I,:)), nanmean(nanmean(pdd.x(I,1,:,:), 3), 4), 60, "k", "filled") ; axis tight
-set(gca, "ytick", [0 0.01 0.02])
-xlabel("") ; ylabel("Eta") ;
-datetick("mmm") ;
-hgsave(sprintf("nc/plots/Eta.og")) ;
-print(sprintf("nc/plots/Eta.svg")) ;
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
 for mdl = {"Shallow.tree" "Deep.LeNet-5"}
+for mdl = {"Shallow.tree" "Deep.ALL-NET"}
    mdl = mdl{:} ;
    clf ; hold on ; clear h ; j = 0 ;
    h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
@@ -159,8 +163,8 @@ for mdl = {"Shallow.tree" "Deep.LeNet-5"}
       loc = "southeast" ;
    endif
    legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", loc) ;
-   hgsave(sprintf("nc/plots/%s.sim.og", mdl)) ;
-   print(sprintf("nc/plots/%s.sim.svg", mdl)) ;
+   hgsave(sprintf("nc/paper/%s.sim.og", mdl)) ;
+   print(sprintf("nc/paper/%s.sim.svg", mdl)) ;
 endfor
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
@@ -196,5 +200,5 @@ for iMDL = [2 1]
 endfor
 set(ax, "ylim", [0.35 0.75]) ;
 
-hgsave(sprintf("nc/plots/Shallow.sim.og")) ;
-print(sprintf("nc/plots/Shallow.sim.svg")) ;
+hgsave(sprintf("nc/paper/Shallow.sim.og")) ;
+print(sprintf("nc/paper/Shallow.sim.svg")) ;

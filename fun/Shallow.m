@@ -85,6 +85,10 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 ## oversampling
 	 [xx yy] = oversmpl(x, y, IMB) ;
 
+	 ## remove missing data
+	 I = all(~isnan([xx yy]), 2) ;
+	 xx = xx(I,:) ; yy = yy(I,:) ;
+
 	 switch mdl
 
 	    case "lasso"
@@ -120,9 +124,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	    case "nnet"
 
-	       I = all(~isnan([xx yy]), 2) ;
-	       xx = xx(I,:) ; yy = yy(I,:) ;
-
 	       Pr = [min(xx) ; max(xx)]' ;
 	       SS = [7 3 1] ; # based on some tests
 	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
@@ -136,9 +137,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       
 	    case "tree"
 
-	       I = all(~isnan([xx yy]), 2) ;
-	       xx = xx(I,:) ; yy = yy(I,:) ;
-
 	       trainParamsEnsemble = m5pparamsensemble(50) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
 	       fit.par = m5pbuild(xx, yy, [], [], trainParamsEnsemble) ;
@@ -149,9 +147,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       endif
 
 	    otherwise
-
-	       I = all(~isnan([xx yy]), 2) ;
-	       xx = xx(I,:) ; yy = yy(I,:) ;
 
 	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(columns(xx)+1, 1) ;
