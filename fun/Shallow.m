@@ -3,7 +3,7 @@
 ## calibrate and apply Shallow models
 function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, varargin)
 
-   global REG NH IMB
+   global GREG REG NH IMB
    if strcmp(class(PCA), "char") ; pkg load tisean ; endif
    init_mdl(mdl) ;	 
 
@@ -37,7 +37,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	 else
 
-	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), "data/atm.ob")
+	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), sprintf("data/atm.%s.ob", GREG)) || ~Lcv 
 	       load(efile)
 	       printf("<-- %s [%d]\n", efile, columns(E)) ;
 	    else

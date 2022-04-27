@@ -125,15 +125,16 @@ set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 22, "defa
 
 # nnet training
 clf ;
-h = plot_log("models/simple1/CatRaRE.log", {"Train" "Test"}, "loss") ;
+h = plot_log("models/DenseNet/DE.24/DenseNet.01010000010.CatRaRE.log", "loss") ;
 set(h(1), "linewidth", 1) ; set(h(2), "linewidth", 4) ;
 hgsave(sprintf("nc/paper/%s.loss.og", net)) ;
 print(sprintf("nc/paper/%s.loss.png", net)) ;
 
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
-for mdl = {"Shallow.tree" "Deep.LeNet-5"}
-for mdl = {"Shallow.tree" "Deep.ALL-NET"}
+C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;
+C2= cellfun(@(net) sprintf("Deep.%s", net), NET, "UniformOutput", false) ;
+for mdl = union(C1, C2)
    mdl = mdl{:} ;
    clf ; hold on ; clear h ; j = 0 ;
    h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
@@ -150,21 +151,30 @@ for mdl = {"Shallow.tree" "Deep.ALL-NET"}
       xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
    endfor
    ##   set(gca, "ygrid", "on") ;
-   ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
-   xt = mean(get(h(j), "xdata")) ;
+   ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
    for j = 2:3
       if stats(j,3) < alpha
+	 xt = mean(get(h(j), "xdata")) - 10 ;
 	 text(xt, 0.7, "p<0.05", "color", COL(j,:)) ;
       endif
    endfor
-   if strcmp(mdl, "Deep.Simple")
-      loc = "northwest" ;
-   else
+##   if strcmp(mdl, "Deep.Simple")
+##      loc = "northwest" ;
+##   else
       loc = "southeast" ;
-   endif
+##   endif
    legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", loc) ;
-   hgsave(sprintf("nc/paper/%s.sim.og", mdl)) ;
-   print(sprintf("nc/paper/%s.sim.svg", mdl)) ;
+   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"driving_model_id\")) ;", SIM{1})) ;
+   GCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{1})) ;
+   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"model_id\")) ;", SIM{1})) ;
+   RCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{1})) ;
+   smdl = strsplit(mdl, "."){2} ;
+   htit = title(sprintf("%s", mdl), "fontsize", 20) ;
+   pos = get(htit, "position") ;
+   ht = text(1960, pos(2) - 0.05, sprintf("GCM: %s\nRCM: %s", GCM, RCM), "fontsize", 14) ;
+
+   hgsave(sprintf("nc/paper/%s.%s.%s.sim.og", GCM, RCM, mdl)) ;
+   print(sprintf("nc/paper/%s.%s.%s.sim.svg", GCM, RCM, mdl)) ;
 endfor
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;

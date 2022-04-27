@@ -25,8 +25,10 @@ function s = read_sim (d, svar, sim, lon, lat)
 
       s.id = cat(1, s.id, id) ;
       s.x = cat(1, s.x, y) ;
-      s.name = svar ;
 
    endfor
+
+   s.name = svar ;
+   s.nc = ncinfo(ncf) ;
 
 endfunction

@@ -1,5 +1,5 @@
 
-global isoctave LON LAT REG NH MON IMB
+global isoctave LON LAT GREG REG NH MON IMB
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -202,8 +202,8 @@ for jNET = 1 : length(NET)
       ##solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
 ##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
       clear skl deep ; i = 1 ;
-      while i <= 20    ## UGLY
-	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ptr.ind, pdd.name))
+      while i <= 5    ## UGLY
+	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.name))
 	    load(sfile) ;
 	    if rows(skl) > i && skl(i,1) > 0.1
 	       i++ ;
@@ -215,8 +215,9 @@ for jNET = 1 : length(NET)
 	    warning("no convergence, repeating %d for %s", i, net) ;
 	    continue ;
 	 endif
-	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.log", sfx, net, ptr.ind, pdd.name, i))) ;
-	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ptr.ind, pdd.name, i)) ;
+	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.tmp.log", sfx, net, ind, pdd.name, i))) ;
+	 system("rm /tmp/caffe.INFO") ;
+	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ind, pdd.name, i)) ;
 	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ; i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
@@ -237,6 +238,9 @@ for jNET = 1 : length(NET)
    cd(sfx) ;
    wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ind, pdd.name, i) ;
    unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ind, pdd.name)) ;
+   symlink(wfile, lfile) ;
+   wfile = sprintf("%s.%s.%s.%02d.log", net, ind, pdd.name, i) ;
+   unlink(lfile = sprintf("%s.%s.%s.log", net, ind, pdd.name)) ;
    symlink(wfile, lfile) ;
    cd ~/carlofff
 
@@ -259,6 +263,7 @@ ID = [1961 1 1 ; 1990 12 31] ;
 SVAR = trl_atm("atmvar.lst", JVAR) ;
 SIM = {"ptr" "historical" "rcp85"}([2 3]) ;
 NSIM = {"ANA" "HIST" "RCP85"}([2 3]) ;
+JNET = 1 : 9 ;
 
 PCA = {{} []}{2} ;
 if iscell(PCA) ptr.ind = sprintf("R%s", ind) ; endif
@@ -288,10 +293,10 @@ for jSIM = 1 : length(SIM)
    endfor
 
    glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.name)) ;
-   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ptr.ind, pdd.name))) ;
+   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.name))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
 
-   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glb{:}) && 0
+   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glb{:})
 
       load(ptfile) ;
 
@@ -319,7 +324,7 @@ for jSIM = 1 : length(SIM)
       
       for jNET = 1 : length(NET(JNET))
 	 net = NET(JNET){jNET} ; res = RES(JNET){jNET} ;
-	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ptr.ind, pdd.name) ;
+	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.name) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2 continue ; endif
 	 weights = sprintf("%s.caffemodel", pfx) ;

@@ -15,15 +15,18 @@ function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog =
 
       mtime = stat(lfile).mtime ;
 
+      fid = fopen(lfile, "rt") ;
+      sf = fscanf(fid, "%c") ;
+      fclose(fid) ;
+      net = strsplit(lfile, "/"){6} ;
+      sf = strsplit(sf, sprintf("name: \"%s\"", net)) ;
+      s = strsplit(sf{3}, "\n") ;
+
       h = [] ;
       for phs = phase
 
 	 phs = phs{:} ;
 	 
-	 fid = fopen(lfile, "rt") ;
-	 s = fscanf(fid, "%c") ;
-	 s = strsplit(s, "\n") ;
-
 	 if strcmp(phs, "Train")
 	    Ipat = sprintf(" Iteration [0-9]+.*, loss") ;
 	 else
@@ -39,11 +42,9 @@ function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog =
 	 I = cellfun(@(c) ~isempty(c), S) ;
 	 x = cellfun(@(c) str2num(strsplit(c{2}, " "){1}), SP(I))' ;
 
-	 fclose(fid) ;
-
 	 n = min(numel(Iter), numel(x)) ;
 	 if plog set(gca, "yscale", "log") ; endif
-	 h = [h plot(iter0 + Iter(1:n), x(1:n), "linestyle", "-", "linewidth", 1)] ;
+	 h = [h plot(iter0 + Iter(2:n), x(2:n), "linestyle", "-", "linewidth", 1)] ;
 	 xlabel("iterations") ; ylabel(loss) ;
 	 set(gca, "ygrid", "on") ;
 	 
