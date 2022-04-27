@@ -145,11 +145,10 @@ endif
 ## Shallow
 SKL = {"HSS" "GSS"} ;
 MDL = {"lasso" "tree" "nnet" "logr"} ;
-PCA = {{} []}{1} ;
+ptr.ind = ind ;
+PCA = {{} []}{2} ;
 if iscell(PCA)
-   ptr.ind = sprintf("R%s", ind) ;
-else
-   ptr.ind = sprintf("%s", ind) ;
+   ptr.ind = ["R" ind] ;
 endif
 if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
    load(mfile) ;
@@ -183,6 +182,7 @@ endif
 ## shape mismatch: Inception-v4
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]} ;
+ptr.ind = ind ;
 jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
@@ -203,7 +203,7 @@ for jNET = 1 : length(NET)
 ##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
       clear skl deep ; i = 1 ;
       while i <= 5    ## UGLY
-	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.name))
+	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.name)) == 2
 	    load(sfile) ;
 	    if rows(skl) > i && skl(i,1) > 0.1
 	       i++ ;
@@ -215,8 +215,9 @@ for jNET = 1 : length(NET)
 	    warning("no convergence, repeating %d for %s", i, net) ;
 	    continue ;
 	 endif
-	 system(sprintf("cp -L /tmp/caffe.INFO %s", sprintf("%s/%s.%s.%s.%02d.tmp.log", sfx, net, ind, pdd.name, i))) ;
-	 system("rm /tmp/caffe.INFO") ;
+	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.name, i) ;
+	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.%02d.log", sfx, net, ind, pdd.name, i)) ;
+	 system("cp /dev/null /tmp/caffe.INFO") ;
 	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ind, pdd.name, i)) ;
 	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ; i++ ;
