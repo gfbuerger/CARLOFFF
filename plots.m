@@ -119,17 +119,23 @@ print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 alpha = 0.05 ;
 qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
 global COL
-COL = [0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([3 2],:) ;
-set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 24) ;
-set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 22, "defaultlinelinewidth", 2) ;
+COL = [0.8 0.2 0.2 ; 0.2 0.2 0.2 ; 0.2 0.8 0.2]([2 3],:) ;
+set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 18) ;
+set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
 
 # nnet training
-clf ;
-h = plot_log("models/DenseNet/DE.24/DenseNet.01010000010.CatRaRE.log", "loss") ;
-set(h(1), "linewidth", 1) ; set(h(2), "linewidth", 4) ;
-hgsave(sprintf("nc/paper/%s.loss.og", net)) ;
-print(sprintf("nc/paper/%s.loss.png", net)) ;
-
+figure(1, "units", "normalized", "position", [0.7 0.7 0.3 0.8]) ;
+clf ; clear ax ; j = 0 ;
+for net = {"LeNet-5" "ALL-CNN"}
+   ax(++j) = subplot(2, 1, j) ;
+   net = net{:} ;
+   lfile = sprintf("models/%s/DE.24/%s.01010000010.CatRaRE.01.log", net, net) ;
+   plot_log(ax(j), lfile, "loss", :, 0) ;
+   title(net)
+endfor
+set(ax, "ylim", [0.2 0.71]) ;
+hgsave(sprintf("nc/paper/loss.og")) ;
+print(sprintf("nc/paper/loss.svg")) ;
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
 C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;

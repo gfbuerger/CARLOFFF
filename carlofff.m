@@ -238,10 +238,10 @@ for jNET = 1 : length(NET)
    deep.name = net ;
    cd(sfx) ;
    wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ind, pdd.name, i) ;
-   unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ind, pdd.name)) ;
+   [st msg] = unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ind, pdd.name)) ;
    symlink(wfile, lfile) ;
    wfile = sprintf("%s.%s.%s.%02d.log", net, ind, pdd.name, i) ;
-   unlink(lfile = sprintf("%s.%s.%s.log", net, ind, pdd.name)) ;
+   [st msg] = unlink(lfile = sprintf("%s.%s.%s.log", net, ind, pdd.name)) ;
    symlink(wfile, lfile) ;
    cd ~/carlofff
 
@@ -305,7 +305,7 @@ for jSIM = 1 : length(SIM)
 
       ## select predictors
       str = sprintf("%s,", SVAR{:}) ; str = str(1:end-1) ;
-      eval(sprintf("%s = selptr(scale, ind, ptfile, ID=[], FILL, %s) ;", sim, str))   
+      eval(sprintf("%s = selptr(scale, ind, ptfile, ID, FILL, %s) ;", sim, str))
       eval(sprintf("%s.name = sim ;", NSIM{jSIM})) ;
 
       ## normalize with mean and std	 

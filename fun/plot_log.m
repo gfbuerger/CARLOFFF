@@ -1,15 +1,18 @@
-## usage: varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog = 0)
+## usage: varargout = plot_log (h, lfile, loss = "loss", iter0 = 0, pse = 10, plog = 0)
 ##
 ##
-function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog = 0)
+function varargout = plot_log (h, lfile, loss = "loss", iter0 = 0, pse = 10, plog = 0)
 
    global COL
 
    phase = {"Train" "Test"} ;
    
    mtime = 0 ;
-   clf ;
-   set(gca, "ygrid", "on", "NextPlot", "add", "colororder", [0 1 0 ; 0 0 1]) ;
+   if isempty(h)
+      clf ;
+      h = gca ;
+   endif
+   set(h, "ygrid", "on", "NextPlot", "add", "colororder", COL) ;
    
    while stat(lfile).mtime > mtime
 
@@ -23,7 +26,7 @@ function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog =
       I = cellfun(@(c) ~isempty(c), S) ;
       s = s(I) ;
       
-      h = [] ;
+      hp = [] ;
       for phs = phase
 
 	 phs = phs{:} ;
@@ -47,26 +50,28 @@ function varargout = plot_log (lfile, loss = "loss", iter0 = 0, pse = 10, plog =
 	 x = cellfun(@(c) str2num(strsplit(c{2}, " "){1}), SP(I))' ;
 
 	 n = min(numel(Iter), numel(x)) ;
-	 if plog set(gca, "yscale", "log") ; endif
-	 h = [h plot(iter0 + Iter, x, "linestyle", "-", "linewidth", 1)] ;
+	 if plog set(h, "yscale", "log") ; endif
+	 hp = [hp plot(iter0 + Iter, x, "linestyle", "-", "linewidth", 1)] ;
 	 xlabel("iterations") ; ylabel(loss) ;
-	 set(gca, "ygrid", "on") ;
+	 set(h, "ygrid", "on") ;
 	 
       endfor
-      if numel(get(gca, "children")) < 2
+      if numel(get(h, "children")) < 2
 	 mtime = 0 ;
 	 continue ;
       endif
-      legend(phase, "box", "off") ;
+      legend(phase, "box", "off", "location", "northeast") ;
       
-      if plog set(gca, "yscale", "log", "yminorgrid", "on") ; endif
+      if plog set(h, "yscale", "log", "yminorgrid", "on") ; endif
 
       pause(pse) ;
       
    endwhile
 
+   set(hp(1), "linewidth", 1) ; set(hp(2), "linewidth", 3) ;
+
    if nargout > 0
-      varargout{1} = h ;
+      varargout{1} = hp ;
    endif
    
 endfunction
