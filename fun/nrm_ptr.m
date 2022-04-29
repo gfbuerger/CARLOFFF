@@ -1,14 +1,18 @@
-## usage: [y varargout] = nrm_ptr (x, varargin)
+## usage: [y varargout] = nrm_ptr (x, I=[], varargin)
 ##
 ## normalize predictors
-function [y varargout] = nrm_ptr (x, varargin)
+function [y varargout] = nrm_ptr (x, I=[], varargin)
 
-   if nargin < 2
-      xm = arrayfun(@(j) nanmean(x(:,j,:)(:)), 1:size(x, 2)) ;
-      xs = arrayfun(@(j) nanstd(x(:,j,:)(:)), 1:size(x, 2)) ;
-   elseif nargin < 3
+   if isempty(I)
+      I = true(size(x, 1), 1) ;
+   endif
+   
+   if nargin < 3
+      xm = arrayfun(@(j) nanmean(x(I,j,:)(:)), 1:size(x, 2)) ;
+      xs = arrayfun(@(j) nanstd(x(I,j,:)(:)), 1:size(x, 2)) ;
+   elseif nargin < 4
       xm = varargin{1} ;
-      xs = arrayfun(@(j) nanstd(x(:,j,:)(:)), 1:size(x, 2)) ;
+      xs = arrayfun(@(j) nanstd(x(I,j,:)(:)), 1:size(x, 2)) ;
    else
       xm = varargin{1} ;
       xs = varargin{2} ;

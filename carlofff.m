@@ -260,7 +260,7 @@ endfor
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
-ID = [1961 1 1 ; 1990 12 31] ;
+ID = [1961 MON(1) 1 ; 1990 MON(end) 31] ;
 SVAR = trl_atm("atmvar.lst", JVAR) ;
 SIM = {"ptr" "historical" "rcp85"}([2 3]) ;
 NSIM = {"ANA" "HIST" "RCP85"}([2 3]) ;
@@ -305,14 +305,14 @@ for jSIM = 1 : length(SIM)
 
       ## select predictors
       str = sprintf("%s,", SVAR{:}) ; str = str(1:end-1) ;
-      eval(sprintf("%s = selptr(scale, ind, ptfile, ID, FILL, %s) ;", sim, str))
+      eval(sprintf("%s = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
       eval(sprintf("%s.name = sim ;", NSIM{jSIM})) ;
 
       ## normalize with mean and std	 
       if strcmp(sim, "historical")
-	 eval(sprintf("[%s.x %s.xm %s.xs] = nrm_ptr(%s.x) ;", sim, sim, sim, sim)) ;
+	 eval(sprintf("[%s.x %s.xm %s.xs] = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim, sim, sim)) ;
       else
-	 eval(sprintf("%s.x = nrm_ptr(%s.x, historical.xm, historical.xs) ;", sim, sim)) ;
+	 eval(sprintf("%s.x = nrm_ptr(%s.x, :, historical.xm, historical.xs) ;", sim, sim)) ;
       endif
 
       for jMDL = 1 : length(MDL)
