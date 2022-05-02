@@ -256,9 +256,15 @@ for jSIM = 1 : length(SIM)
    for svar = SVAR
       svar = svar{:} ;
 
-      if exist(svar, "var") == 1 continue ; endif
+      if exist(svar, "var") == 1, continue ; endif
 
-      if exist(sfile = sprintf("data/%s.%s.ob", svar, sim), "file") == 2
+      if strcmp(sim, "ana")
+	 sfile = sprintf("data/all.%s.ob", sim) ;
+      else
+	 sfile = sprintf("data/%s.%s.ob", svar, sim) ;
+      endif
+
+      if exist(sfile, "file") == 2
 
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
@@ -270,15 +276,17 @@ for jSIM = 1 : length(SIM)
 	    VAR = fieldnames(V)' ;
 	    for k = VAR
 	       eval(sprintf("%s = V.%s ;", k{:}, k{:})) ;
+	       ## aggregate
+	       eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
 	    endfor
+	    save(sfile, SVAR{:}) ;
 	 else
 	    eval(sprintf("%s = read_sim(\"esgf\", svar, sim, lon, lat) ;", svar)) ;
+	    ## aggregate
+	    eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
+	    save(sfile, svar) ;
 	 endif
 	 
-	 ## aggregate
-	 eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
-	 save(sfile, svar) ;
-
       endif
 
    endfor
