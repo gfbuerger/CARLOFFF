@@ -91,7 +91,7 @@ for jNET = 1 : length(NET)
    printf("<-- %s\n", mfile) ;
    load(mfile) ;
    hg(jNET) = hggroup() ;
-   scatter(skl(:,jSKL), skl(:,end), sz/5, col(jPLT,:), "o", "filled", "parent", hg(jNET)) ;
+   scatter(skl(:,jSKL), skl(:,end), sz/5, col(jPLT,:), "d", "filled", "parent", hg(jNET)) ;
    hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, col(jPLT,:), "d", "filled", "parent", hg(jNET)) ;
 
    JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
@@ -124,7 +124,7 @@ set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 18) ;
 set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
 
 # nnet training
-figure(1, "units", "normalized", "position", [0.7 0.7 0.3 0.8]) ;
+figure(1, "units", "normalized", "position", [0.7 0.7 0.3 0.6]) ;
 clf ; clear ax ; j = 0 ;
 for net = {"LeNet-5" "ALL-CNN"}
    ax(++j) = subplot(2, 1, j) ;

@@ -37,36 +37,15 @@ else
 endif
 pmkdir(sprintf("data/%s.%02d", REG, NH)) ; pmkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 
-if isnewer(afile = sprintf("data/atm.%s.ob", GREG), glob("data/ind/*.nc"){:})
+if isnewer(afile = sprintf("data/ana.%s.ob", GREG), glob("data/ind/*.nc"){:})
    load(afile) ;
 else
-   pkg load netcdf
-   F = glob("data/ind/*.nc")' ;
-   lon = ncread(F{1}, "longitude") ;
-   lat = ncread(F{1}, "latitude") ;
-   if (Llat = lat(1) > lat(end)) lat = flip(lat) ; endif
-   nc = ncinfo(F{1}) ;
-   id = nctime(F{1}) ;
-   JLON = GLON(1) <= lon & lon <= GLON(2) ;
-   JLAT = GLAT(1) <= lat & lat <= GLAT(2) ;
-
-   for j = 1 : length(F)
-      nc = ncinfo(F{j}) ;
-      VAR(j) = v = {nc.Variables.Name}(4) ;
-      LVAR{j} = nc.Variables(4).Attributes(6).Value ;
-      x = squeeze(ncread(F{j}, v{:})) ;
-      x = permute(x, [3 1 2]) ; # all data are N x W x H
-      if Llat x = flip(x, 3) ; endif
-      [id x] = selmon(id, x) ;
-      eval(sprintf("%s.id = id ;", v{:})) ;
-      eval(sprintf("%s.x = x(:,JLON,JLAT) ;", v{:})) ;
-      eval(sprintf("%s.lon = lon(JLON) ;", v{:})) ;
-      eval(sprintf("%s.lat = lat(JLAT) ;", v{:})) ;
-      eval(sprintf("%s.name = VAR{j} ;", v{:})) ;
-      ## aggregate
-      eval(sprintf("%s = agg(%s, NH) ;", v{:}, v{:})) ;
+   V = read_ana(GLON, GLAT, NH) ;
+   VAR = fieldnames(V)' ;
+   for k = VAR
+      eval(sprintf("%s = V.%s ;", k{:}, k{:})) ;
    endfor
-   save(afile, VAR{:}, "VAR", "LVAR") ;
+   save(afile, VAR{:}, "VAR") ;
 endif
 
 PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
@@ -258,12 +237,10 @@ endfor
 
 
 ### historical and future simulations
-load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;
-lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 ID = [1961 MON(1) 1 ; 1990 MON(end) 31] ;
-SVAR = trl_atm("atmvar.lst", JVAR) ;
-SIM = {"ptr" "historical" "rcp85"}([2 3]) ;
-NSIM = {"ANA" "HIST" "RCP85"}([2 3]) ;
+JSIM = 1:3 ;
+SIM = {"ana" "historical" "rcp85"}(JSIM) ;
+NSIM = {"ANA" "HIST" "RCP85"}(JSIM) ;
 JNET = 1 : 9 ;
 
 PCA = {{} []}{2} ;
@@ -272,18 +249,31 @@ if iscell(PCA) ptr.ind = sprintf("R%s", ind) ; endif
 for jSIM = 1 : length(SIM)
 
    sim = SIM{jSIM} ;
+   SVAR = trl_atm("atmvar.lst", [1 2 2](jSIM), JVAR) ;
+   clear(SVAR{:}) ;
 
    ## load atmospheric variables
    for svar = SVAR
       svar = svar{:} ;
 
-      if exist(sfile = sprintf("esgf/%s.%s.ob", svar, sim), "file") == 2
+      if exist(svar, "var") == 1 continue ; endif
 
+      if exist(sfile = sprintf("data/%s.%s.ob", svar, sim), "file") == 2
+
+	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
 
       else
 
-	 eval(sprintf("%s = read_sim(\"esgf\", svar, sim, lon, lat) ;", svar)) ;
+	 if strcmp(sim, "ana")
+	    V = read_ana(GLON, GLAT, NH, SVAR) ;
+	    VAR = fieldnames(V)' ;
+	    for k = VAR
+	       eval(sprintf("%s = V.%s ;", k{:}, k{:})) ;
+	    endfor
+	 else
+	    eval(sprintf("%s = read_sim(\"esgf\", svar, sim, lon, lat) ;", svar)) ;
+	 endif
 	 
 	 ## aggregate
 	 eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
@@ -297,8 +287,9 @@ for jSIM = 1 : length(SIM)
    glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.name))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
 
-   if isnewer(ptfile = sprintf("esgf/%s.ob", sim), glb{:})
+   if isnewer(ptfile = sprintf("data/%s.ob", sim), glb{:})
 
+      printf("<-- %s\n", ptfile) ;
       load(ptfile) ;
 
    else
@@ -309,10 +300,10 @@ for jSIM = 1 : length(SIM)
       eval(sprintf("%s.name = sim ;", NSIM{jSIM})) ;
 
       ## normalize with mean and std	 
-      if strcmp(sim, "historical")
-	 eval(sprintf("[%s.x %s.xm %s.xs] = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim, sim, sim)) ;
-      else
+      if strcmp(sim, "rcp85")
 	 eval(sprintf("%s.x = nrm_ptr(%s.x, :, historical.xm, historical.xs) ;", sim, sim)) ;
+      else
+	 eval(sprintf("[%s.x %s.xm %s.xs] = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim, sim, sim)) ;
       endif
 
       for jMDL = 1 : length(MDL)

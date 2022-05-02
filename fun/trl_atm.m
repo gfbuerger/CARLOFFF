@@ -1,12 +1,12 @@
-## usage: SVAR = trl_atm (tfile, JVAR)
+## usage: SVAR = trl_atm (tfile, jSIM, JVAR)
 ##
 ## translate atmospheric variables
-function SVAR = trl_atm (tfile, JVAR)
+function SVAR = trl_atm (tfile, jSIM, JVAR)
 
    fid = fopen(tfile, "rt") ;
    t = textscan(fid, "%s,%s", "Delimiter", ",") ;
    fclose(fid) ;
 
-   SVAR = t{2}'(JVAR) ;
+   SVAR = t{jSIM}'(JVAR) ;
    
 endfunction
