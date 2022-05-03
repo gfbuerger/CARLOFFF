@@ -237,7 +237,6 @@ endfor
 
 
 ### historical and future simulations
-ID = [1961 MON(1) 1 ; 1990 MON(end) 31] ;
 JSIM = 1:3 ;
 SIM = {"ana" "historical" "rcp85"}(JSIM) ;
 NSIM = {"ANA" "HIST" "RCP85"}(JSIM) ;
@@ -291,6 +290,13 @@ for jSIM = 1 : length(SIM)
 
    endfor
 
+endfor
+
+for jSIM = 1 : length(SIM)
+
+   sim = SIM{jSIM} ;
+   SVAR = trl_atm("atmvar.lst", [1 2 2](jSIM), JVAR) ;
+
    glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.name)) ;
    glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.name))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
@@ -307,11 +313,18 @@ for jSIM = 1 : length(SIM)
       eval(sprintf("%s = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
       eval(sprintf("%s.name = sim ;", NSIM{jSIM})) ;
 
-      ## normalize with mean and std	 
-      if strcmp(sim, "rcp85")
-	 eval(sprintf("%s.x = nrm_ptr(%s.x, :, historical.xm, historical.xs) ;", sim, sim)) ;
+      ## normalize with mean and std
+      if exist(rfile = "data/refclim.ob", "file") == 2
+	 load(rfile) ;
       else
-	 eval(sprintf("[%s.x %s.xm %s.xs] = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim, sim, sim)) ;
+	 eval(sprintf("[refclim.xm refclim.xs] = ref_clim(%s, %s, ID) ;", SIM{2}, SIM{3})) ;
+	 save(rfile, "refclim") ;
+      endif
+
+      if strcmp(sim, "ana")
+	 eval(sprintf("%s.x = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim, sim, sim)) ;
+      else
+	 eval(sprintf("%s.x = nrm_ptr(%s.x, :, refclim.xm, refclim.xs) ;", sim, sim)) ;
       endif
 
       for jMDL = 1 : length(MDL)

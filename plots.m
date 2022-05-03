@@ -15,7 +15,7 @@ col = maxdistcolor(ncol = length(JMDL) + length(NET), @(m) sRGB_to_OSAUCS (m, tr
 ##col = col(randperm(ncol),:) ;
 
 ### cases
-load(sprintf("data/atm.%s.ob", GREG)) ;
+load(sprintf("data/ana.%s.ob", GREG)) ;
 clf ; jVAR = 1 ;
 ## June 2013
 D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 31] ;
@@ -119,7 +119,7 @@ print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 alpha = 0.05 ;
 qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
 global COL
-COL = [0.8 0.2 0.2 ; 0.2 0.2 0.2 ; 0.2 0.8 0.2]([2 3],:) ;
+COL = [0 0 0 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
 set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 18) ;
 set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
 
@@ -137,12 +137,44 @@ set(ax, "ylim", [0.2 0.71]) ;
 hgsave(sprintf("nc/paper/loss.og")) ;
 print(sprintf("nc/paper/loss.svg")) ;
 
-COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
 C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;
 C2= cellfun(@(net) sprintf("Deep.%s", net), NET, "UniformOutput", false) ;
 for mdl = union(C1, C2)
    mdl = mdl{:} ;
-   clf ; hold on ; clear h ; j = 0 ;
+   clf ; hold on ; clear h stats ; j = 0 ;
+   h(++j) = plot([1979 2020], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
+   for sim = SIM(1)
+      j++ ;
+      eval(sprintf("sim = %s ;", sim{:})) ;
+      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", strrep(mdl, "-", "_"))) ;
+      scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL(j,:), "filled") ; axis tight
+      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      stats(j,:) = STATS ;
+      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
+      h(j) = plot(s.id(:,1), yf, "color", COL(j,:), "linewidth", 4) ;
+##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
+      xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
+   endfor
+   ##   set(gca, "ygrid", "on") ;
+   ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
+   for j = 2:rows(stats)
+      if stats(j,3) < alpha
+	 xt = mean(get(h(j), "xdata")) - 5 ;
+	 text(xt, 0.9*ylim()(2), "p<0.05", "color", COL(j,:)) ;
+      endif
+   endfor
+   legend(h, {"CLIM" NSIM{1}}, "box", "off", "location", "southeast") ;
+   htit = title(sprintf("%s", mdl), "fontsize", 20) ;
+   pos = get(htit, "position") ;
+   ht = text(1960, pos(2) - 0.05, sprintf("ERA5"), "fontsize", 14) ;
+
+   hgsave(sprintf("nc/paper/ERA5.%s.sim.og", mdl)) ;
+   print(sprintf("nc/paper/ERA5.%s.sim.svg", mdl)) ;
+endfor
+
+for mdl = union(C1, C2)
+   mdl = mdl{:} ;
+   clf ; hold on ; clear h stats ; j = 0 ;
    h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
    for sim = SIM
       j++ ;
@@ -158,10 +190,10 @@ for mdl = union(C1, C2)
    endfor
    ##   set(gca, "ygrid", "on") ;
    ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
-   for j = 2:3
+   for j = 2:rows(stats)
       if stats(j,3) < alpha
 	 xt = mean(get(h(j), "xdata")) - 10 ;
-	 text(xt, 0.7, "p<0.05", "color", COL(j,:)) ;
+	 text(xt, 0.9*ylim()(2), "p<0.05", "color", COL(j,:)) ;
       endif
    endfor
 ##   if strcmp(mdl, "Deep.Simple")
@@ -170,10 +202,10 @@ for mdl = union(C1, C2)
       loc = "southeast" ;
 ##   endif
    legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", loc) ;
-   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"driving_model_id\")) ;", SIM{1})) ;
-   GCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{1})) ;
-   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"model_id\")) ;", SIM{1})) ;
-   RCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{1})) ;
+   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"driving_model_id\")) ;", SIM{2})) ;
+   GCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{2})) ;
+   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"model_id\")) ;", SIM{2})) ;
+   RCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{2})) ;
    smdl = strsplit(mdl, "."){2} ;
    htit = title(sprintf("%s", mdl), "fontsize", 20) ;
    pos = get(htit, "position") ;
