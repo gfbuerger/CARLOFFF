@@ -1,7 +1,7 @@
-## usage: retval = read_ana (GLON, GLAT, NH, SVAR={})
+## usage: retval = read_ana (GLON, GLAT, NH, svar)
 ##
 ## read ERA5 data
-function retval = read_ana (GLON, GLAT, NH, SVAR={})
+function retval = read_ana (GLON, GLAT, NH, svar)
 
    pkg load netcdf
    F = glob("data/ind/*.nc")' ;
@@ -15,7 +15,7 @@ function retval = read_ana (GLON, GLAT, NH, SVAR={})
       nc = ncinfo(F{j}) ;
       k = find(cellfun(@(c) length(c), {nc.Variables.Size}) > 1) ;
       VAR(j) = v = {nc.Variables.Name}(k) ;
-      if ~ismember(v, SVAR) continue ; endif
+      if ~isempty(svar) && ~strcmp(v, svar) continue ; endif
       LVAR{j} = nc.Variables(k).Attributes(6).Value ;
       x = squeeze(ncread(F{j}, v{:})) ;
       x = permute(x, [3 1 2]) ; # all data are N x W x H
@@ -32,5 +32,9 @@ function retval = read_ana (GLON, GLAT, NH, SVAR={})
       eval(sprintf("retval.%s = agg(retval.%s, NH) ;", v{:}, v{:})) ;
 
    endfor
+
+   if ~isempty(svar) && ~strcmp(v, svar)
+      eval(sprintf("retval = retval.%s ;", svar)) ;
+   endif
 
 endfunction

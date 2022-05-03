@@ -237,6 +237,8 @@ endfor
 
 
 ### historical and future simulations
+load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;
+lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 JSIM = 1:3 ;
 SIM = {"ana" "historical" "rcp85"}(JSIM) ;
 NSIM = {"ANA" "HIST" "RCP85"}(JSIM) ;
@@ -248,47 +250,32 @@ if iscell(PCA) ptr.ind = sprintf("R%s", ind) ; endif
 for jSIM = 1 : length(SIM)
 
    sim = SIM{jSIM} ;
-   SVAR = trl_atm("atmvar.lst", [1 2 2](jSIM), JVAR) ;
-   clear(SVAR{:}) ;
 
    ## load atmospheric variables
-   for svar = SVAR
-      svar = svar{:} ;
+   if exist(sfile = sprintf("data/%s.ob", sim), "file") == 2
 
-      if exist(svar, "var") == 1, continue ; endif
+      printf("<-- %s\n", sfile) ;
+      load(sfile) ;
 
-      if strcmp(sim, "ana")
-	 sfile = sprintf("data/all.%s.ob", sim) ;
-      else
-	 sfile = sprintf("data/%s.%s.ob", svar, sim) ;
-      endif
+   else
 
-      if exist(sfile, "file") == 2
-
-	 printf("<-- %s\n", sfile) ;
-	 load(sfile) ;
-
-      else
-
+      SVAR = trl_atm("atmvar.lst", [1 2 2](jSIM), JVAR) ;
+      clear(SVAR{:}) ;
+      for svar = SVAR
+	 svar = svar{:} ;
 	 if strcmp(sim, "ana")
-	    V = read_ana(GLON, GLAT, NH, SVAR) ;
-	    VAR = fieldnames(V)' ;
-	    for k = VAR
-	       eval(sprintf("%s = V.%s ;", k{:}, k{:})) ;
-	       ## aggregate
-	       eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
-	    endfor
-	    save(sfile, SVAR{:}) ;
-	 else
-	    eval(sprintf("%s = read_sim(\"esgf\", svar, sim, lon, lat) ;", svar)) ;
+	    s = read_ana(GLON, GLAT, NH, svar) ;
 	    ## aggregate
-	    eval(sprintf("%s = agg(%s, NH) ;", svar, svar)) ;
-	    save(sfile, svar) ;
+	 else
+	    s = read_sim("esgf", svar, sim, lon, lat) ;
+	    ## aggregate
 	 endif
-	 
-      endif
+	 eval(sprintf("%s.%s = agg(s, NH) ;", sim, svar)) ;
 
-   endfor
+      endfor
+      save(sfile, sim) ;
+
+   endif
 
 endfor
 
@@ -301,7 +288,7 @@ for jSIM = 1 : length(SIM)
    glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.name))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
 
-   if isnewer(ptfile = sprintf("data/%s.ob", sim), glb{:})
+   if isnewer(ptfile = sprintf("data/%s.prob.ob", sim), glb{:})
 
       printf("<-- %s\n", ptfile) ;
       load(ptfile) ;
@@ -309,9 +296,10 @@ for jSIM = 1 : length(SIM)
    else
 
       ## select predictors
-      str = sprintf("%s,", SVAR{:}) ; str = str(1:end-1) ;
+      str = cellfun(@(c) sprintf("%s.%s,", sim, c), SVAR, "Uniformoutput", false) ;
+      str = strcat(str{:})(1:end-1) ;
       eval(sprintf("%s = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
-      eval(sprintf("%s.name = sim ;", NSIM{jSIM})) ;
+      eval(sprintf("%s.name = %s ;", sim, sim)) ;
 
       ## normalize with mean and std
       if exist(rfile = "data/refclim.ob", "file") == 2
@@ -322,7 +310,7 @@ for jSIM = 1 : length(SIM)
       endif
 
       if strcmp(sim, "ana")
-	 eval(sprintf("%s.x = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim, sim, sim)) ;
+	 eval(sprintf("%s.x = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim)) ;
       else
 	 eval(sprintf("%s.x = nrm_ptr(%s.x, :, refclim.xm, refclim.xs) ;", sim, sim)) ;
       endif
