@@ -30,8 +30,13 @@ if isoctave()
    source("caffe_loc.m") ; # LOC = "/path/to/caffe"
    addpath(sprintf("%s/matlab", LOC)) ;
    addpath(sprintf("%s/matlab/+caffe/private", LOC)) ;
-   caffe.set_mode_gpu() ;
-   caffe.set_device(0) ;
+   [st out] = system("caffe device_query -gpu 0 2>&1") ;
+   if st == 0
+      caffe.set_mode_gpu() ;
+      caffe.set_device(0) ;
+   else
+      caffe.set_mode_cpu() ;
+   endif
 else
    addpath /opt/caffeML/matlab
 endif
@@ -256,14 +261,6 @@ for jSIM = 1 : length(SIM)
 
       printf("<-- %s\n", sfile) ;
       load(sfile) ;
-      SVAR = trl_atm("atmvar.lst", [1 2 2](jSIM), JVAR) ;
-      clear(SVAR{:}) ;
-      ## select predictors
-      str = cellfun(@(c) sprintf("%s.%s,", sim, c), SVAR, "Uniformoutput", false) ;
-      str = strcat(str{:})(1:end-1) ;
-      eval(sprintf("%s.prob = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
-      eval(sprintf("%s.prob.name = \"%s\" ;", sim, sim)) ;
-      save(sfile, sim) ;
 
    else
 
@@ -273,11 +270,10 @@ for jSIM = 1 : length(SIM)
 	 svar = svar{:} ;
 	 if strcmp(sim, "ana")
 	    s = read_ana(GLON, GLAT, NH, svar) ;
-	    ## aggregate
 	 else
 	    s = read_sim("esgf", svar, sim, lon, lat) ;
-	    ## aggregate
 	 endif
+	 ## aggregate
 	 eval(sprintf("%s.%s = agg(s, NH) ;", sim, svar)) ;
 
       endfor
@@ -324,9 +320,10 @@ for jSIM = 1 : length(SIM)
 
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 load(sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name)) ;
+	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name) ;
+	 printf("<-- %s\n", sfile) ;
+	 load(sfile) ;
 	 out = sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
-	 printf("%s\n", out) ;
 	 eval(out) ;
       endfor
       
