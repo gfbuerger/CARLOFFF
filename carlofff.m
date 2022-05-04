@@ -256,6 +256,14 @@ for jSIM = 1 : length(SIM)
 
       printf("<-- %s\n", sfile) ;
       load(sfile) ;
+      SVAR = trl_atm("atmvar.lst", [1 2 2](jSIM), JVAR) ;
+      clear(SVAR{:}) ;
+      ## select predictors
+      str = cellfun(@(c) sprintf("%s.%s,", sim, c), SVAR, "Uniformoutput", false) ;
+      str = strcat(str{:})(1:end-1) ;
+      eval(sprintf("%s.prob = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
+      eval(sprintf("%s.prob.name = \"%s\" ;", sim, sim)) ;
+      save(sfile, sim) ;
 
    else
 
@@ -275,6 +283,12 @@ for jSIM = 1 : length(SIM)
       endfor
       save(sfile, sim) ;
 
+      ## select predictors
+      str = cellfun(@(c) sprintf("%s.%s,", sim, c), SVAR, "Uniformoutput", false) ;
+      str = strcat(str{:})(1:end-1) ;
+      eval(sprintf("%s.prob = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
+      eval(sprintf("%s.prob.name = \"%s\" ;", sim, sim)) ;
+
    endif
 
 endfor
@@ -282,7 +296,6 @@ endfor
 for jSIM = 1 : length(SIM)
 
    sim = SIM{jSIM} ;
-   SVAR = trl_atm("atmvar.lst", [1 2 2](jSIM), JVAR) ;
 
    glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.name)) ;
    glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.name))) ;
@@ -295,30 +308,24 @@ for jSIM = 1 : length(SIM)
 
    else
 
-      ## select predictors
-      str = cellfun(@(c) sprintf("%s.%s,", sim, c), SVAR, "Uniformoutput", false) ;
-      str = strcat(str{:})(1:end-1) ;
-      eval(sprintf("%s = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
-      eval(sprintf("%s.name = %s ;", sim, sim)) ;
-
       ## normalize with mean and std
-      if exist(rfile = "data/refclim.ob", "file") == 2
-	 load(rfile) ;
-      else
-	 eval(sprintf("[refclim.xm refclim.xs] = ref_clim(%s, %s, ID) ;", SIM{2}, SIM{3})) ;
-	 save(rfile, "refclim") ;
-      endif
-
-      if strcmp(sim, "ana")
-	 eval(sprintf("%s.x = nrm_ptr(%s.x, sdate(%s.id, ID)) ;", sim, sim, sim)) ;
-      else
-	 eval(sprintf("%s.x = nrm_ptr(%s.x, :, refclim.xm, refclim.xs) ;", sim, sim)) ;
-      endif
+      switch sim
+	 case "ana"
+	    eval(sprintf("%s.prob.x = nrm_ptr(%s.prob.x, sdate(%s.prob.id, ID)) ;", sim, sim, sim)) ;
+	 otherwise
+	    if exist(rfile = "data/refclim.ob", "file") == 2
+	       load(rfile) ;
+	    else
+	       eval(sprintf("[refclim.xm refclim.xs] = ref_clim(%s.prob, %s.prob, ID) ;", SIM{2}, SIM{3})) ;
+	       save(rfile, "refclim") ;
+	    endif
+	    eval(sprintf("%s.prob.x = nrm_ptr(%s.prob.x, :, refclim.xm, refclim.xs) ;", sim, sim)) ;
+      endswitch
 
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
 	 load(sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name)) ;
-	 out = sprintf("%s.Shallow.%s.prob = Shallow(%s, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
+	 out = sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
 	 printf("%s\n", out) ;
 	 eval(out) ;
       endfor
@@ -331,8 +338,8 @@ for jSIM = 1 : length(SIM)
 	 weights = sprintf("%s.caffemodel", pfx) ;
 	 if exist(weights, "file") ~= 2 continue ; endif
 	 deploy = caffe.Net(model, weights, 'test') ;
-	 eval(sprintf("%s.img = arr2img(%s.x, res) ;", sim, sim)) ;
-	 out = sprintf("%s.Deep.%s.prob = apply_net(scale*%s.img, deploy) ;", sim, strrep(net, "-", "_"), sim) ;
+	 eval(sprintf("%s.prob.img = arr2img(%s.prob.x, res) ;", sim, sim)) ;
+	 out = sprintf("%s.prob.Deep.%s = apply_net(scale*%s.prob.img, deploy) ;", sim, strrep(net, "-", "_"), sim) ;
 	 printf("%s\n", out) ;
 	 eval(out) ;
       endfor
