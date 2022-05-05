@@ -1,7 +1,7 @@
-## usage: retval = read_ana (GLON, GLAT, NH, svar)
+## usage: retval = read_ana (GLON, GLAT, NH, svar=[])
 ##
 ## read ERA5 data
-function retval = read_ana (GLON, GLAT, NH, svar)
+function retval = read_ana (GLON, GLAT, NH, svar=[])
 
    pkg load netcdf
    F = glob("data/ind/*.nc")' ;

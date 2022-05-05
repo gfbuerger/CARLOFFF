@@ -42,7 +42,7 @@ else
 endif
 pmkdir(sprintf("data/%s.%02d", REG, NH)) ; pmkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 
-if isnewer(afile = sprintf("data/ana.%s.ob", GREG), glob("data/ind/*.nc"){:})
+if isnewer(afile = sprintf("data/ind/ind.%s.ob", GREG), glob("data/ind/*.nc"){:})
    load(afile) ;
 else
    V = read_ana(GLON, GLAT, NH) ;
