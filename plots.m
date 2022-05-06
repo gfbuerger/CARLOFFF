@@ -5,8 +5,8 @@ set(0, "defaultfigurepaperunits", "normalized", "defaultfigurepaperpositionmode"
 set(0, "defaultfigureposition", [0.7 0.7 0.3 0.3]) ;
 set(0, "defaultaxesgridalpha", 0.3)
 
-set(0, "defaultaxesfontname", "Liberation Sans", "defaultaxesfontsize", 14) ;
-set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 14, "defaultlinelinewidth", 2) ;
+set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 18) ;
+set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
 
 
 addpath ~/oct/nc/maxdistcolor
@@ -119,9 +119,7 @@ print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 alpha = 0.05 ;
 qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
 global COL
-COL = [0 0 0 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
-set(0, "defaultaxesfontname", "Linux Biolinum", "defaultaxesfontsize", 18) ;
-set(0, "defaulttextfontname", "Linux Biolinum", "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
+COL = [1 1 1 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
 
 # nnet training
 figure(1, "units", "normalized", "position", [0.7 0.7 0.3 0.6]) ;
@@ -137,54 +135,74 @@ set(ax, "ylim", [0.2 0.71]) ;
 hgsave(sprintf("nc/paper/loss.og")) ;
 print(sprintf("nc/paper/loss.svg")) ;
 
+## plot scatter of obs vs sim annual probs!!
+
 C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;
 C2= cellfun(@(net) sprintf("Deep.%s", net), NET, "UniformOutput", false) ;
-for mdl = union(C1, C2)
-   mdl = mdl{:} ;
-   clf ; hold on ; clear h stats ; j = 0 ;
-   h(++j) = plot([1979 2020], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
-   for sim = SIM(1)
-      j++ ;
-      eval(sprintf("sim = %s ;", sim{:})) ;
-      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", strrep(mdl, "-", "_"))) ;
-      scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL(j,:), "filled") ; axis tight
-      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
-      stats(j,:) = STATS ;
-      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j,:), "linewidth", 4) ;
-##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
-      xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
-   endfor
-   ##   set(gca, "ygrid", "on") ;
-   ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
-   for j = 2:rows(stats)
-      if stats(j,3) < alpha
-	 xt = mean(get(h(j), "xdata")) - 5 ;
-	 text(xt, 0.9*ylim()(2), "p<0.05", "color", COL(j,:)) ;
-      endif
-   endfor
-   legend(h, {"CLIM" NSIM{1}}, "box", "off", "location", "southeast") ;
-   htit = title(sprintf("%s", mdl), "fontsize", 20) ;
-   pos = get(htit, "position") ;
-   ht = text(1960, pos(2) - 0.05, sprintf("ERA5"), "fontsize", 14) ;
+C = union(C1, C2)([13 6]) ;
 
-   hgsave(sprintf("nc/paper/ERA5.%s.sim.og", mdl)) ;
-   print(sprintf("nc/paper/ERA5.%s.sim.svg", mdl)) ;
+## ERA5
+figure(1, "position", [0.7 0.7 0.4 0.34]) ; sz = 60 ;
+[o.id o.x] = annstat(pdd.id, real(pdd.c), @nanmean) ;
+oC = sdate(o.id, [2001 1 1 ; 2010 1 1]) ;
+oV = sdate(o.id, [2011 1 1 ; 2020 1 1]) ;
+
+j = 0 ; clf ; hold on
+for mdl = C
+   mdl = mdl{:} ; mdln = toupper(strsplit(mdl, "."){end}) ;
+   j++ ;
+   eval(sprintf("[s.id s.x] = annstat(ana.prob.id, ana.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
+   s.x = s.x(:,2) ;
+   sC = sdate(s.id, [2001 1 1 ; 2010 1 1]) ;
+   sV = sdate(s.id, [2011 1 1 ; 2020 1 1]) ;
+   xn = min([o.x ; s.x]) ; xx = max([o.x ; s.x]) ;
+   subplot(2, 3, 3*(j-1) + (1:2)) ; hold on
+   plot(s.id([1 end],1), [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 2, "linestyle", "--") ;
+   scatter(o.id(:,1), o.x(:,1), 0.7*sz, 0*COL(1,:), "x") ;
+   scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
+   scatter(s.id(sC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
+   scatter(s.id(sV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
+   [B, BINT, R, RINT, STATS] = regress(s.x, [ones(rows(s.x),1) s.id(:,1)]) ;
+   yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
+   h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
+   xlim(s.id([1 end],1)) ;
+   ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
+   xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
+   if STATS(3) < alpha
+      xt = mean(get(h, "xdata")) - 5 ;
+      text(xt, 0.9*ylim()(2), sprintf("p<%.2f", alpha), "color", 0*COL(1,:)) ;
+   endif
+   set(gca, "fontsize", 14)
+   subplot(2, 3, 3*(j-1) + 3) ; hold on
+   plot([xn xx], [xn xx], "color", 0*COL(1,:), "linewidth", 2, "linestyle", "--") ;
+   scatter(o.x(oC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
+   scatter(o.x(oV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
+   xlim([xn xx]) ; ylim([xn xx]) ;
+   axis square ;
+   xlabel("OBS") ; ylabel(sprintf("%s", mdln)) ;
+##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
+   r = corr(o.x(oV,1), s.x(sV,1)) ;
+   text(xn, xx, sprintf("{\\it\\rho} = %.2f", r), "color", COL(3,:)) ;
+   set(gca, "fontsize", 14)
 endfor
+hgsave(sprintf("nc/paper/ann_scatter.og")) ;
+print(sprintf("nc/paper/ann_scatter.svg")) ;
 
-for mdl = union(C1, C2)
-   mdl = mdl{:} ;
+
+## GCM/RCM
+for mdl = C
+   mdl = mdl{:} ; mdln = toupper(strsplit(mdl, "."){end}) ;
    clf ; hold on ; clear h stats ; j = 0 ;
-   h(++j) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
-   for sim = SIM
+   h(++j) = plot([1951 2100], [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 4, "linestyle", "--") ;
+   for sim = SIM(j+1:end)
       j++ ;
       eval(sprintf("sim = %s ;", sim{:})) ;
-      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", strrep(mdl, "-", "_"))) ;
-      scatter(s.id(:,1), s.x(:,2), 20, 0.8*COL(j,:), "filled") ; axis tight
+      eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
+      scatter(s.id(:,1), s.x(:,2), 20, COL(j+1,:), "filled") ; axis tight
       [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
       stats(j,:) = STATS ;
       yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j,:), "linewidth", 4) ;
+      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 4) ;
 ##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
       xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
    endfor
@@ -193,7 +211,7 @@ for mdl = union(C1, C2)
    for j = 2:rows(stats)
       if stats(j,3) < alpha
 	 xt = mean(get(h(j), "xdata")) - 10 ;
-	 text(xt, 0.9*ylim()(2), "p<0.05", "color", COL(j,:)) ;
+	 text(xt, 0.86*ylim()(2), "p<0.05", "color", COL(j+1,:)) ;
       endif
    endfor
 ##   if strcmp(mdl, "Deep.Simple")
@@ -201,18 +219,18 @@ for mdl = union(C1, C2)
 ##   else
       loc = "southeast" ;
 ##   endif
-   legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", loc) ;
-   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"driving_model_id\")) ;", SIM{2})) ;
-   GCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{2})) ;
-   j = eval(sprintf("find(strcmp({%s.nc.Attributes.Name}, \"model_id\")) ;", SIM{2})) ;
-   RCM = eval(sprintf("%s.nc.Attributes(j).Value ;", SIM{2})) ;
+   legend(h, {"CLIM" NSIM{2:end}}, "box", "off", "location", loc) ;
+   j = eval(sprintf("find(strcmp({%s.prob.nc.Attributes.Name}, \"driving_model_id\")) ;", SIM{2})) ;
+   GCM = eval(sprintf("%s.prob.nc.Attributes(j).Value ;", SIM{2})) ;
+   j = eval(sprintf("find(strcmp({%s.prob.nc.Attributes.Name}, \"model_id\")) ;", SIM{2})) ;
+   RCM = eval(sprintf("%s.prob.nc.Attributes(j).Value ;", SIM{2})) ;
    smdl = strsplit(mdl, "."){2} ;
-   htit = title(sprintf("%s", mdl), "fontsize", 20) ;
+   htit = title(sprintf("%s", mdln), "fontsize", 20) ;
    pos = get(htit, "position") ;
    ht = text(1960, pos(2) - 0.05, sprintf("GCM: %s\nRCM: %s", GCM, RCM), "fontsize", 14) ;
 
-   hgsave(sprintf("nc/paper/%s.%s.%s.sim.og", GCM, RCM, mdl)) ;
-   print(sprintf("nc/paper/%s.%s.%s.sim.svg", GCM, RCM, mdl)) ;
+   hgsave(sprintf("nc/paper/%s.%s.%s.sim.og", GCM, RCM, mdln)) ;
+   print(sprintf("nc/paper/%s.%s.%s.sim.svg", GCM, RCM, mdln)) ;
 endfor
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;

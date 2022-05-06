@@ -277,13 +277,14 @@ for jSIM = 1 : length(SIM)
 	 eval(sprintf("%s.%s = agg(s, NH) ;", sim, svar)) ;
 
       endfor
-      save(sfile, sim) ;
 
       ## select predictors
       str = cellfun(@(c) sprintf("%s.%s,", sim, c), SVAR, "Uniformoutput", false) ;
       str = strcat(str{:})(1:end-1) ;
       eval(sprintf("%s.prob = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
       eval(sprintf("%s.prob.name = \"%s\" ;", sim, sim)) ;
+
+      save(sfile, sim) ;
 
    endif
 
@@ -296,6 +297,7 @@ for jSIM = 1 : length(SIM)
    glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.name)) ;
    glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.name))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
+   glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
    if isnewer(ptfile = sprintf("data/%s.prob.ob", sim), glb{:})
 
