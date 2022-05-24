@@ -1,5 +1,5 @@
 
-global isoctave LON LAT GREG REG NH MON IMB
+global isoctave LON LAT GREG REG NH MON IMB CNVDUR
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -18,6 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
+CNVDUR = 3 ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
@@ -140,7 +141,7 @@ else
    clear skl ;
    for jMDL = 1 : length(MDL)
       mdl = MDL{jMDL} ;
-      if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name), ptfile)
+      if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name), ptfile, pdfile)
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
       else

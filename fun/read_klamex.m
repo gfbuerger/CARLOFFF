@@ -3,23 +3,21 @@
 %%
 function s = read_klamex (fin)
 
-   global isoctave LON LAT MON REG
+   global isoctave LON LAT MON REG CNVDUR
 
    if isoctave(), pkg load io ; end
 
    dlon = 62 ; dlat = 63 ;
-   Jx = 23 : 29 ;
+   Jx = [9 10 23 : 29] ;
    
-   MONS = 5:8 ;
-   HRS = 12:23 ;
-
    fid = fopen(fin, "rt") ;
    str = fgetl(fid) ;
    s.vars = strsplit(str, ",")(Jx) ;
    fclose(fid) ;
    
-   D = dlmread(fin) ;
-   D = D(2:end,:) ;
+   D = real(dlmread(fin)) ;
+   Icnv = (D(2:end,Jx(1)) <= CNVDUR) ;
+   D = D(Icnv,:) ;
 
    lon = D(:,dlon) ; lat = D(:,dlat) ;
    I = lookup(LON, lon) == 1 & lookup(LAT, lat) == 1 ;

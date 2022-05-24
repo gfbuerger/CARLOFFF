@@ -38,6 +38,7 @@ function pdd = selpdd (PDD, LON, LAT, ID, Q0, s)
 	 plot_pdd(pdd, jVAR) ;
       endfor
    endif
+
    pdd.x(isinf(pdd.x)) = 0 ;
    if 0
       plot_hrs(pdd) ;
