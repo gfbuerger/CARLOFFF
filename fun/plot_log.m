@@ -12,7 +12,8 @@ function varargout = plot_log (h, lfile, loss = "loss", gap = 1, pse = 10, plog 
       clf ;
       h = gca ;
    endif
-   set(h, "ygrid", "on", "NextPlot", "add", "colororder", COL) ;
+   set(h, "ygrid", "on", "NextPlot", "add") ;
+   if ~isempty(COL) set(h, "colororder", COL) ; endif
    
    while stat(lfile).mtime > mtime
 

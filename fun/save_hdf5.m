@@ -11,7 +11,7 @@ function save_hdf5 (of, images, labels)
    fputs(fid, file) ;
    fclose(fid) ;
 
-   unlink(file) ;
+   [st msg] = unlink(file) ;
 
    labels = flipdim(labels) ;
    images = flipdim(images) ;

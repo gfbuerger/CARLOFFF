@@ -165,15 +165,16 @@ endif
 ## Deep
 ## divergent: SqueezeNet
 ## shape mismatch: Inception-v4
-NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"} ;
-RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]} ;
+JNET = [1 3 4 9] ;
+NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"}(JNET) ;
+RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}(JNET) ;
 ptr.ind = ind ;
 jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
 
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name), ptfile)
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name), ptfile, pdfile)
 
       load(mfile) ;
       load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.name))
@@ -186,8 +187,8 @@ for jNET = 1 : length(NET)
       solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, PDD) ;
       ##solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
 ##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
-      clear skl deep ; i = 1 ;
-      while i <= 5    ## UGLY
+      clear skl deep ; i = 1 ; kfail = 0 ;
+      while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.name)) == 2
 	    load(sfile) ;
 	    if rows(skl) > i && skl(i,1) > 0.1
@@ -196,8 +197,8 @@ for jNET = 1 : length(NET)
 	    endif
 	 endif
 	 [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	 if deep(i).skl.VAL.(SKL{end}) <= 0.1 # no convergence, repeat
-	    warning("no convergence, repeating %d for %s", i, net) ;
+	 if kfail++ < 5 && deep(i).skl.VAL.(SKL{end}) <= 0.1 # no convergence, repeat
+	    warning("no convergence, retry %d at %d for %s\n", kfail, i, net) ;
 	    continue ;
 	 endif
 	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.name, i) ;
