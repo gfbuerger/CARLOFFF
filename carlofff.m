@@ -55,13 +55,14 @@ else
 endif
 
 PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
-if exist(pdfile = sprintf("data/%s.%s.ob", REG, PDD), "file") == 2
+if exist(pdfile = sprintf("data/%s.%s_%.02d.ob", REG, PDD, CNVDUR), "file") == 2
    load(pdfile) ;
 else
    ## select predictand
    jV = find(strcmp(PDD, VAR)) ; if isempty(jV) jV = 1 ; endif
    str = sprintf("%s,", VAR{:}) ; str = str(1:end-1) ;
    eval(sprintf("pdd = selpdd(PDD, LON, LAT, ID, Q0, %s) ;", VAR{jV}))
+   pdd.lname = sprintf("%s_%02d", pdd.name, CNVDUR) ; 
    ## aggregate
    pdd = agg(pdd, NH) ;
    save(pdfile, "pdd") ;
@@ -70,7 +71,7 @@ endif
 JVAR = [2 4 10] ;
 FILL = true ;
 ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name), afile, pdfile)
+if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname), afile, pdfile)
 
    load(ptfile) ;
 
@@ -174,24 +175,24 @@ for jNET = 1 : length(NET)
 
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
 
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name), ptfile, pdfile)
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname), ptfile, pdfile)
 
       load(mfile) ;
-      load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.name))
+      load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname))
 
    else
 
       init_rnd() ;
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
-      ##solverstate = sprintf("%s/%s.%s.netonly", sfx, net, PDD) ;
+##      solverstate = sprintf("%s/%s.%s.netonly", sfx, net, PDD) ;
       solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, PDD) ;
       ##solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
 ##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
       clear skl deep ; i = 1 ; kfail = 0 ;
       while i <= 20    ## UGLY
-	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.name)) == 2
+	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
 	    load(sfile) ;
-	    if rows(skl) > i && skl(i,1) > 0.1
+	    if rows(skl) >= i && skl(i,1) > 0.1
 	       i++ ;
 	       continue ;
 	    endif
@@ -201,16 +202,16 @@ for jNET = 1 : length(NET)
 	    warning("no convergence, retry %d at %d for %s\n", kfail, i, net) ;
 	    continue ;
 	 endif
-	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.name, i) ;
-	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.%02d.log", sfx, net, ind, pdd.name, i)) ;
+	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.lname, i) ;
+	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.%02d.log", sfx, net, ind, pdd.lname, i)) ;
 	 system("cp /dev/null /tmp/caffe.INFO") ;
-	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ind, pdd.name, i)) ;
+	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ind, pdd.lname, i)) ;
 	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ; i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 
-      rename(sfile, mfile) ;
+      movefile(sfile, mfile) ;
       save(strrep(strrep(sfile, "skl.", "Deep."), ".ot", ".ob"), "deep") ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
@@ -223,17 +224,17 @@ for jNET = 1 : length(NET)
    deep = deep(i) ;
    deep.name = net ;
    cd(sfx) ;
-   wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ind, pdd.name, i) ;
-   [st msg] = unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ind, pdd.name)) ;
+   wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ind, pdd.lname, i) ;
+   [st msg] = unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ind, pdd.lname)) ;
    symlink(wfile, lfile) ;
-   wfile = sprintf("%s.%s.%s.%02d.log", net, ind, pdd.name, i) ;
-   [st msg] = unlink(lfile = sprintf("%s.%s.%s.log", net, ind, pdd.name)) ;
+   wfile = sprintf("%s.%s.%s.%02d.log", net, ind, pdd.lname, i) ;
+   [st msg] = unlink(lfile = sprintf("%s.%s.%s.log", net, ind, pdd.lname)) ;
    symlink(wfile, lfile) ;
    cd ~/carlofff
 
    if 0
-      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ind, pdd.name) ;
-      weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ind, pdd.name) ;
+      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ind, pdd.lname) ;
+      weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ind, pdd.lname) ;
       printf("<-- %s\n", weights) ;
       deploy = caffe.Net(model, weights, 'test') ;
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
@@ -241,10 +242,10 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
-
+exit
 
 ### historical and future simulations
-load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.name)) ;
+load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 JSIM = 1:3 ;
 SIM = {"ana" "historical" "rcp85"}(JSIM) ;
@@ -296,8 +297,8 @@ for jSIM = 1 : length(SIM)
 
    sim = SIM{jSIM} ;
 
-   glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.name)) ;
-   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.name))) ;
+   glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.lname)) ;
+   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.lname))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
@@ -324,7 +325,7 @@ for jSIM = 1 : length(SIM)
 
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name) ;
+	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname) ;
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
 	 out = sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
@@ -333,7 +334,7 @@ for jSIM = 1 : length(SIM)
       
       for jNET = 1 : length(NET(JNET))
 	 net = NET(JNET){jNET} ; res = RES(JNET){jNET} ;
-	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.name) ;
+	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2 continue ; endif
 	 weights = sprintf("%s.caffemodel", pfx) ;

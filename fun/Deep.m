@@ -13,10 +13,16 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    endif
    pmkdir(sprintf("models/%s", proto)) ;
    Sa = sprintf("models/%s/%s", proto, area) ;
-   if exist(Sa, "file") ~= 7 || ~S_ISLNK(lstat(Sa).mode)
-      unlink(Sa) ;
-      symlink(fullfile(pwd, Dd), Sa) ;
+   if (ie = exist(Sa)) == 0 || ~S_ISLNK(lstat(Sa).mode)
+      switch ie
+	 case 2
+	    [st msg] = unlink(Sa) ;
+	 case 7
+	    [st msg] = rmdir(Sa, "s") ;
+	 otherwise
+      endswitch
       printf("%s --> %s\n", fullfile(pwd, Dd), Sa) ;
+      symlink(fullfile(pwd, Dd), Sa) ;
    endif
 
    if exist(sprintf("%s/CAL_lmdb", Dd), "dir") ~= 7 & 0
