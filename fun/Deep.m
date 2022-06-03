@@ -7,7 +7,8 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    [Dd Dn De] = fileparts(solverstate) ;
    Dn = strsplit(Dn, ".") ;
-   proto = Dn{1} ; area = strsplit(Dd, "/"){2} ; res = strsplit(Dd, "/"){3} ;
+   proto = Dn{1} ; area = strsplit(Dd, "/"){2} ;
+   res = strsplit(Dd, "/"){3} ; weights = "" ;
    if exist(Dd, "dir") ~= 7
       pmkdir(Dd) ;
    endif
@@ -42,7 +43,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       PHS = PHS{:} ;
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
-      if ~isnewer(of = h5f(pdd.name, PHS), ptr.ptfile) || ~isempty(IMB)
+      if ~isnewer(of = h5f(pdd.lname, PHS), ptr.ptfile) || ~isempty(IMB)
 	 labels = pdd.c(pdd.(PHS)) ;
 	 images = ptr.img(ptr.(PHS), :, :, :) ;
 
@@ -67,7 +68,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    endif
    
    ## train model
-   sfx = sprintf("%s/%s.%s", Dd, proto, pdd.name) ;
+   sfx = sprintf("%s/%s.%s", Dd, proto, pdd.lname) ;
    Solver = caffe.Solver(solver) ;
    pat = sprintf("%s_iter_*.solverstate", sfx) ;
    if regexp(solverstate, "\\*") && ~isempty(lst = glob(solverstate))
@@ -82,7 +83,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       Solver.restore(state) ;
       iter = Solver.iter ;
       printf("Solver at iteration: %d\n", iter) ;
-      if ~isnewer(state, solver, deploy, h5f(pdd.name, "CAL")) && ~BATCH
+      if ~isnewer(state, solver, deploy, h5f(pdd.lname, "CAL")) && ~BATCH
 	 n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
 	 if ~isempty(n)
 	    switch n > 0
@@ -113,7 +114,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
       if 0
 
-	 [images labels] = load_hdf5(h5f(pdd.name, PHS)) ;
+	 [images labels] = load_hdf5(h5f(pdd.lname, PHS)) ;
 	 labels_h5 = labels ;
 	 n = size(labels, 1) ;
 	 prb.(PHS) = nan(n, 2) ;
