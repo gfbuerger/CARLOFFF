@@ -192,13 +192,13 @@ for jNET = 1 : length(NET)
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
 	    load(sfile) ;
-	    if rows(skl) >= i && skl(i,1) > 0.3
+	    if rows(skl) >= i
 	       i++ ;
 	       continue ;
 	    endif
 	 endif
 	 [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	 if kfail++ < 5 && deep(i).skl.VAL.(SKL{end}) <= 0.1 # no convergence, repeat
+	 if kfail++ < 5 && deep(i).skl.VAL.(SKL{end}) <= 0.3 # no convergence, repeat
 	    warning("no convergence, retry %d at %d for %s\n", kfail, i, net) ;
 	    continue ;
 	 endif
