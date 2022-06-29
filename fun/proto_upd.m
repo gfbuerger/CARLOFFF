@@ -35,9 +35,9 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    sn = strcat(sn1, sn2, sn3) ;
    sd = strcat(sd1, sn2, sd2) ;
 
-   solver = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.name) ;
-   net = sprintf("%s/%s.%s.prototxt", Dd, proto, pdd.name) ;
-   deploy = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.name) ;
+   solver = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.lname) ;
+   net = sprintf("%s/%s.%s.prototxt", Dd, proto, pdd.lname) ;
+   deploy = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
 
    if ~isnewer(solver, wss)
       print_str(ptr, pdd, proto, Dd, ss, solver) ;
@@ -70,7 +70,7 @@ function print_str (ptr, pdd, proto, Dd, str, ofile)
    str = strrep(str, "REG_tpl", REG);
    str = strrep(str, "NH_tpl", NHs);
    str = strrep(str, "DATA_tpl", Dd);
-   str = strrep(str, "PDD_tpl", pdd.name);
+   str = strrep(str, "PDD_tpl", pdd.lname);
    str = strrep(str, "CHANNEL_tpl", num2str(N(2)));
    str = strrep(str, "WIDTH_tpl", num2str(N(3)));
    str = strrep(str, "HEIGHT_tpl", num2str(N(4)));

@@ -4,7 +4,7 @@ global isoctave LON LAT GREG REG NH MON IMB CNVDUR
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
 addpath ~/carlofff/fun
-pmkdir("data")
+[~, ~] = mkdir("data") ;
 cd ~/carlofff
 [glat glon] = borders("germany") ;
 ##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
@@ -23,6 +23,7 @@ NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
 IMB = "SIMPLE" ;
+SKL = {"HSS" "GSS"} ;
 
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
@@ -41,7 +42,7 @@ if isoctave()
 else
    addpath /opt/caffeML/matlab
 endif
-pmkdir(sprintf("data/%s.%02d", REG, NH)) ; pmkdir(sprintf("nc/%s.%02d", REG, NH)) ;
+[~, ~] = mkdir(sprintf("data/%s.%02d", REG, NH)) ; [~, ~] = mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 
 if isnewer(afile = sprintf("data/ind/ind.%s.ob", GREG), glob("data/ind/*.nc"){:})
    load(afile) ;
@@ -129,7 +130,6 @@ if 0
 endif
 
 ## Shallow
-SKL = {"HSS" "GSS"} ;
 MDL = {"lasso" "tree" "nnet" "logr"} ;
 ptr.ind = ind ;
 PCA = {{} []}{2} ;
@@ -192,7 +192,7 @@ for jNET = 1 : length(NET)
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
 	    load(sfile) ;
-	    if rows(skl) >= i && skl(i,1) > 0.1
+	    if rows(skl) >= i && skl(i,1) > 0.3
 	       i++ ;
 	       continue ;
 	    endif
