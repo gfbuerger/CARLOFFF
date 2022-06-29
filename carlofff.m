@@ -136,13 +136,13 @@ PCA = {{} []}{2} ;
 if iscell(PCA)
    ptr.ind = ["R" ind] ;
 endif
-if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.name), ptfile, pdfile)
+if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
    load(mfile) ;
 else
    clear skl ;
    for jMDL = 1 : length(MDL)
       mdl = MDL{jMDL} ;
-      if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.name), ptfile, pdfile)
+      if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
       else
@@ -166,7 +166,7 @@ endif
 ## Deep
 ## divergent: SqueezeNet
 ## shape mismatch: Inception-v4
-JNET = [1 3 4 9] ;
+JNET = [1 : 9] ;
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"}(JNET) ;
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}(JNET) ;
 ptr.ind = ind ;
@@ -242,7 +242,6 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
-exit
 
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
