@@ -56,7 +56,7 @@ else
 endif
 
 PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
-if exist(pdfile = sprintf("data/%s.%s_%.02d.ob", REG, PDD, CNVDUR), "file") == 2
+if exist(pdfile = sprintf("data/%s.%s_%02d.ob", REG, PDD, CNVDUR), "file") == 2
    load(pdfile) ;
 else
    ## select predictand
@@ -188,7 +188,7 @@ for jNET = 1 : length(NET)
       solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, PDD) ;
       ##solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
 ##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
-      clear skl deep ; i = 1 ; kfail = 0 ;
+      clear skl deep ; i = 1 ;
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
 	    load(sfile) ;
@@ -197,11 +197,14 @@ for jNET = 1 : length(NET)
 	       continue ;
 	    endif
 	 endif
-	 [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	 if kfail++ < 5 && deep(i).skl.VAL.(SKL{end}) <= 0.3 # no convergence, repeat
-	    warning("no convergence, retry %d at %d for %s\n", kfail, i, net) ;
-	    continue ;
-	 endif
+
+	 kfail = 0 ; wskl = 0 ;
+	 while ++kfail <= 5 && wskl <= 0.3
+	    [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
+	    wskl = deep(i).skl.VAL.(SKL{jSKL}) ;
+	 endwhile
+	 if kfail > 5 warning("no convergence\n") ; endif
+
 	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.lname, i) ;
 	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.%02d.log", sfx, net, ind, pdd.lname, i)) ;
 	 system("cp /dev/null /tmp/caffe.INFO") ;
@@ -345,6 +348,7 @@ for jSIM = 1 : length(SIM)
 	 eval(out) ;
       endfor
 
+      printf("--> %s\n", ptfile) ;
       save(ptfile, sim) ;
 
    endif
