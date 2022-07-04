@@ -1,9 +1,7 @@
 ## usage: varargout = plot_log (h, lfile, loss = "loss", gap = 1, pse = 10, plog = 0, c = 100)
 ##
 ##
-function varargout = plot_log (h, lfile, loss = "loss", gap = 1, pse = 10, plog = 0, c = 100)
-
-   global COL
+function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap = 1, pse = 10, plog = 0, c = 100)
 
    phase = {"Train" "Test"} ;
    
@@ -12,8 +10,7 @@ function varargout = plot_log (h, lfile, loss = "loss", gap = 1, pse = 10, plog 
       clf ;
       h = gca ;
    endif
-   set(h, "ygrid", "on", "NextPlot", "add") ;
-   if ~isempty(COL) set(h, "colororder", COL) ; endif
+   set(h, "ygrid", "on", "NextPlot", "add", "ColorOrder", [0.3 0.3 0.7 ; 0.3 0.7 0.3]) ;
    
    while stat(lfile).mtime > mtime
 

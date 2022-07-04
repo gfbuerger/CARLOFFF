@@ -235,6 +235,11 @@ for jNET = 1 : length(NET)
    symlink(wfile, lfile) ;
    cd ~/carlofff
 
+   lfile = [sfx "/" lfile] ;
+   figure(1, "visible", "on") ; clf ;
+   plot_log(gca, lfile, :, :, pse = 1, plog = 0) ;
+   print(sprintf("%s/%s", sfx, strrep(lfile, ".log", ".svg"))) ;
+
    if 0
       model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ind, pdd.lname) ;
       weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ind, pdd.lname) ;
