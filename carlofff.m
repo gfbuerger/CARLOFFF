@@ -20,6 +20,7 @@ ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 CNVDUR = 3 ;
 NH = 24 ; # relevant hours
+SOLV = getenv("SOLV") ;
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
 IMB = "SIMPLE" ;
@@ -184,10 +185,17 @@ for jNET = 1 : length(NET)
 
       init_rnd() ;
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
-##      solverstate = sprintf("%s/%s.%s.netonly", sfx, net, PDD) ;
-      solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, PDD) ;
-      ##solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
-##      solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, PDD) ;
+      switch SOLV
+	 case ""
+	    solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, pdd.lname) ;
+	 case "netonly"
+	    solverstate = sprintf("%s/%s.%s.netonly", sfx, net, pdd.lname) ;
+	 case "cont"
+##	    solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
+	    solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, pdd.lname) ;
+	 otherwise
+	    solverstate = SOLV ;
+      endswitch
       clear skl deep ; i = 1 ;
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
@@ -217,7 +225,7 @@ for jNET = 1 : length(NET)
       movefile(sfile, mfile) ;
       save(strrep(strrep(sfile, "skl.", "Deep."), ".ot", ".ob"), "deep") ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
-##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, PDD, net) ;
+##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, pdd.lname, net) ;
 ##      system(cmd) ;
 
    endif
