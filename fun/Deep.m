@@ -67,7 +67,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       weights = "" ;
       return ;
    endif
-   
+
    ## train model
    sfx = sprintf("%s/%s.%s", Dd, proto, pdd.lname) ;
    Solver = caffe.Solver(solver) ;
@@ -84,8 +84,12 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       Solver.restore(state) ;
       iter = Solver.iter ;
       printf("Solver at iteration: %d\n", iter) ;
-      if ~isnewer(state, solver, deploy, h5f(pdd.lname, "CAL")) && ~BATCH
-	 n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
+      if ~isnewer(state, solver, deploy, h5f(pdd.lname, "CAL"))
+	 if BATCH || true
+	    n = iter ;
+	 else
+	    n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
+	 endif
 	 if ~isempty(n)
 	    switch n > 0
 	       case 0

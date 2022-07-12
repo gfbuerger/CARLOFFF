@@ -35,7 +35,7 @@ display: 10
 # The maximum number of iterations
 max_iter: 1000
 # snapshot intermediate results
-snapshot: 10000
+snapshot: 1000
 #snapshot_format: HDF5
 # solver mode: CPU or GPU
 solver_mode: GPU

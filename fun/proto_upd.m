@@ -36,6 +36,9 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    sd = strcat(sd1, sn2, sd2) ;
 
    solver = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.lname) ;
+   if isnewer(slv = strrep(solver, "solver", "solver_upd"), solver)
+      solver = slv ;
+   endif
    net = sprintf("%s/%s.%s.prototxt", Dd, proto, pdd.lname) ;
    deploy = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
 
