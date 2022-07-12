@@ -5,15 +5,10 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    global IMB BATCH
 
-   [Dd Dn De] = fileparts(solverstate) ;
+   [Sa Dn De] = fileparts(solverstate) ;
    Dn = strsplit(Dn, ".") ;
-   proto = Dn{1} ; area = strsplit(Dd, "/"){2} ;
-   res = strsplit(Dd, "/"){3} ; weights = "" ;
-   if exist(Dd, "dir") ~= 7
-      pmkdir(Dd) ;
-   endif
-   pmkdir(sprintf("models/%s", proto)) ;
-   Sa = sprintf("models/%s/%s", proto, area) ;
+   proto = Dn{1} ; area = strsplit(Sa, "/"){3} ;
+   Dd = sprintf("data/%s/%dx%d", area, size(ptr.img)(3:4)) ;
    if (ie = exist(Sa)) == 0 || ~S_ISLNK(lstat(Sa).mode)
       switch ie
 	 case 2
