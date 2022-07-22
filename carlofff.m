@@ -199,6 +199,7 @@ for jNET = 1 : length(NET)
 	    solverstate = upd_solver(SOLV, pdd.lname) ;
 	    if strcmp(strsplit(solverstate, "/"){2}, net)
 	       warning("solverstate not matching for %s, continuing\n", net) ;
+	       continue ;
 	    endif
       endswitch
       clear skl deep ; i = 1 ;
