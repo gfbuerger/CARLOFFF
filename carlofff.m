@@ -175,11 +175,13 @@ jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
+   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
+   dfile = sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname) ;
 
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname), ptfile, pdfile)
+   if isnewer(mfile, ptfile, pdfile, dfile)
 
       load(mfile) ;
-      load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname))
+      load(dfile) ;
 
    else
 
@@ -216,14 +218,16 @@ for jNET = 1 : length(NET)
 	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.lname, i) ;
 	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.%02d.log", sfx, net, ind, pdd.lname, i)) ;
 	 system("cp /dev/null /tmp/caffe.INFO") ;
-	 rename(weights, sprintf("%s/%s.%s.%s.%02d.caffemodel", sfx, net, ind, pdd.lname, i)) ;
+	 pfx = sprintf("%s/%s.%s.%s.%02d", sfx, net, ind, pdd.lname, i)
+	 rename(weights, sprintf("%s.caffemodel", pfx)) ;
+	 rename(strrep(weights, ".caffemodel", ".solverstate"), sprintf("%s.solverstate", pfx)) ;
 	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ; i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 
-      movefile(sfile, mfile) ;
-      save(strrep(strrep(sfile, "skl.", "Deep."), ".ot", ".ob"), "deep") ;
+      movefile(sfile, mfile) ; pause(3) ;
+      save(dfile, "deep") ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, pdd.lname, net) ;
 ##      system(cmd) ;

@@ -4,10 +4,12 @@
 function ofile = upd_solver (file, name)
 
    ofile = file ;
-   
+
+   if isempty(SOLV = getenv("SOLV")) return ; endif
+
    [Dd Dn De] = fileparts(file) ;
    Dn = strsplit(Dn, ".") ;
-   proto = Dn{1} ; area = strsplit(Dd, "/"){2} ;
+   proto = Dn{1} ; area = strsplit(Dd, "/"){3} ;
 
    sfile = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, name) ;
    str = fileread(sfile) ;

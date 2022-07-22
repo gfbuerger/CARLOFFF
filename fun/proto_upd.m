@@ -11,7 +11,7 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
       ss = fileread(wss = "models/solver.tpl") ;
    endif
    ss = [ss "net: \"DATA_tpl/PROTO_tpl.PDD_tpl.prototxt\"\n"] ;
-   ss = [ss "snapshot_prefix: \"DATA_tpl/PROTO_tpl.PDD_tpl\"\n"] ;
+   ss = [ss "snapshot_prefix: \"DATA_tpl/PROTO_tpl.IND_tpl.PDD_tpl\"\n"] ;
    
    if exist(wsn1 = sprintf("models/%s/data.tpl", proto), "file") == 2
       sn1 = fileread(wsn1) ;
@@ -35,7 +35,7 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    sn = strcat(sn1, sn2, sn3) ;
    sd = strcat(sd1, sn2, sd2) ;
 
-   solver = sprintf("%s/%s.%s_solver.prototxt", Dd, proto, pdd.lname) ;
+   solver = sprintf("%s/%s.%s.%s_solver.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
    if isnewer(slv = strrep(solver, "solver", "solver_upd"), solver)
       solver = slv ;
    endif
@@ -70,6 +70,7 @@ function print_str (ptr, pdd, proto, Dd, str, ofile)
    NHs = sprintf("%02d", NH);
 
    str = strrep(str, "PROTO_tpl", proto);
+   str = strrep(str, "IND_tpl", ptr.ind);
    str = strrep(str, "REG_tpl", REG);
    str = strrep(str, "NH_tpl", NHs);
    str = strrep(str, "DATA_tpl", Dd);

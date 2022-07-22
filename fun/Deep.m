@@ -5,10 +5,11 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 
    global IMB BATCH
 
-   [Sa Dn De] = fileparts(solverstate) ;
+   [Dd Dn De] = fileparts(solverstate) ;
    Dn = strsplit(Dn, ".") ;
-   proto = Dn{1} ; area = strsplit(Sa, "/"){3} ;
-   Dd = sprintf("data/%s/%dx%d", area, size(ptr.img)(3:4)) ;
+   proto = Dn{1} ; area = strsplit(Dd, "/"){2} ;
+   res = strsplit(Dd, "/"){3} ; weights = "" ;
+   Sa = sprintf("models/%s/%s", proto, area) ;
    if (ie = exist(Sa)) == 0 || ~S_ISLNK(lstat(Sa).mode)
       switch ie
 	 case 2
@@ -64,13 +65,13 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    endif
 
    ## train model
-   sfx = sprintf("%s/%s.%s", Dd, proto, pdd.lname) ;
    Solver = caffe.Solver(solver) ;
+   sfx = sprintf("%s/%s.%s.%s", Dd, proto, ptr.ind, pdd.lname) ;
    pat = sprintf("%s_iter_*.solverstate", sfx) ;
    if regexp(solverstate, "\\*") && ~isempty(lst = glob(solverstate))
       state = strtrim(ls("-1t", lst{:})(1,:)) ;
    elseif exist(solverstate, "file") == 2
-      state = solverstate ;
+      state = upd_solver(solverstate, pdd.lname) ;
    endif
 
    if exist("state", "var") == 0
