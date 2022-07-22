@@ -197,6 +197,9 @@ for jNET = 1 : length(NET)
 	    solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, pdd.lname) ;
 	 otherwise
 	    solverstate = upd_solver(SOLV, pdd.lname) ;
+	    if strcmp(strsplit(solverstate, "/"){2}, net)
+	       warning("solverstate not matching for %s, continuing\n", net) ;
+	    endif
       endswitch
       clear skl deep ; i = 1 ;
       while i <= 20    ## UGLY
@@ -218,7 +221,7 @@ for jNET = 1 : length(NET)
 	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.lname, i) ;
 	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.%02d.log", sfx, net, ind, pdd.lname, i)) ;
 	 system("cp /dev/null /tmp/caffe.INFO") ;
-	 pfx = sprintf("%s/%s.%s.%s.%02d", sfx, net, ind, pdd.lname, i)
+	 pfx = sprintf("%s/%s.%s.%s.%02d", sfx, net, ind, pdd.lname, i) ;
 	 rename(weights, sprintf("%s.caffemodel", pfx)) ;
 	 rename(strrep(weights, ".caffemodel", ".solverstate"), sprintf("%s.solverstate", pfx)) ;
 	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
