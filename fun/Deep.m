@@ -71,7 +71,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
    if regexp(solverstate, "\\*") && ~isempty(lst = glob(solverstate))
       state = strtrim(ls("-1t", lst{:})(1,:)) ;
    elseif exist(solverstate, "file") == 2
-      state = upd_solver(solverstate, pdd.lname) ;
+      state = upd_solver(solverstate, ptr.ind, pdd.lname) ;
    endif
 
    if exist("state", "var") == 0

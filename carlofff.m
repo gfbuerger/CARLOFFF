@@ -189,18 +189,18 @@ for jNET = 1 : length(NET)
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
       switch SOLV
 	 case ""
-	    solverstate = sprintf("%s/%s.%s_iter_0.solverstate", sfx, net, pdd.lname) ;
+	    solverstate = sprintf("%s/%s.%s.%s_iter_0.solverstate", sfx, net, ptr.ind, pdd.lname) ;
 	 case "netonly"
-	    solverstate = sprintf("%s/%s.%s.netonly", sfx, net, pdd.lname) ;
+	    solverstate = sprintf("%s/%s.%s.%s.netonly", sfx, net, ptr.ind, pdd.lname) ;
 	 case "cont"
 ##	    solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
-	    solverstate = sprintf("%s/%s.%s_iter_*.solverstate", sfx, net, pdd.lname) ;
+	    solverstate = sprintf("%s/%s.%s.%s_iter_*.solverstate", sfx, net, ptr.ind, pdd.lname) ;
 	 otherwise
-	    solverstate = upd_solver(SOLV, pdd.lname) ;
-	    if strcmp(strsplit(solverstate, "/"){2}, net)
-	       warning("solverstate not matching for %s, continuing\n", net) ;
+	    if ~strcmp(strsplit(SOLV, "/"){2}, net)
+	       warning("SOLV not matching %s, continuing\n", net) ;
 	       continue ;
 	    endif
+	    solverstate = upd_solver(SOLV, ptr.ind, pdd.lname) ;
       endswitch
       clear skl deep ; i = 1 ;
       while i <= 20    ## UGLY
