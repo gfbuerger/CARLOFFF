@@ -18,16 +18,16 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
-[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
+##[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
 if isempty(CNVDUR = getenv("CNVDUR"))
    CNVDUR = 9 ;
 else
-   CNVDUR = str2num(CNVDUR) ;
+   CNVDUR = str2num(CNVDUR)
 endif
 if isempty(JVAR = getenv("JVAR"))
    JVAR = [2 4 10] ;
 else
-   JVAR = str2num(char(strsplit(JVAR))) ;
+   JVAR = str2num(char(strsplit(JVAR)))
 endif
 NH = 24 ; # relevant hours
 SOLV = getenv("SOLV") ;
