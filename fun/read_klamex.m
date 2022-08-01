@@ -15,8 +15,8 @@ function s = read_klamex (fin)
    s.vars = strsplit(str, ",")(Jx) ;
    fclose(fid) ;
    
-   D = real(dlmread(fin)) ;
-   Icnv = (D(2:end,Jx(1)) <= CNVDUR) ;
+   D = real(dlmread(fin))(2:end,:) ;
+   Icnv = (D(:,Jx(1)) <= CNVDUR) ;
    D = D(Icnv,:) ;
 
    lon = D(:,dlon) ; lat = D(:,dlat) ;

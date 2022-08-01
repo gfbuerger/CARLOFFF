@@ -18,7 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
-CNVDUR = 3 ;
+CNVDUR = 9 ;
 NH = 24 ; # relevant hours
 SOLV = getenv("SOLV") ;
 scale = 0.00390625 ; % MNIST
