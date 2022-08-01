@@ -230,8 +230,8 @@ for jNET = 1 : length(NET)
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 
-      movefile(sfile, mfile) ; pause(3) ;
-      save(dfile, "deep") ;
+      save(dfile, "deep") ; pause(3) ;
+      movefile(sfile, mfile) ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, pdd.lname, net) ;
 ##      system(cmd) ;
