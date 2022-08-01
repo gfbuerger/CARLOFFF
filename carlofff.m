@@ -18,7 +18,17 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
-CNVDUR = 9 ;
+[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
+if isempty(CNVDUR = getenv("CNVDUR"))
+   CNVDUR = 9 ;
+else
+   CNVDUR = str2num(CNVDUR) ;
+endif
+if isempty(JVAR = getenv("JVAR"))
+   JVAR = [2 4 10] ;
+else
+   JVAR = str2num(char(strsplit(JVAR))) ;
+endif
 NH = 24 ; # relevant hours
 SOLV = getenv("SOLV") ;
 scale = 0.00390625 ; % MNIST
@@ -70,7 +80,6 @@ else
    save(pdfile, "pdd") ;
 endif
 
-JVAR = [2 4 10] ;
 FILL = true ;
 ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname), afile, pdfile)

@@ -10,7 +10,7 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    else
       ss = fileread(wss = "models/solver.tpl") ;
    endif
-   ss = [ss "net: \"DATA_tpl/PROTO_tpl.PDD_tpl.prototxt\"\n"] ;
+   ss = [ss "net: \"DATA_tpl/PROTO_tpl.IND_tpl.PDD_tpl.prototxt\"\n"] ;
    ss = [ss "snapshot_prefix: \"DATA_tpl/PROTO_tpl.IND_tpl.PDD_tpl\"\n"] ;
    
    if exist(wsn1 = sprintf("models/%s/data.tpl", proto), "file") == 2
@@ -39,7 +39,7 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    if isnewer(slv = strrep(solver, "solver", "solver_upd"), solver)
       solver = slv ;
    endif
-   net = sprintf("%s/%s.%s.prototxt", Dd, proto, pdd.lname) ;
+   net = sprintf("%s/%s.%s.%s.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
    deploy = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
 
    if ~isnewer(solver, wss)

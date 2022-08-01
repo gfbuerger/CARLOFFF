@@ -33,7 +33,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       unlink(tt) ;
    endif
 
-   h5f = @(pddn, PHS) sprintf("%s/%s.%s.txt", Dd, pddn, PHS) ;
+   h5f = @(pddn, PHS) sprintf("%s/%s.%s.%s.txt", Dd, ptr.ind, pddn, PHS) ;
 
    for PHS = {"CAL" "VAL"}
       PHS = PHS{:} ;

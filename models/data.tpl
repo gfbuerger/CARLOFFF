@@ -8,7 +8,7 @@ layer {
     phase: TRAIN
   }
   hdf5_data_param {
-    source: "DATA_tpl/PDD_tpl.CAL.txt"
+    source: "DATA_tpl/IND_tpl.PDD_tpl.CAL.txt"
     batch_size: 100
   }
 }
@@ -21,7 +21,7 @@ layer {
     phase: TEST
   }
   hdf5_data_param {
-    source: "DATA_tpl/PDD_tpl.VAL.txt"
+    source: "DATA_tpl/IND_tpl.PDD_tpl.VAL.txt"
     batch_size: 100
   }
 }
