@@ -29,8 +29,8 @@ if isempty(JVAR = getenv("JVAR"))
 else
    JVAR = str2num(char(strsplit(JVAR)))
 endif
+SOLV = getenv("SOLV")
 NH = 24 ; # relevant hours
-SOLV = getenv("SOLV") ;
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
 IMB = "SIMPLE" ;
@@ -228,12 +228,12 @@ for jNET = 1 : length(NET)
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 
-	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.%02d.log\n", sfx, net, ind, pdd.lname, i) ;
-	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.%02d.log", sfx, net, ind, pdd.lname, i)) ;
+	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.log.%02d\n", sfx, net, ind, pdd.lname, i) ;
+	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.log.%02d", sfx, net, ind, pdd.lname, i)) ;
 	 system("cp /dev/null /tmp/caffe.INFO") ;
-	 pfx = sprintf("%s/%s.%s.%s.%02d", sfx, net, ind, pdd.lname, i) ;
-	 rename(weights, sprintf("%s.caffemodel", pfx)) ;
-	 rename(strrep(weights, ".caffemodel", ".solverstate"), sprintf("%s.solverstate", pfx)) ;
+	 state = strrep(weights, ".caffemodel", ".solverstate") ;
+	 rename(weights, sprintf("%s.%02d", weights, i)) ;
+	 rename(state, sprintf("%s.%02d", state, i)) ;
 	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ; i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
@@ -251,17 +251,19 @@ for jNET = 1 : length(NET)
    [~, i] = max(skl(:,jSKL)) ;
    deep = deep(i) ;
    deep.name = net ;
-   cd(sfx) ;
-   wfile = sprintf("%s.%s.%s.%02d.caffemodel", net, ind, pdd.lname, i) ;
-   [st msg] = unlink(lfile = sprintf("%s.%s.%s.caffemodel", net, ind, pdd.lname)) ;
-   symlink(wfile, lfile) ;
-   wfile = sprintf("%s.%s.%s.%02d.log", net, ind, pdd.lname, i) ;
-   [st msg] = unlink(lfile = sprintf("%s.%s.%s.log", net, ind, pdd.lname)) ;
-   symlink(wfile, lfile) ;
-   cd ~/carlofff
+
+   pfx = sprintf("%s/%s.%s.%s", sfx, net, ind, pdd.lname) ;
+   wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
+   rename(wfile, wfile(1:end-3)) ;
+   delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
+   wfile = strtrim(ls("-1t", sprintf("%s_iter_*.solverstate.%02d", pfx, i))(1,:)) ;
+   rename(wfile, wfile(1:end-3)) ;
+   delete(ls("-1t", sprintf("%s_iter_*.solverstate.*", pfx))) ;
+   wfile = sprintf("%s.log.%02d", pfx, i) ;
+   rename(wfile, lfile = wfile(1:end-3)) ;
+   delete(ls("-1t", sprintf("%s.log.*", pfx))) ;
 
    if ~strcmp(graphics_toolkit, "gnuplot")
-      lfile = [sfx "/" lfile] ;
       figure(1, "visible", "off") ; clf ;
       plot_log(gca, lfile, :, :, pse = 1, plog = 0) ;
       print(strrep(lfile, ".log", ".svg")) ;
