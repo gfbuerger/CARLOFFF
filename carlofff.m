@@ -122,7 +122,8 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
-w = squeeze(pdd.x(:,1,:,:)) ; # Eta
+jVAR = 3 ; # Eta
+w = squeeze(pdd.x(:,jVAR,:,:)) ;
 pdd.q = quantile(w(:), Q0) ;
 pdd.c = any(any(w > pdd.q, 2), 3) ;
 printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(w(:) > 0) sum(w(:) == 0)] / numel(w)) ;

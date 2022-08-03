@@ -16,7 +16,7 @@ col = maxdistcolor(ncol = length(JMDL) + length(NET), @(m) sRGB_to_OSAUCS (m, tr
 
 ### cases
 load(sprintf("data/ana.%s.ob", GREG)) ;
-clf ; jVAR = 1 ;
+clf ; jVAR = 3 ;
 ## June 2013
 D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 31] ;
 ## July 2014
