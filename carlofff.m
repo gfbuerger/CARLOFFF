@@ -29,6 +29,9 @@ if isempty(JVAR = getenv("JVAR"))
 else
    JVAR = str2num(char(strsplit(JVAR)))
 endif
+if isempty(GLOG_log_dir = getenv("GLOG_log_dir"))
+   mkdir(GLOG_log_dir = sprintf("/tmp/GLOG.%d", getpid)) ;
+endif
 SOLV = getenv("SOLV")
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
@@ -175,9 +178,9 @@ else
 endif
 
 ## Deep
-## divergent: SqueezeNet
+## divergent: CIFAR-10, SqueezeNet
 ## shape mismatch: Inception-v4
-JNET = [1 : 9] ;
+JNET = 1 : 9 ;
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"}(JNET) ;
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}(JNET) ;
 ptr.ind = ind ;
@@ -229,19 +232,21 @@ for jNET = 1 : length(NET)
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 
-	 printf("/tmp/caffe.INFO --> %s/%s.%s.%s.log.%02d\n", sfx, net, ind, pdd.lname, i) ;
-	 system(sprintf("cp -L /tmp/caffe.INFO %s/%s.%s.%s.log.%02d", sfx, net, ind, pdd.lname, i)) ;
-	 system("cp /dev/null /tmp/caffe.INFO") ;
+	 printf("%s/caffe.INFO --> %s/%s.%s.%s.log.%02d\n", GLOG_log_dir, sfx, net, ind, pdd.lname, i) ;
+	 system(sprintf("cp -L %s/caffe.INFO %s/%s.%s.%s.log.%02d", GLOG_log_dir, sfx, net, ind, pdd.lname, i)) ;
+	 system(sprintf("cp /dev/null %s/caffe.INFO", GLOG_log_dir)) ;
 	 state = strrep(weights, ".caffemodel", ".solverstate") ;
 	 rename(weights, sprintf("%s.%02d", weights, i)) ;
 	 rename(state, sprintf("%s.%02d", state, i)) ;
 	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
-	 save("-text", sfile, "skl") ; i++ ;
+	 save(dfile, "deep") ;
+	 save("-text", sfile, "skl") ;
+	 i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 
       save(dfile, "deep") ; pause(3) ;
-      movefile(sfile, mfile) ;
+      copyfile(sfile, mfile) ; unlink(sfile) ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, pdd.lname, net) ;
 ##      system(cmd) ;
@@ -254,17 +259,19 @@ for jNET = 1 : length(NET)
    deep.name = net ;
 
    pfx = sprintf("%s/%s.%s.%s", sfx, net, ind, pdd.lname) ;
-   wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
-   rename(wfile, wfile(1:end-3)) ;
-   delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
-   wfile = strtrim(ls("-1t", sprintf("%s_iter_*.solverstate.%02d", pfx, i))(1,:)) ;
-   rename(wfile, wfile(1:end-3)) ;
-   delete(ls("-1t", sprintf("%s_iter_*.solverstate.*", pfx))) ;
-   wfile = sprintf("%s.log.%02d", pfx, i) ;
-   rename(wfile, lfile = wfile(1:end-3)) ;
-   delete(ls("-1t", sprintf("%s.log.*", pfx))) ;
-
-   if ~strcmp(graphics_toolkit, "gnuplot")
+   if isempty(glob(sprintf("%s_iter_*.caffemodel", pfx)))
+      wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
+      rename(wfile, wfile(1:end-3)) ;
+      delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
+      wfile = strtrim(ls("-1t", sprintf("%s_iter_*.solverstate.%02d", pfx, i))(1,:)) ;
+      rename(wfile, wfile(1:end-3)) ;
+      delete(ls("-1t", sprintf("%s_iter_*.solverstate.*", pfx))) ;
+      wfile = sprintf("%s.log.%02d", pfx, i) ;
+      rename(wfile, lfile = wfile(1:end-3)) ;
+      delete(ls("-1t", sprintf("%s.log.*", pfx))) ;
+   endif
+   
+   if 0 && ~strcmp(graphics_toolkit, "gnuplot")
       figure(1, "visible", "off") ; clf ;
       plot_log(gca, lfile, :, :, pse = 1, plog = 0) ;
       print(strrep(lfile, ".log", ".svg")) ;
@@ -297,7 +304,7 @@ for jSIM = 1 : length(SIM)
    sim = SIM{jSIM} ;
 
    ## load atmospheric variables
-   if exist(sfile = sprintf("data/%s.ob", sim), "file") == 2
+   if exist(sfile = sprintf("data/%s.%s.ob", sim, ind), "file") == 2
 
       printf("<-- %s\n", sfile) ;
       load(sfile) ;

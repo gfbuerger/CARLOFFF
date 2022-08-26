@@ -9,7 +9,7 @@ layer {
   }
   hdf5_data_param {
     source: "DATA_tpl/IND_tpl.PDD_tpl.CAL.txt"
-    batch_size: 100
+    batch_size: 10
   }
 }
 layer {
@@ -22,6 +22,6 @@ layer {
   }
   hdf5_data_param {
     source: "DATA_tpl/IND_tpl.PDD_tpl.VAL.txt"
-    batch_size: 100
+    batch_size: 10
   }
 }

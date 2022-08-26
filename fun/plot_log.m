@@ -44,7 +44,8 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
 	 
 	 n = min(numel(Iter), numel(x)) ;
 	 if plog set(h, "yscale", "log") ; endif
-	 hp = [hp plot(1/c * Iter(gap:end), x(gap:end))] ;
+	 II = gap <= Iter ;
+	 hp = [hp plot(1/c * Iter(II), x(II))] ;
 	 xlabel(sprintf("iterations (x%d)", c)) ; ylabel(loss) ;
 	 set(h, "ygrid", "on") ;
 	 
