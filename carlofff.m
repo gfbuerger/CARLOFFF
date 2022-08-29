@@ -227,25 +227,25 @@ for jNET = 1 : length(NET)
 
 	 kfail = 0 ; wskl = 0 ;
 	 while ++kfail <= 5 && wskl <= 0.3
-	    [deep(i) weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	    wskl = deep(i).skl.VAL.(SKL{jSKL}) ;
+	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
+	    wskl = deep.skl.VAL.(SKL{jSKL}) ;
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 
+	 deep.name = net ;
+	 save(sprintf("%s/Deep.%s.%s.%s.ob.%02d", sfx, net, ind, pdd.lname, i), "deep") ;
 	 printf("%s/caffe.INFO --> %s/%s.%s.%s.log.%02d\n", GLOG_log_dir, sfx, net, ind, pdd.lname, i) ;
 	 system(sprintf("cp -L %s/caffe.INFO %s/%s.%s.%s.log.%02d", GLOG_log_dir, sfx, net, ind, pdd.lname, i)) ;
 	 system(sprintf("cp /dev/null %s/caffe.INFO", GLOG_log_dir)) ;
 	 state = strrep(weights, ".caffemodel", ".solverstate") ;
 	 rename(weights, sprintf("%s.%02d", weights, i)) ;
 	 rename(state, sprintf("%s.%02d", state, i)) ;
-	 skl(i,:) = [cellfun(@(s) deep(i).skl.VAL.(s), SKL) deep(i).crossentropy.VAL] ;
-	 save(dfile, "deep") ;
+	 skl(i,:) = [cellfun(@(s) deep.skl.VAL.(s), SKL) deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
 	 i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 
-      save(dfile, "deep") ; pause(3) ;
       copyfile(sfile, mfile) ; unlink(sfile) ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, pdd.lname, net) ;
@@ -255,11 +255,9 @@ for jNET = 1 : length(NET)
 
    ## find best model and apply
    [~, i] = max(skl(:,jSKL)) ;
-   deep = deep(i) ;
-   deep.name = net ;
 
    pfx = sprintf("%s/%s.%s.%s", sfx, net, ind, pdd.lname) ;
-   if isempty(glob(sprintf("%s_iter_*.caffemodel", pfx)))
+   if exist(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname), "file") ~= 2
       wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
       rename(wfile, wfile(1:end-3)) ;
       delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
@@ -267,12 +265,16 @@ for jNET = 1 : length(NET)
       rename(wfile, wfile(1:end-3)) ;
       delete(ls("-1t", sprintf("%s_iter_*.solverstate.*", pfx))) ;
       wfile = sprintf("%s.log.%02d", pfx, i) ;
-      rename(wfile, lfile = wfile(1:end-3)) ;
+      rename(wfile, wfile(1:end-3)) ;
       delete(ls("-1t", sprintf("%s.log.*", pfx))) ;
+      wfile = sprintf("%s/Deep.%s.%s.%s.ob.%02d", sfx, net, ind, pdd.lname, i) ;
+      rename(wfile, wfile(1:end-3)) ;      
+      delete(ls("-1t", sprintf("%s/Deep.%s.%s.%s.ob.*", sfx, net, ind, pdd.lname))) ;
    endif
    
    if 0 && ~strcmp(graphics_toolkit, "gnuplot")
       figure(1, "visible", "off") ; clf ;
+      lfile = sprintf("%s.log", pfx)
       plot_log(gca, lfile, :, :, pse = 1, plog = 0) ;
       print(strrep(lfile, ".log", ".svg")) ;
    endif
