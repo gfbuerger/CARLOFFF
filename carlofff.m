@@ -346,7 +346,7 @@ for jSIM = 1 : length(SIM)
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
-   if isnewer(ptfile = sprintf("data/%s.prob.ob", sim), glb{:})
+   if isnewer(ptfile = sprintf("data/%s.%s.prob.ob", sim, ind), glb{:})
 
       printf("<-- %s\n", ptfile) ;
       load(ptfile) ;
