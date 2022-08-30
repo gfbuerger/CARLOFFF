@@ -12,11 +12,7 @@ function prob = apply_net (x, net, I=[])
    
    if isempty(I) I = true(N(end), 1) ; endif
 
-   prob = nan(sum(I), 2) ; ii = 0 ;
-   for i = find(I)'
-      data = Data(:,:,:,i) ;
-      phat = net.forward({data}) ;
-      prob(++ii,:) = phat{1}(1:2) ;
-   endfor
+   fI = find(I) ;
+   prob = arrayfun(@(i) net.forward({Data(:,:,:,fI(i))}){1}(1:2), 1 : sum(I), "UniformOutput", false) ;
 
 endfunction
