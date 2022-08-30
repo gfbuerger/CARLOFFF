@@ -27,7 +27,7 @@ endif
 if isempty(JVAR = getenv("JVAR"))
    JVAR = [2 4 10] ;
 else
-   JVAR = str2num(char(strsplit(JVAR)))
+   JVAR = str2num(char(strsplit(JVAR))) ;
 endif
 if isempty(GLOG_log_dir = getenv("GLOG_log_dir"))
    mkdir(GLOG_log_dir = sprintf("/tmp/GLOG.%d", getpid)) ;
@@ -257,7 +257,7 @@ for jNET = 1 : length(NET)
    [~, i] = max(skl(:,jSKL)) ;
 
    pfx = sprintf("%s/%s.%s.%s", sfx, net, ind, pdd.lname) ;
-   if exist(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname), "file") ~= 2
+   if isnewer(sprintf("%s/Deep.%s.%s.%s.ob.01", sfx, net, ind, pdd.lname), sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname))
       wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
       rename(wfile, wfile(1:end-3)) ;
       delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
@@ -383,7 +383,7 @@ for jSIM = 1 : length(SIM)
 	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2 continue ; endif
-	 weights = sprintf("%s.caffemodel", pfx) ;
+	 weights = glob(sprintf("%s_iter_*.caffemodel", pfx)){1} ;
 	 if exist(weights, "file") ~= 2 continue ; endif
 	 deploy = caffe.Net(model, weights, 'test') ;
 	 eval(sprintf("%s.prob.img = arr2img(%s.prob.x, res) ;", sim, sim)) ;
