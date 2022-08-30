@@ -13,6 +13,6 @@ function prob = apply_net (x, net, I=[])
    if isempty(I) I = true(N(end), 1) ; endif
 
    fI = find(I) ;
-   prob = arrayfun(@(i) net.forward({Data(:,:,:,fI(i))}){1}(1:2), 1 : sum(I), "UniformOutput", false) ;
-
+   prob = pararrayfun(nproc, @(i) net.forward({Data(:,:,:,fI(i))}){1}(1:2), 1 : sum(I), "UniformOutput", false) ;
+   
 endfunction
