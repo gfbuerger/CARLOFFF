@@ -3,6 +3,8 @@
 ## apply ptr to net for PHS
 function prob = apply_net (x, net, I=[])
 
+   pkg load parallel
+
    Data = flipdim(x) ;
    N = size(Data) ;
    if length(N) < 3
