@@ -60,22 +60,16 @@ Pskl(:,:,4) = skl(:,[jSKL end]) ;
 Pskl = Pskl(JMDL,:,:) ;
 
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
-clf ;
-ax1 = subplot(1, 2, 1) ; hold on ;
-axis square ;
-sn = min(Pskl(:,1,:)) ; sx = max(Pskl(:,1,:)) ;
-plot([sn sx], [sn sx], "k--") ;
+clf ; clear ax
+ax(1) = subplot(1, 2, 1) ; hold on ;
 for jMDL = 1 : size(Pskl, 1)
    hg(jMDL) = scatter(Pskl(jMDL,1,2), Pskl(jMDL,1,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
    hgE(jMDL) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,1,3), sz, col(jMDL,:), "filled", "s") ;
 endfor
 xlabel([SKL{jSKL} " with cape"]) ; ylabel([SKL{jSKL} " without cape"]) ;
-xl = [xlim()(1) xlim()(2)] ; grid on
-xlim(xl) ; ylim(xl) ;
 
 ## Deep
-ax2 = subplot(1, 2, 2) ; hold on ;
-axis square ;
+ax(2) = subplot(1, 2, 2) ; hold on ;
 jPLT = 0 ;
 for jNET = 1 : rows(Pskl)
    jPLT++ ;
@@ -99,18 +93,25 @@ for jNET = 1 : length(NET)
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
    printf("<-- %s\n", mfile) ;
    w = load(mfile) ;
-   scatter(ax1, mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, col(jPLT,:), "d", "filled") ;
-   axes(ax2) ;
+   scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, col(jPLT,:), "d", "filled") ;
+   axes(ax(2)) ;
 endfor
-xlim(xl) ; grid on
+axis(ax(1), "tight") ;
+vl = cell2mat(arrayfun(@(a) [xlim(a) ; ylim(a)], ax(1), "UniformOutput", false)) ;
+vl = [min(vl(:,1))-0.01 max(vl(:,2))+0.01] ;
+plot(ax(1), vl, vl, "k--") ;
+set(ax(1), "xlim", vl, "ylim", vl, "xgrid", "on", "ygrid", "on") ;
+set(ax(2), "xgrid", "on", "ygrid", "on") ;
 xlabel(SKL{jSKL}) ; ylabel("crossentropy") ;
-hlS = legend(ax1, hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
+hlS = legend(ax(1), hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
 hlD = legend(hgD, NET, "box", "off", "location", "southwest") ;
 set(findall(hlS, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
-pos = get(ax1, "position") ; pos(1) -= 0.05 ; set(ax1, "position", pos)
-pos = get(ax2, "position") ; pos(1) += 0.05 ; set(ax2, "position", pos)
-set(hlD, "position", [0.45 0.15 0.10 0.5])
+pos = get(ax(1), "position") ; pos(1) -= 0.05 ; set(ax(1), "position", pos)
+pos = get(ax(2), "position") ; pos(1) += 0.05 ; set(ax(2), "position", pos)
 set(hlS, "position", [0.45 0.65 0.10 0.24])
+set(hlD, "position", [0.45 0.15 0.10 0.5])
+get(findobj("-property", "fontsize"), "fontsize")
+set(findobj("-property", "fontsize"), "fontsize", 12) ;
 
 print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
