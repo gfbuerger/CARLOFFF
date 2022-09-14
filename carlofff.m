@@ -22,7 +22,7 @@ MON = 5 : 8 ;
 if isempty(CNVDUR = getenv("CNVDUR"))
    CNVDUR = 9 ;
 else
-   CNVDUR = str2num(CNVDUR)
+   CNVDUR = str2num(CNVDUR) ;
 endif
 if isempty(JVAR = getenv("JVAR"))
    JVAR = [2 4 10] ;
@@ -32,7 +32,7 @@ endif
 if isempty(GLOG_log_dir = getenv("GLOG_log_dir"))
    mkdir(GLOG_log_dir = sprintf("/tmp/GLOG.%d", getpid)) ;
 endif
-SOLV = getenv("SOLV")
+SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;

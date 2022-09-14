@@ -25,6 +25,7 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
 plot_case(cape, pdd, deep, D, d, jVAR, cx = 5) ;
+
 if 0 		    # Eta for case
    clf ;
    I = pdd.id(:,1) == 2016 & ismember(pdd.id(:,2), MON) ;
@@ -43,17 +44,17 @@ endif
 clear Pskl ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
+load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
 Pskl(:,:,1) = skl(:,[jSKL end]) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.name))
+load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
 Pskl(:,:,2) = skl(:,[jSKL end]) ;
 ## with EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
+load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
 Pskl(:,:,3) = skl(:,[jSKL end]) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.name))
+load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
 Pskl(:,:,4) = skl(:,[jSKL end]) ;
 
 Pskl = Pskl(JMDL,:,:) ;
@@ -87,7 +88,7 @@ for jNET = 1 : length(NET)
 
    JVAR = [2 4 10] ;
    ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name) ;
+   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
    printf("<-- %s\n", mfile) ;
    load(mfile) ;
    hg(jNET) = hggroup() ;
@@ -95,7 +96,7 @@ for jNET = 1 : length(NET)
    hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, col(jPLT,:), "d", "filled", "parent", hg(jNET)) ;
 
    JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.name) ;
+   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
    printf("<-- %s\n", mfile) ;
    w = load(mfile) ;
    scatter(ax1, mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, col(jPLT,:), "d", "filled") ;
