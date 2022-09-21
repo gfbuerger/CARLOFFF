@@ -127,28 +127,31 @@ global COL
 
 ## training curves
 COL = [0.2 0.7 0.2 ; 0.2 0.2 0.7] ;
+jNET = 2 ;
 clf ;
-net = NET{jNET=3} ;
-lfile = sprintf("models/%s/DE.24/%s.01010000010.CatRaRE.log", net, net) ;
+net = NET{++jNET} ;
+lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname) ;
 plot_log(gca, lfile, "loss", gap = 2, pse = 0, plog = 0) ;
 title(net)
 hgsave(sprintf("nc/paper/loss.%s.og", net)) ;
 print(sprintf("nc/paper/loss.%s.svg", net)) ;
 
+GAP = [2 300 2 2 40 2 2 2 2] ;
 clf ; j = 0 ; clear H ;
 for net = NET((1:9) ~= jNET)
-   ax(++j) = subplot(2, 4, j) ;
    net = net{:} ;
-##   if exist(lfile = sprintf("data/%s.log", net), "file") ~= 2
-   if exist(lfile = sprintf("models/%s/DE.24/%s.01010000010.CatRaRE.log", net, net), "file") ~= 2
+   ax(++j) = subplot(2, 4, j) ;
+   if exist(lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname), "file") ~= 2
       warning("file not found: %s", lfile) ;
    endif
-   H(j,:) = plot_log(ax(j), lfile, "loss", gap = 2, pse = 0, plog = 0) ;
+   jN = find(strcmp(NET, net)) ;
+   H(j,:) = plot_log(ax(j), lfile, "loss", gap = GAP(jN), pse = 0, plog = 0) ;
    title(net)
 endfor
 delete(H(:,3)) ;
 ##set(H(:,1), "linewidth", 1) ; set(H(:,2), "linewidth", 2) ;
 ##set(ax, "ylim", [0.2 0.71]) ;
+set(findobj("-property", "fontsize"), "fontsize", 12) ;
 hgsave(sprintf("nc/paper/loss.og")) ;
 print(sprintf("nc/paper/loss.svg")) ;
 

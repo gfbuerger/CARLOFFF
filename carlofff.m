@@ -1,4 +1,6 @@
 
+profile on
+
 global isoctave LON LAT GREG REG NH MON IMB CNVDUR
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
@@ -398,5 +400,10 @@ for jSIM = 1 : length(SIM)
    endif
 
 endfor
+
+profshow ;
+profile off ;
+T = profile("info") ;
+save -text prof.ot T
 
 source plots.m ;

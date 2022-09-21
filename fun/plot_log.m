@@ -6,6 +6,9 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
    phase = {"Train" "Test"} ;
    
    mtime = 0 ;
+
+   if exist(lfile, "file") ~= 2 error("no such file: %s\n", lfile) ; endif
+   
    if isempty(h)
       clf ;
       h = gca ;
@@ -20,7 +23,7 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
       sf = fscanf(fid, "%c") ;
       fclose(fid) ;
       s = strsplit(sf, "\n") ;
-      [S, E, TE, M, T, NM, SP] = regexp(s, " solver.cpp") ;
+      [S, E, TE, M, T, NM, SP] = regexp(s, "I.* solver.cpp") ;
       I = cellfun(@(c) ~isempty(c), S) ;
       s = s(I) ;
       
