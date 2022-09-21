@@ -195,7 +195,7 @@ for jNET = 1 : length(NET)
 
       load(mfile) ;
       load(dfile) ;
-
+      
    else
 
       init_rnd() ;
@@ -232,7 +232,7 @@ for jNET = 1 : length(NET)
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 
-	 deep.name = net ;
+	 deep.prob.name = net ;
 	 save(sprintf("%s/Deep.%s.%s.%s.ob.%02d", sfx, net, ind, pdd.lname, i), "deep") ;
 	 printf("%s/caffe.INFO --> %s/%s.%s.%s.log.%02d\n", GLOG_log_dir, sfx, net, ind, pdd.lname, i) ;
 	 system(sprintf("cp -L %s/caffe.INFO %s/%s.%s.%s.log.%02d", GLOG_log_dir, sfx, net, ind, pdd.lname, i)) ;
