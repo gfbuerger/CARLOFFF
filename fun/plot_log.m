@@ -23,7 +23,7 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
       sf = fscanf(fid, "%c") ;
       fclose(fid) ;
       s = strsplit(sf, "\n") ;
-      [S, E, TE, M, T, NM, SP] = regexp(s, "I.* solver.cpp") ;
+      [S, E, TE, M, T, NM, SP] = regexp(s, "I.* solver.cpp.*(Iteration|output)") ;
       I = cellfun(@(c) ~isempty(c), S) ;
       s = s(I) ;
       
@@ -36,7 +36,7 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
 	 [S, E, TE, M, T, NM, SP] = regexp(s, lpat) ;
 	 I = cellfun(@(c) ~isempty(c), S) ;
 	 x = cellfun(@(c) str2num(strsplit(c{2}, " "){1}), SP(I))' ;
-	 [S, E, TE, M, T, NM, SP] = regexp(s(find(I)-2), " [0-9]+") ;
+	 [S, E, TE, M, T, NM, SP] = regexp(s(find(I)+1), " [0-9]+") ;
 	 Iter = cellfun(@(c) str2num(c{3}), M)' ;
 
 	 if isempty(Iter) || isempty(x) || all(Iter .* x == 0, 1)

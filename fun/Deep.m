@@ -19,7 +19,8 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 	 otherwise
       endswitch
       printf("%s --> %s\n", fullfile(pwd, Dd), Sa) ;
-      symlink(fullfile(pwd, Dd), Sa) ;
+      cd(sprintf("models/%s", proto)) ;
+      symlink(sprintf("../../data/%s/%s", area, res), area) ;
    endif
 
    if exist(sprintf("%s/CAL_lmdb", Dd), "dir") ~= 7 & 0

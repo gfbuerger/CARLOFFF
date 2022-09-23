@@ -10,14 +10,13 @@ set(0, "defaultaxesfontsize", 18, "defaulttextfontsize", 18, "defaultlinelinewid
 
 
 addpath ~/oct/nc/maxdistcolor
-JMDL = 1 : 3 ;
-col = maxdistcolor(ncol = length(JMDL) + length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
+JMDL = 1 : 4 ;
 ##col = col(randperm(ncol),:) ;
 
 ### cases
 jNET = 3 ;
 net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
-load(sprintf("data/ana.%s.ob", GREG)) ;
+load(sprintf("data/ana.%s.ob", ind)) ;
 load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname)) ;
 clf ; jVAR = 3 ;
 ## June 2013
@@ -27,7 +26,7 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 ## May 2016
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
-plot_case(cape, pdd, deep.prob, D, d, jVAR, cx = 5) ;
+plot_case(ana.cape, pdd, deep.prob, D, d, jVAR, cx = 5) ;
 
 if 0 		    # Eta for case
    clf ;
@@ -62,23 +61,25 @@ Pskl(:,:,4) = skl(:,[jSKL end]) ;
 
 Pskl = Pskl(JMDL,:,:) ;
 
+colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
+colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ; clear ax
 ax(1) = subplot(1, 2, 1) ; hold on ;
 for jMDL = 1 : size(Pskl, 1)
-   hg(jMDL) = scatter(Pskl(jMDL,1,2), Pskl(jMDL,1,1), sz, col(jMDL,:), "", "s", "linewidth", 1.5) ;
-   hgE(jMDL) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,1,3), sz, col(jMDL,:), "filled", "s") ;
+   hg(jMDL) = scatter(Pskl(jMDL,1,2), Pskl(jMDL,1,1), sz, colS(jMDL,:), "", "s", "linewidth", 1.5) ;
+   hgE(jMDL) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,1,3), sz, colS(jMDL,:), "filled", "s") ;
 endfor
 xlabel([SKL{jSKL} " with cape"]) ; ylabel([SKL{jSKL} " without cape"]) ;
 
-## Deep
 ax(2) = subplot(1, 2, 2) ; hold on ;
 jPLT = 0 ;
-for jNET = 1 : rows(Pskl)
+for jMDL = 1 : rows(Pskl)
    jPLT++ ;
-   hgS(jPLT) = scatter(Pskl(jNET,1,4), Pskl(jNET,end,4), sz, col(jPLT,:), "filled", "s") ;
+   hgS(jPLT) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,end,4), sz, colS(jMDL,:), "filled", "s") ;
 endfor
 
+## Deep
 for jNET = 1 : length(NET)
    jPLT++ ;
    net = NET{jNET} ;
@@ -89,19 +90,17 @@ for jNET = 1 : length(NET)
    printf("<-- %s\n", mfile) ;
    load(mfile) ;
    hg(jNET) = hggroup() ;
-   scatter(skl(:,jSKL), skl(:,end), sz/5, col(jPLT,:), "d", "filled", "parent", hg(jNET)) ;
-   hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, col(jPLT,:), "d", "filled", "parent", hg(jNET)) ;
+   scatter(skl(:,jSKL), skl(:,end), sz/4, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
+   hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
 
    JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
    printf("<-- %s\n", mfile) ;
    w = load(mfile) ;
-   scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, col(jPLT,:), "d", "filled") ;
+   scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, colD(jNET,:), "d", "filled") ;
    axes(ax(2)) ;
 endfor
-axis(ax(1), "tight") ;
-vl = cell2mat(arrayfun(@(a) [xlim(a) ; ylim(a)], ax(1), "UniformOutput", false)) ;
-vl = [min(vl(:,1))-0.01 max(vl(:,2))+0.01] ;
+vl = xlim(ax(2)) ;
 plot(ax(1), vl, vl, "k--") ;
 set(ax(1), "xlim", vl, "ylim", vl, "xgrid", "on", "ygrid", "on") ;
 set(ax(2), "xgrid", "on", "ygrid", "on") ;
@@ -111,10 +110,9 @@ hlD = legend(hgD, NET, "box", "off", "location", "southwest") ;
 set(findall(hlS, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
 pos = get(ax(1), "position") ; pos(1) -= 0.05 ; set(ax(1), "position", pos)
 pos = get(ax(2), "position") ; pos(1) += 0.05 ; set(ax(2), "position", pos)
-set(hlS, "position", [0.45 0.65 0.10 0.24])
-set(hlD, "position", [0.45 0.15 0.10 0.5])
-get(findobj("-property", "fontsize"), "fontsize")
-set(findobj("-property", "fontsize"), "fontsize", 12) ;
+set(hlS, "position", [0.43 0.69 0.10 0.24])
+set(hlD, "position", [0.43 0.12 0.10 0.5])
+set(findobj("-property", "fontsize"), "fontsize", 16) ;
 
 print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
