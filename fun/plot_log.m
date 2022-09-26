@@ -28,15 +28,16 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
       s = s(I) ;
       
       hp = [] ;
-      for phs = phase
+      phase = {"Train" "Test"} ; sh_phs = [1 -2] ;
+      for jphs = 1 : length(phase)
 
-	 phs = phs{:} ;
-	 
+	 phs = phase{jphs} ;
+
 	 lpat = sprintf("%s net output #[0-9]+: %s = ", phs, loss) ;
 	 [S, E, TE, M, T, NM, SP] = regexp(s, lpat) ;
 	 I = cellfun(@(c) ~isempty(c), S) ;
 	 x = cellfun(@(c) str2num(strsplit(c{2}, " "){1}), SP(I))' ;
-	 [S, E, TE, M, T, NM, SP] = regexp(s(find(I)+1), " [0-9]+") ;
+	 [S, E, TE, M, T, NM, SP] = regexp(s(find(I)+sh_phs(jphs)), " [0-9]+") ;
 	 Iter = cellfun(@(c) str2num(c{3}), M)' ;
 
 	 if isempty(Iter) || isempty(x) || all(Iter .* x == 0, 1)

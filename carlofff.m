@@ -235,7 +235,7 @@ for jNET = 1 : length(NET)
 	 if kfail > 5 warning("no convergence\n") ; endif
 
 	 deep.prob.name = net ;
-	 save(sprintf("%s/Deep.%s.%s.%s.ob.%02d", sfx, net, ind, pdd.lname, i), "deep") ;
+	 save(sprintf("%s.%02d", dfile, i), "deep") ;
 	 printf("%s/caffe.INFO --> %s/%s.%s.%s.log.%02d\n", GLOG_log_dir, sfx, net, ind, pdd.lname, i) ;
 	 system(sprintf("cp -L %s/caffe.INFO %s/%s.%s.%s.log.%02d", GLOG_log_dir, sfx, net, ind, pdd.lname, i)) ;
 	 system(sprintf("cp /dev/null %s/caffe.INFO", GLOG_log_dir)) ;
@@ -248,6 +248,7 @@ for jNET = 1 : length(NET)
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
 
+      printf("--> %s\n", mfile) ;
       copyfile(sfile, mfile) ; unlink(sfile) ;
 ##      plot_log("/tmp/caffe.INFO", :, iter = 0, pse = 30, plog = 0) ;
 ##      cmd = sprintf("python /opt/src/caffe/python/draw_net.py models/%s/%s.prototxt nc/%s.svg", net, pdd.lname, net) ;
@@ -259,7 +260,9 @@ for jNET = 1 : length(NET)
    [~, i] = max(skl(:,jSKL)) ;
 
    pfx = sprintf("%s/%s.%s.%s", sfx, net, ind, pdd.lname) ;
-   if isnewer(sprintf("%s/Deep.%s.%s.%s.ob.01", sfx, net, ind, pdd.lname), sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname))
+   if isnewer(sprintf("%s.01", dfile), dfile)
+      rename(sprintf("%s.%02d", dfile, i), dfile) ;
+      delete(ls("-1t", sprintf("%s.*", dfile))) ;
       wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
       rename(wfile, wfile(1:end-3)) ;
       delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
@@ -269,9 +272,6 @@ for jNET = 1 : length(NET)
       wfile = sprintf("%s.log.%02d", pfx, i) ;
       rename(wfile, wfile(1:end-3)) ;
       delete(ls("-1t", sprintf("%s.log.*", pfx))) ;
-      wfile = sprintf("%s/Deep.%s.%s.%s.ob.%02d", sfx, net, ind, pdd.lname, i) ;
-      rename(wfile, wfile(1:end-3)) ;      
-      delete(ls("-1t", sprintf("%s/Deep.%s.%s.%s.ob.*", sfx, net, ind, pdd.lname))) ;
    endif
    
    if 0 && ~strcmp(graphics_toolkit, "gnuplot")

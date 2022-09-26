@@ -100,6 +100,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 	 endif
       endif
    endif
+   pause(15) ;
    state = strtrim(ls("-1t", pat)(1,:)) ;
    
    ## apply model
