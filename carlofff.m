@@ -50,9 +50,11 @@ if isoctave()
    addpath(sprintf("%s/matlab/+caffe/private", LOC)) ;
    [st out] = system("caffe device_query -gpu 0 2>&1") ;
    if st == 0
+      printf("+++\t\tCaffe using GPU\t\t+++\n") ;
       caffe.set_mode_gpu() ;
       caffe.set_device(0) ;
    else
+      printf("+++\t\tCaffe using CPU\t\t+++\n") ;
       caffe.set_mode_cpu() ;
    endif
 else

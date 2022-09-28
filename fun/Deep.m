@@ -76,7 +76,9 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
       state = upd_solver(solverstate, ptr.ind, pdd.lname) ;
    endif
 
+   tic ;
    if exist("state", "var") == 0
+      printf("Solver at iteration: 0\n") ;
       Solver.solve() ;
    else
       Solver.restore(state) ;
@@ -100,6 +102,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 	 endif
       endif
    endif
+   printf("training time:\t%10.5g\n", toc) ;
    pause(15) ;
    state = strtrim(ls("-1t", pat)(1,:)) ;
    

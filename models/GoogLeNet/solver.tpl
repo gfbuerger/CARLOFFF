@@ -31,11 +31,11 @@ power: 3
 # # The learning rate policy
 # lr_policy: "fixed"
 # Display every 200 iterations
-display: 5
+display: 10
 # The maximum number of iterations
 max_iter: 500
 # snapshot intermediate results
-snapshot: 20000
+snapshot: 10000
 #snapshot_format: HDF5
 # solver mode: CPU or GPU
 solver_mode: GPU
