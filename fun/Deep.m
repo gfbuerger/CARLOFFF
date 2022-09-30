@@ -1,7 +1,7 @@
-## usage: [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
+## usage: [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd = false)
 ##
 ## calibrate and apply caffe model
-function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
+function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd = false)
 
    global IMB BATCH
 
@@ -54,7 +54,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"})
 	    lfile = sprintf('%s/%s-labels-idx1-ubyte', Dd, PHS) ;
 	    save_bin(images, ifile, labels, lfile) ;
 	 endif
-	 save_hdf5(of, ptr.scale * images, labels) ;
+	 save_hdf5(of, ptr.scale * images, labels, rnd) ;
       endif
    endfor
 

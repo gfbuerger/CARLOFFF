@@ -1,7 +1,7 @@
-## usage: save_hdf5 (of, images, labels)
+## usage: save_hdf5 (of, images, labels, lrnd = false)
 ##
 ## save to hdf5
-function save_hdf5 (of, images, labels)
+function save_hdf5 (of, images, labels, lrnd = false)
 
    pkg load hdf5oct
 
@@ -13,6 +13,11 @@ function save_hdf5 (of, images, labels)
 
    [st msg] = unlink(file) ;
 
+   if lrnd
+      warning("using scrambled data") ;
+      labels = labels(randperm(length(labels)),:) ;
+   endif
+   
    labels = flipdim(labels) ;
    images = flipdim(images) ;
 

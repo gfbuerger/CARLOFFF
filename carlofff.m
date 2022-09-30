@@ -293,6 +293,7 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
+exit
 
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;

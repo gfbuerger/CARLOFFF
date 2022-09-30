@@ -114,6 +114,7 @@ set(hlS, "position", [0.43 0.69 0.10 0.24])
 set(hlD, "position", [0.43 0.12 0.10 0.5])
 set(findobj("-property", "fontsize"), "fontsize", 16) ;
 
+hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
 print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
 

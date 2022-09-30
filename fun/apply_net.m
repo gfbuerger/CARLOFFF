@@ -14,6 +14,6 @@ function prob = apply_net (x, net, I=[])
 
    fI = find(I) ;
    prob = arrayfun(@(i) net.forward({Data(:,:,:,fI(i))}){1}(1:2), 1 : sum(I), "UniformOutput", false) ;
-   prob = double(cell2mat(prob)') ;
+   prob = double(squeeze(cell2mat(prob)))' ;
 
 endfunction
