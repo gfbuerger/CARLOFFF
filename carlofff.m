@@ -20,6 +20,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
+IND = "01010000010" ; # default atm. indices
 ##[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
 if isempty(CNVDUR = getenv("CNVDUR"))
    CNVDUR = 9 ;
@@ -310,7 +311,7 @@ for jSIM = 1 : length(SIM)
    sim = SIM{jSIM} ;
 
    ## load atmospheric variables
-   if exist(sfile = sprintf("data/%s.%s.ob", sim, ind), "file") == 2
+   if exist(sfile = sprintf("data/%s.%s.ob", sim, IND), "file") == 2
 
       printf("<-- %s\n", sfile) ;
       load(sfile) ;
@@ -334,7 +335,7 @@ for jSIM = 1 : length(SIM)
       ## select predictors
       str = cellfun(@(c) sprintf("%s.%s,", sim, c), SVAR, "Uniformoutput", false) ;
       str = strcat(str{:})(1:end-1) ;
-      eval(sprintf("%s.prob = selptr(scale, ind, ptfile, :, FILL, %s) ;", sim, str)) ;
+      eval(sprintf("%s.prob = selptr(scale, IND, ptfile, :, FILL, %s) ;", sim, str)) ;
       eval(sprintf("%s.prob.name = \"%s\" ;", sim, sim)) ;
 
       save(sfile, sim) ;
@@ -358,6 +359,9 @@ for jSIM = 1 : length(SIM)
       load(ptfile) ;
 
    else
+
+      ## select variables
+      eval(sprintf("%s.prob = selind(%s.prob, ind, IND) ;", sim, sim)) ;
 
       ## normalize with mean and std
       switch sim
