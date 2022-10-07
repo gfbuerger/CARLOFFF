@@ -13,6 +13,43 @@ addpath ~/oct/nc/maxdistcolor
 JMDL = 1 : 4 ;
 ##col = col(randperm(ncol),:) ;
 
+### plots
+alpha = 0.05 ;
+qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
+global COL
+
+## training curves
+COL = [0.2 0.7 0.2 ; 0.2 0.2 0.7] ;
+jNET = 2 ;
+clf ;
+jNET++ ;
+net = NET{jNET} ;
+lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname) ;
+plot_log(gca, lfile, "loss", gap = 2, pse = 0, plog = 0) ;
+title(net)
+hgsave(sprintf("nc/paper/loss.%s.og", net)) ;
+print(sprintf("nc/paper/loss.%s.svg", net)) ;
+
+GAP = [1 1 1 1 1 1 1 1 1] ;
+clf ; j = 0 ; clear H ;
+for net = NET((1:9) ~= jNET)
+   net = net{:} ;
+   ax(++j) = subplot(2, 4, j) ;
+   if exist(lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname), "file") ~= 2
+      warning("file not found: %s", lfile) ;
+   endif
+   jN = find(strcmp(NET, net)) ;
+   H(j,:) = plot_log(ax(j), lfile, "loss", gap = GAP(jN), pse = 0, plog = 0) ;
+   title(net)
+endfor
+delete(H(:,3)) ;
+##set(H(:,1), "linewidth", 1) ; set(H(:,2), "linewidth", 2) ;
+##set(ax, "ylim", [0.2 0.71]) ;
+set(findobj("-property", "fontsize"), "fontsize", 12) ;
+hgsave(sprintf("nc/paper/loss.og")) ;
+print(sprintf("nc/paper/loss.svg")) ;
+
+
 ### cases
 jNET = 3 ;
 net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
@@ -26,7 +63,7 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 ## May 2016
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
-plot_case(ana.cape, pdd, deep.prob, D, d, jVAR, cx = 5) ;
+plot_case(ana.cape, pdd, deep.prob, D, d, jVAR, cx = 5, "svg") ;
 
 if 0 		    # Eta for case
    clf ;
@@ -100,8 +137,10 @@ for jNET = 1 : length(NET)
    scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, colD(jNET,:), "d", "filled") ;
    axes(ax(2)) ;
 endfor
-vl = xlim(ax(2)) ;
+axis tight ;
+vl = [xlim()(1)-0.01 xlim()(2)+0.01] ; yl = [ylim()(1)-0.01 ylim()(2)+0.01] ;
 plot(ax(1), vl, vl, "k--") ;
+set(ax, "xlim", vl) ; set(ax(1), "ylim", vl) ; set(ax(2), "ylim", yl) ;
 set(ax(1), "xlim", vl, "ylim", vl, "xgrid", "on", "ygrid", "on") ;
 set(ax(2), "xgrid", "on", "ygrid", "on") ;
 xlabel(SKL{jSKL}) ; ylabel("crossentropy") ;
@@ -118,52 +157,15 @@ hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
 print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
 
-
-### plots
-alpha = 0.05 ;
-qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
-global COL
-
-## training curves
-COL = [0.2 0.7 0.2 ; 0.2 0.2 0.7] ;
-jNET = 2 ;
-clf ;
-net = NET{++jNET} ;
-lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname) ;
-plot_log(gca, lfile, "loss", gap = 2, pse = 0, plog = 0) ;
-title(net)
-hgsave(sprintf("nc/paper/loss.%s.og", net)) ;
-print(sprintf("nc/paper/loss.%s.svg", net)) ;
-
-GAP = [2 300 2 2 40 2 2 2 2] ;
-clf ; j = 0 ; clear H ;
-for net = NET((1:9) ~= jNET)
-   net = net{:} ;
-   ax(++j) = subplot(2, 4, j) ;
-   if exist(lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname), "file") ~= 2
-      warning("file not found: %s", lfile) ;
-   endif
-   jN = find(strcmp(NET, net)) ;
-   H(j,:) = plot_log(ax(j), lfile, "loss", gap = GAP(jN), pse = 0, plog = 0) ;
-   title(net)
-endfor
-delete(H(:,3)) ;
-##set(H(:,1), "linewidth", 1) ; set(H(:,2), "linewidth", 2) ;
-##set(ax, "ylim", [0.2 0.71]) ;
-set(findobj("-property", "fontsize"), "fontsize", 12) ;
-hgsave(sprintf("nc/paper/loss.og")) ;
-print(sprintf("nc/paper/loss.svg")) ;
-
-
 ## plot scatter of obs vs sim annual probs!!
 
 C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;
 C1n = toupper(MDL) ;
 C2= cellfun(@(net) sprintf("Deep.%s", net), NET, "UniformOutput", false) ;
 C2n = NET ;
-JM = {[2 7] [1 11] [12 10] [3 5] [6 8] [9 13]}{6} ;
-C = union(C1, C2, "stable")(JM) ;
-Cn = union(C1n, C2n, "stable")(JM) ;
+JM = {[2 7] [1 2] [12 10] [3 5] [6 8] [9 13]}{2} ;
+C = union(C1(JM(1)), C2(JM(2)), "stable") ;
+Cn = union(C1n(JM(1)), C2n(JM(2)), "stable") ;
 
 ## ERA5
 COL = [1 1 1 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
@@ -181,7 +183,7 @@ for mdl = C
    sC = sdate(s.id, [2001 1 1 ; 2010 1 1]) ;
    sV = sdate(s.id, [2011 1 1 ; 2020 1 1]) ;
    xn = min([o.x ; s.x]) ; xx = max([o.x ; s.x]) ;
-   subplot(2, 3, 3*(jMDL-1) + (1:2)) ; hold on
+   ax1 = subplot(2, 3, 3*(jMDL-1) + (1:2)) ; hold on
    plot(s.id([1 end],1), [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 2, "linestyle", "--") ;
    scatter(o.id(:,1), o.x(:,1), 0.7*sz, 0*COL(1,:), "x") ;
    scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
@@ -198,7 +200,7 @@ for mdl = C
       text(xt, 0.9*ylim()(2), sprintf("p<%.2f", alpha), "color", 0*COL(1,:)) ;
    endif
    set(gca, "fontsize", 14)
-   subplot(2, 3, 3*(jMDL-1) + 3) ; hold on
+   ax2 = subplot(2, 3, 3*(jMDL-1) + 3) ; hold on
    plot([xn xx], [xn xx], "color", 0*COL(1,:), "linewidth", 2, "linestyle", "--") ;
    scatter(o.x(oC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
    scatter(o.x(oV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
@@ -209,9 +211,68 @@ for mdl = C
    r = corr(o.x(oV,1), s.x(sV,1)) ;
    text(xn, xx, sprintf("{\\it\\rho} = %.2f", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14)
+   yl = [min(ylim(ax1)(1), ylim(ax2)(1)) max(ylim(ax1)(2), ylim(ax2)(2))] ;
+   set([ax1 ax2], "ylim", yl)
 endfor
 hgsave(sprintf("nc/paper/ERA5.%s-%s.og", Cn{:})) ;
 print(sprintf("nc/paper/ERA5.%s-%s.svg", Cn{:})) ;
+
+figure(1, "position", [0.7 0.3 0.3 0.7]) ;
+JM = setxor(JM, 1 : length(MDL) + length(NET)) ;
+C = union(C1, C2, "stable")(JM) ;
+Cn = union(C1n, C2n, "stable")(JM) ;
+clf ; hold on ;
+jPLT = jMDL = 0 ; nMDL = round(length(C)/2) ;
+for mdl = C
+   jPLT++ ; jMDL++ ;
+   if jPLT/nMDL > 1
+      hgsave(sprintf("nc/paper/ERA5.1.og", Cn{jMDL})) ;
+      print(sprintf("nc/paper/ERA5.1.svg", Cn{jMDL})) ;
+      jPLT = rem(jPLT, nMDL) ;
+      clf ; hold on ;
+   endif
+   mdl = mdl{:} ;
+   eval(sprintf("[s.id s.x] = annstat(ana.prob.id, ana.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
+   s.x = s.x(:,2) ;
+   sC = sdate(s.id, [2001 1 1 ; 2010 1 1]) ;
+   sV = sdate(s.id, [2011 1 1 ; 2020 1 1]) ;
+   xn = min([o.x ; s.x]) ; xx = max([o.x ; s.x]) ;
+   ax(jPLT,1) = subplot(nMDL, 3, 3*(jPLT-1) + (1:2)) ; hold on
+   plot(s.id([1 end],1), [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 2, "linestyle", "--") ;
+   scatter(o.id(:,1), o.x(:,1), 0.7*sz, 0*COL(1,:), "x") ;
+   scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
+   scatter(s.id(sC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
+   scatter(s.id(sV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
+   [B, BINT, R, RINT, STATS] = regress(s.x, [ones(rows(s.x),1) s.id(:,1)]) ;
+   yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
+   h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
+   xlim(s.id([1 end],1)) ;
+   ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
+   xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
+   if STATS(3) < alpha
+      xt = get(h, "xdata")(1) + 5 ;
+      text(xt, 0.9*ylim()(2), sprintf("p<%.2f", alpha), "color", 0*COL(1,:)) ;
+   endif
+   set(gca, "fontsize", 14)
+   ax(jPLT,2) = subplot(nMDL, 3, 3*(jPLT-1) + 3) ; hold on
+   plot([xn xx], [xn xx], "color", 0*COL(1,:), "linewidth", 2, "linestyle", "--") ;
+   scatter(o.x(oC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
+   scatter(o.x(oV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
+   xlim([xn xx]) ; ylim([xn xx]) ;
+   set(gca, "XTick", [0.4 0.6], "YTick", [0.4 0.6]) ;
+   axis square ;
+   xlabel("OBS") ; ylabel(sprintf("%s", Cn{jMDL})) ;
+##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
+   r = corr(o.x(oV,1), s.x(sV,1)) ;
+   text(xn, xx, sprintf("{\\it\\rho} = %.2f", r), "color", COL(3,:)) ;
+   set(gca, "fontsize", 14)
+   yl = [min(ylim(ax(jPLT,1))(1), ylim(ax(jPLT,2))(1)) max(ylim(ax(jPLT,1))(2), ylim(ax(jPLT,2))(2))] ;
+   set(ax(jPLT,:), "ylim", yl)
+   drawnow
+endfor
+set(findobj("-property", "fontsize"), "fontsize", 14) ;
+hgsave(sprintf("nc/paper/ERA5.2.og", Cn{jMDL})) ;
+print(sprintf("nc/paper/ERA5.2.svg", Cn{jMDL})) ;
 
 
 ## GCM/RCM

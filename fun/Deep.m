@@ -135,6 +135,10 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
 	 labels = pdd.c(pdd.(PHS)) ;
 	 prb.(PHS) = apply_net(ptr.scale*ptr.img, net, ptr.(PHS)) ;
+         if size(prb.(PHS), 2) ~= 2
+            warning("incorrect dimensions: %s, %s", proto, PHS)
+            prb.(PHS) = prb.(PHS)' ;
+         endif
 
       endif
       

@@ -39,7 +39,7 @@ NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = 0.99 ;
 IMB = "SIMPLE" ;
-SKL = {"HSS" "GSS"} ;
+SKL = {"HSS" "ETS"} ;
 
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
@@ -293,7 +293,6 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
-exit
 
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
@@ -349,7 +348,7 @@ for jSIM = 1 : length(SIM)
    sim = SIM{jSIM} ;
 
    glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.lname)) ;
-   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s.caffemodel", REG, NH, ind, pdd.lname))) ;
+   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s_iter_*.caffemodel", REG, NH, ind, pdd.lname))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
@@ -388,7 +387,8 @@ for jSIM = 1 : length(SIM)
 	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2 continue ; endif
-	 weights = glob(sprintf("%s_iter_*.caffemodel", pfx)){1} ;
+	 siter = table_pick("models/ALL-CNN/DE.24/ALL-CNN.01010000010.CatRaRE_09_solver.prototxt", "max_iter") ;
+	 weights = sprintf("%s_iter_%s.caffemodel", pfx, siter) ;
 	 if exist(weights, "file") ~= 2 continue ; endif
 	 deploy = caffe.Net(model, weights, 'test') ;
 	 eval(sprintf("%s.prob.img = arr2img(%s.prob.x, res) ;", sim, sim)) ;

@@ -13,7 +13,7 @@ function prob = apply_net (x, net, I=[])
    if isempty(I) I = true(N(end), 1) ; endif
 
    fI = find(I) ;
-   prob = arrayfun(@(i) net.forward({Data(:,:,:,fI(i))}){1}(1:2), 1 : sum(I), "UniformOutput", false) ;
-   prob = double(squeeze(cell2mat(prob)))' ;
+   prob = arrayfun(@(i) squeeze(net.forward({Data(:,:,:,fI(i))}){:})(:), 1 : sum(I), "UniformOutput", false) ;
+   prob = double(cell2mat(prob)') ;
 
 endfunction
