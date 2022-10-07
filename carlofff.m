@@ -390,10 +390,16 @@ for jSIM = 1 : length(SIM)
 	 net = NET(JNET){jNET} ; res = RES(JNET){jNET} ;
 	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
-	 if exist(model, "file") ~= 2 continue ; endif
+	 if exist(model, "file") ~= 2
+	    warning("no model for %s\n", net) ;
+	    continue ;
+	 endif
 	 siter = table_pick("models/ALL-CNN/DE.24/ALL-CNN.01010000010.CatRaRE_09_solver.prototxt", "max_iter") ;
 	 weights = sprintf("%s_iter_%s.caffemodel", pfx, siter) ;
-	 if exist(weights, "file") ~= 2 continue ; endif
+	 if exist(weights, "file") ~= 2
+	    warning("no weights for %s\n", net) ;
+	    continue ;
+	 endif
 	 deploy = caffe.Net(model, weights, 'test') ;
 	 eval(sprintf("%s.prob.img = arr2img(%s.prob.x, res) ;", sim, sim)) ;
 	 out = sprintf("%s.prob.Deep.%s = apply_net(scale*%s.prob.img, deploy) ;", sim, strrep(net, "-", "_"), sim) ;
