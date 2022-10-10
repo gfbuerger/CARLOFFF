@@ -138,7 +138,7 @@ for jNET = 1 : length(NET)
    axes(ax(2)) ;
 endfor
 axis tight ;
-vl = [xlim()(1)-0.01 xlim()(2)+0.01] ; yl = [ylim()(1)-0.01 ylim()(2)+0.01] ;
+vl = [xlim(ax(2))(1)-0.05 xlim(ax(2))(2)] ; yl = [ylim(ax(2))(1)-0.02 ylim(ax(2))(2)+0.02] ;
 plot(ax(1), vl, vl, "k--") ;
 set(ax, "xlim", vl) ; set(ax(1), "ylim", vl) ; set(ax(2), "ylim", yl) ;
 set(ax(1), "xlim", vl, "ylim", vl, "xgrid", "on", "ygrid", "on") ;
