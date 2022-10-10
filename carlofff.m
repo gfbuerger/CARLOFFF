@@ -353,7 +353,7 @@ for jSIM = 1 : length(SIM)
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
-   if isnewer(ptfile = sprintf("data/%s.%s.prob.ob", sim, ind), glb{:})
+   if isnewer(ptfile = sprintf("data/%s.%s.%s.ob", sim, ind, pdd.lname), glb{:})
 
       printf("<-- %s\n", ptfile) ;
       load(ptfile) ;
@@ -391,13 +391,13 @@ for jSIM = 1 : length(SIM)
 	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2
-	    warning("no model for %s\n", net) ;
+	    warning("model not found: %s\n", model) ;
 	    continue ;
 	 endif
-	 siter = table_pick("models/ALL-CNN/DE.24/ALL-CNN.01010000010.CatRaRE_09_solver.prototxt", "max_iter") ;
+	 siter = table_pick(sprintf("%s_solver.prototxt", pfx), "max_iter") ;
 	 weights = sprintf("%s_iter_%s.caffemodel", pfx, siter) ;
 	 if exist(weights, "file") ~= 2
-	    warning("no weights for %s\n", net) ;
+	    warning("weights not found: %s\n", weights) ;
 	    continue ;
 	 endif
 	 deploy = caffe.Net(model, weights, 'test') ;
