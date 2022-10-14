@@ -114,6 +114,7 @@ jPLT = 0 ;
 for jMDL = 1 : rows(Pskl)
    jPLT++ ;
    hgS(jPLT) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,end,4), sz, colS(jMDL,:), "filled", "s") ;
+   printf("%s:\t%7.3f\n", MDL{jMDL}, Pskl(jMDL,1,4)) ;
 endfor
 
 ## Deep
@@ -124,16 +125,16 @@ for jNET = 1 : length(NET)
    JVAR = [2 4 10] ;
    ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
-   printf("<-- %s\n", mfile) ;
    load(mfile) ;
+   printf("<-- %s: %7.3f %7.3f\n", mfile, [mean(skl(:,jSKL)) max(skl(:,jSKL))]) ;
    hg(jNET) = hggroup() ;
    scatter(skl(:,jSKL), skl(:,end), sz/4, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
    hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
 
    JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
-   printf("<-- %s\n", mfile) ;
    w = load(mfile) ;
+   printf("<-- %s\n", mfile) ;
    scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, colD(jNET,:), "d", "filled") ;
    axes(ax(2)) ;
 endfor
@@ -158,14 +159,13 @@ print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
 
 ## plot scatter of obs vs sim annual probs!!
-
 C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;
 C1n = toupper(MDL) ;
 C2= cellfun(@(net) sprintf("Deep.%s", net), NET, "UniformOutput", false) ;
 C2n = NET ;
-JM = {[2 7] [1 2] [12 10] [3 5] [6 8] [9 13]}{2} ;
-C = union(C1(JM(1)), C2(JM(2)), "stable") ;
-Cn = union(C1n(JM(1)), C2n(JM(2)), "stable") ;
+JM = [1 11] ;
+C = union(C1, C2, "stable")(JM) ;
+Cn = union(C1n, C2n, "stable")(JM) ;
 
 ## ERA5
 COL = [1 1 1 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
@@ -209,6 +209,7 @@ for mdl = C
    xlabel("OBS") ; ylabel(sprintf("%s", Cn{jMDL})) ;
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
+   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
    text(xn, xx, sprintf("{\\it\\rho} = %.2f", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14)
    yl = [min(ylim(ax1)(1), ylim(ax2)(1)) max(ylim(ax1)(2), ylim(ax2)(2))] ;
@@ -218,26 +219,27 @@ hgsave(sprintf("nc/paper/ERA5.%s-%s.og", Cn{:})) ;
 print(sprintf("nc/paper/ERA5.%s-%s.svg", Cn{:})) ;
 
 figure(1, "position", [0.7 0.3 0.3 0.7]) ;
-JM = setxor(JM, 1 : length(MDL) + length(NET)) ;
-C = union(C1, C2, "stable")(JM) ;
-Cn = union(C1n, C2n, "stable")(JM) ;
+JMa = setxor(JM, 1 : length(MDL) + length(NET)) ;
+Call = union(C1, C2, "stable")(JMa) ;
+Calln = union(C1n, C2n, "stable")(JMa) ;
 clf ; hold on ;
-jPLT = jMDL = 0 ; nMDL = round(length(C)/2) ;
-for mdl = C
+jPLT = jMDL = 0 ; nMDL = round(length(Call)/2) ; fs = 14 ;
+for mdl = Call
    jPLT++ ; jMDL++ ;
    if jPLT/nMDL > 1
-      hgsave(sprintf("nc/paper/ERA5.1.og", Cn{jMDL})) ;
-      print(sprintf("nc/paper/ERA5.1.svg", Cn{jMDL})) ;
+      set(findobj("-property", "fontsize"), "fontsize", fs) ;
+      hgsave(sprintf("nc/paper/ERA5.1.og")) ;
+      print(sprintf("nc/paper/ERA5.1.svg")) ;
       jPLT = rem(jPLT, nMDL) ;
       clf ; hold on ;
    endif
    mdl = mdl{:} ;
+   ax(jPLT,1) = subplot(nMDL, 3, 3*(jPLT-1) + (1:2)) ; hold on
    eval(sprintf("[s.id s.x] = annstat(ana.prob.id, ana.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
    s.x = s.x(:,2) ;
    sC = sdate(s.id, [2001 1 1 ; 2010 1 1]) ;
    sV = sdate(s.id, [2011 1 1 ; 2020 1 1]) ;
    xn = min([o.x ; s.x]) ; xx = max([o.x ; s.x]) ;
-   ax(jPLT,1) = subplot(nMDL, 3, 3*(jPLT-1) + (1:2)) ; hold on
    plot(s.id([1 end],1), [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 2, "linestyle", "--") ;
    scatter(o.id(:,1), o.x(:,1), 0.7*sz, 0*COL(1,:), "x") ;
    scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
@@ -261,22 +263,23 @@ for mdl = C
    xlim([xn xx]) ; ylim([xn xx]) ;
    set(gca, "XTick", [0.4 0.6], "YTick", [0.4 0.6]) ;
    axis square ;
-   xlabel("OBS") ; ylabel(sprintf("%s", Cn{jMDL})) ;
+   xlabel("OBS") ; ylabel(sprintf("%s", Calln{jMDL})) ;
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
+   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
    text(xn, xx, sprintf("{\\it\\rho} = %.2f", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14)
    yl = [min(ylim(ax(jPLT,1))(1), ylim(ax(jPLT,2))(1)) max(ylim(ax(jPLT,1))(2), ylim(ax(jPLT,2))(2))] ;
    set(ax(jPLT,:), "ylim", yl)
    drawnow
 endfor
-set(findobj("-property", "fontsize"), "fontsize", 14) ;
-hgsave(sprintf("nc/paper/ERA5.2.og", Cn{jMDL})) ;
-print(sprintf("nc/paper/ERA5.2.svg", Cn{jMDL})) ;
+set(findobj("-property", "fontsize"), "fontsize", fs) ;
+hgsave(sprintf("nc/paper/ERA5.2.og")) ;
+print(sprintf("nc/paper/ERA5.2.svg")) ;
 
 
 ## GCM/RCM
-figure(1, "position", [0.7 0.7 0.4 0.4]) ; sz = 20 ;
+figure(1, "position", [0.7 0.7 0.4 0.4]) ;
 jMDL = 0 ; clf ; hold on
 for mdl = C
    jMDL++ ;
@@ -290,6 +293,7 @@ for mdl = C
       eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
       [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      printf("%s, %s:\t%.2f\t%.2f\n", mdl, SIM{j}, 100*B(2), STATS(3)) ;
       stats(j,:) = STATS ;
       yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
       h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 3) ;
@@ -302,19 +306,68 @@ for mdl = C
 	 text(xt, 0.84*ylim()(2), "p<0.05", "color", COL(j+1,:)) ;
       endif
    endfor
-   loc = "southeast" ;
-   legend(h, {"CLIM" NSIM{2:end}}, "box", "off", "location", loc) ;
+   legend(h, {"CLIM" NSIM{2:end}}, "box", "off", "location", "southeast") ;
    j = eval(sprintf("find(strcmp({%s.prob.nc.Attributes.Name}, \"driving_model_id\")) ;", SIM{2})) ;
    GCM = eval(sprintf("%s.prob.nc.Attributes(j).Value ;", SIM{2})) ;
    j = eval(sprintf("find(strcmp({%s.prob.nc.Attributes.Name}, \"model_id\")) ;", SIM{2})) ;
    RCM = eval(sprintf("%s.prob.nc.Attributes(j).Value ;", SIM{2})) ;
-   smdl = strsplit(mdl, "."){2} ;
    htit = title(sprintf("%s", Cn{jMDL}), "fontsize", 20) ;
    pos = get(htit, "position") ;
    ht = text(1960, pos(2) - 0.05, sprintf("GCM: %s\nRCM: %s", GCM, RCM), "fontsize", 14) ;
 endfor
 hgsave(sprintf("nc/paper/%s.%s.%s-%s.og", GCM, RCM, Cn{:})) ;
 print(sprintf("nc/paper/%s.%s.%s-%s.svg", GCM, RCM, Cn{:})) ;
+
+figure(1, "position", [0.7 0.3 0.3 0.7]) ;
+clf ; hold on ;
+jPLT = jMDL = 0 ; nMDL = round(length(Call)/2) ; sz = 10 ; fs = 12 ;
+for mdl = Call
+   jPLT++ ; jMDL++ ;
+   if jPLT/nMDL > 1
+      set(findobj("-property", "fontsize"), "fontsize", fs) ;
+      hgsave(sprintf("nc/paper/GCM_RCM.1.og")) ;
+      print(sprintf("nc/paper/GCM_RCM.1.svg")) ;
+      jPLT = rem(jPLT, nMDL) ;
+      clf ; hold on ;
+   endif
+   mdl = mdl{:} ;
+   ax(jPLT,1) = subplot(nMDL, 1, jPLT) ; hold on
+   clear h stats ; j = 0 ;
+   h(++j) = plot([1951 2100], [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 2, "linestyle", "--") ;
+   for sim = SIM(j+1:end)
+      j++ ;
+      eval(sprintf("sim = %s ;", sim{:})) ;
+      eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
+      scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
+      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      printf("%s, %s:\t%.2f\t%.2f\n", mdl, SIM{j}, 100*B(2), STATS(3)) ;
+      stats(j,:) = STATS ;
+      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
+      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
+      xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
+   endfor
+   ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
+   for j = 2:rows(stats)
+      if stats(j,3) < alpha
+	 xt = mean(get(h(j), "xdata")) - 10 ;
+	 text(xt, 0.84*ylim()(2), "p<0.05", "color", COL(j+1,:)) ;
+      endif
+   endfor
+   htit = title(sprintf("%s", Calln{jMDL}), "fontsize", 20) ;
+   if jPLT ~= 1 continue ; endif
+##   j = eval(sprintf("find(strcmp({%s.prob.nc.Attributes.Name}, \"driving_model_id\")) ;", SIM{2})) ;
+##   GCM = eval(sprintf("%s.prob.nc.Attributes(j).Value ;", SIM{2})) ;
+##   j = eval(sprintf("find(strcmp({%s.prob.nc.Attributes.Name}, \"model_id\")) ;", SIM{2})) ;
+##   RCM = eval(sprintf("%s.prob.nc.Attributes(j).Value ;", SIM{2})) ;
+##   pos = get(htit, "position") ;
+##   ht = text(1955, pos(2) - 0.05, sprintf("GCM: %s\nRCM: %s", GCM, RCM), "fontsize", 14) ;
+   legend(h, {"CLIM" NSIM{2:end}}, "box", "off", "location", "southeast") ;
+endfor
+set(findobj("-property", "fontsize"), "fontsize", fs) ;
+hgsave(sprintf("nc/paper/GCM_RCM.2.og")) ;
+print(sprintf("nc/paper/GCM_RCM.2.svg")) ;
+
+
 
 COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
 set(0, "defaultaxesfontsize", 18) ;

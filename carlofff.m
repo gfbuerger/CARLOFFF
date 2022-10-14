@@ -149,7 +149,7 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nnet" "logr"} ;
+MDL = {"lasso" "tree" "nnet" "nls"} ;
 ptr.ind = ind ;
 PCA = {{} []}{2} ;
 if iscell(PCA)
@@ -164,6 +164,13 @@ else
       if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
+	 if 0
+	    strucdisp(shallow.skl) ;
+	    plot_fit(mdl, shallow.fit) ;
+	    set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+	    set(findall("type", "axes"), "fontsize", 24) ;
+	    set(findall("type", "text"), "fontsize", 22) ;
+	 endif
       else
 	 varargin = {} ;
 ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
@@ -172,11 +179,6 @@ else
 	 save("-text", sfile, "shallow") ;
       endif
       skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
-##      strucdisp(shallow.skl) ;
-##      plot_fit(shallow.fit) ;
-##      set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
-##      set(findall("type", "axes"), "fontsize", 24) ;
-##      set(findall("type", "text"), "fontsize", 22) ;
    endfor
    skl = real(skl) ;
    save("-text", mfile, "skl") ;
@@ -357,6 +359,9 @@ for jSIM = 1 : length(SIM)
 
       printf("<-- %s\n", ptfile) ;
       load(ptfile) ;
+##      eval(sprintf("%s.prob.Shallow.nls = %s.prob.Shallow.logr ;", sim, sim)) ;
+##      eval(sprintf("%s.prob.Shallow = rmfield(%s.prob.Shallow, \"logr\") ;", sim, sim)) ;
+##      save(ptfile, sim) ;
 
    else
 
