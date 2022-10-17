@@ -163,13 +163,13 @@ C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;
 C1n = toupper(MDL) ;
 C2= cellfun(@(net) sprintf("Deep.%s", net), NET, "UniformOutput", false) ;
 C2n = NET ;
-JM = [1 11] ;
+JM = [2 11] ;
 C = union(C1, C2, "stable")(JM) ;
 Cn = union(C1n, C2n, "stable")(JM) ;
 
 ## ERA5
 COL = [1 1 1 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
-figure(1, "position", [0.7 0.7 0.4 0.34]) ; sz = 60 ;
+figure(1, "position", [0.7 0.7 0.4 0.34]) ; sz = 40 ;
 [o.id o.x] = annstat(pdd.id, real(pdd.c), @nanmean) ;
 oC = sdate(o.id, [2001 1 1 ; 2010 1 1]) ;
 oV = sdate(o.id, [2011 1 1 ; 2020 1 1]) ;
@@ -218,7 +218,7 @@ endfor
 hgsave(sprintf("nc/paper/ERA5.%s-%s.og", Cn{:})) ;
 print(sprintf("nc/paper/ERA5.%s-%s.svg", Cn{:})) ;
 
-figure(1, "position", [0.7 0.3 0.3 0.7]) ;
+figure(1, "position", [0.7 0.3 0.3 0.7]) ; sz = 20 ;
 JMa = setxor(JM, 1 : length(MDL) + length(NET)) ;
 Call = union(C1, C2, "stable")(JMa) ;
 Calln = union(C1n, C2n, "stable")(JMa) ;
@@ -279,14 +279,14 @@ print(sprintf("nc/paper/ERA5.2.svg")) ;
 
 
 ## GCM/RCM
-figure(1, "position", [0.7 0.7 0.4 0.4]) ;
+figure(1, "position", [0.7 0.7 0.4 0.4]) ; sz = 30 ;
 jMDL = 0 ; clf ; hold on
 for mdl = C
    jMDL++ ;
    mdl = mdl{:} ;
    subplot(2, 1, jMDL) ; hold on
    clear h stats ; j = 0 ;
-   h(++j) = plot([1951 2100], [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 4, "linestyle", "--") ;
+   h(++j) = plot([1951 2100], [qEta qEta], "color", 0.7*COL(1,:), "linewidth", 2, "linestyle", "--") ;
    for sim = SIM(j+1:end)
       j++ ;
       eval(sprintf("sim = %s ;", sim{:})) ;
@@ -296,7 +296,7 @@ for mdl = C
       printf("%s, %s:\t%.2f\t%.2f\n", mdl, SIM{j}, 100*B(2), STATS(3)) ;
       stats(j,:) = STATS ;
       yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 3) ;
+      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
       xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
    endfor
    ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
@@ -318,7 +318,7 @@ endfor
 hgsave(sprintf("nc/paper/%s.%s.%s-%s.og", GCM, RCM, Cn{:})) ;
 print(sprintf("nc/paper/%s.%s.%s-%s.svg", GCM, RCM, Cn{:})) ;
 
-figure(1, "position", [0.7 0.3 0.3 0.7]) ;
+figure(1, "position", [0.7 0.3 0.3 0.7]) ; sz = 20 ;
 clf ; hold on ;
 jPLT = jMDL = 0 ; nMDL = round(length(Call)/2) ; sz = 10 ; fs = 12 ;
 for mdl = Call
