@@ -18,7 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
-ID = [2001 5 1 0 ; 2020 8 31 23] ;
+ID = [2001 5 1 0 ; 2021 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # default atm. indices
 ##[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
@@ -74,7 +74,7 @@ else
    save(afile, VAR{:}, "VAR") ;
 endif
 
-PDD = {"cape" "cp" "regnie" "RR" "CatRaRE"}{5} ;
+PDD = {"xWEI" "cape" "cp" "regnie" "RR" "CatRaRE"}{1} ;
 if exist(pdfile = sprintf("data/%s.%s_%02d.ob", REG, PDD, CNVDUR), "file") == 2
    load(pdfile) ;
 else

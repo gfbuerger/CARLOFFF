@@ -24,6 +24,10 @@ function pdd = selpdd (PDD, LON, LAT, ID, Q0, s)
 	 ##      pdd.x = pdd.x(:,3) ; # use RRmean
 	 ##      pdd.x = pdd.x(:,5) ; # use Eta
 	 ##      pdd.x = pdd.x(:,6) ; # use RRmax
+      case "xWEI"
+	 pdd = read_xWEI("nc/xWEI/HPEs_2001_2021_xwei.csv") ;
+      otherwise
+	 error("unknown predictand: %s", PDD) ;
    endswitch
 
    pdd.name = PDD ;
