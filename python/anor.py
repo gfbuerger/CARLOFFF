@@ -49,4 +49,4 @@ c.retrieve(
         ],
         'format': 'netcdf',
     },
-    'data/anor.nc')
+    'data/ind/anor.nc')

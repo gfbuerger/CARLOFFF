@@ -49,4 +49,4 @@ c.retrieve(
         ],
         'format': 'netcdf',
     },
-    'data/sdor.nc')
+    'data/ind/sdor.nc')

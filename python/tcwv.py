@@ -49,4 +49,4 @@ c.retrieve(
         ],
         'format': 'netcdf',
     },
-    'data/tcwv.nc')
+    'data/ind/tcwv.nc')

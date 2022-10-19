@@ -130,7 +130,7 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
-jVAR = 3 ; # Eta
+jVAR = 1 ; # Eta
 w = squeeze(pdd.x(:,jVAR,:,:)) ;
 pdd.q = quantile(w(:), Q0) ;
 pdd.c = any(any(w > pdd.q, 2), 3) ;
@@ -140,7 +140,7 @@ if 0 write_H(pdd.c) ; endif
 
 %% write train (CAL) & test (VAL) data
 ptr.YCAL = [2001 5 1 0 ; 2010 8 31 23] ;
-ptr.YVAL = [2011 5 1 0 ; 2020 8 31 23] ;
+ptr.YVAL = [2011 5 1 0 ; 2021 8 31 23] ;
 ##ptr.YCAL = ptr.YVAL = [2001 5 1 0 ; 2020 8 31 23] ;
 
 if 0

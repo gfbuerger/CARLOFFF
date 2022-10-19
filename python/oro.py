@@ -49,4 +49,4 @@ c.retrieve(
         ],
         'format': 'netcdf',
     },
-    'data/oro.nc')
+    'data/ind/oro.nc')

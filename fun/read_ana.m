@@ -4,6 +4,7 @@
 function retval = read_ana (GLON, GLAT, NH, svar=[])
 
    pkg load netcdf
+
    F = glob("data/ind/*.nc")' ;
    lon = ncread(F{1}, "longitude") ;
    lat = ncread(F{1}, "latitude") ;
