@@ -265,7 +265,8 @@ for jNET = 1 : length(NET)
    [~, i] = max(skl(:,jSKL)) ;
 
    pfx = sprintf("%s/%s.%s.%s", sfx, net, ind, pdd.lname) ;
-   if isnewer(sprintf("%s.01", dfile), dfile)
+   d1file = sprintf("%s.01", dfile) ;
+   if exist(d1file, "file") == 2 && isnewer(d1file, dfile)
       rename(sprintf("%s.%02d", dfile, i), dfile) ;
       delete(ls("-1t", sprintf("%s.*", dfile))) ;
       wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
