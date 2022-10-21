@@ -23,7 +23,7 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
       sf = fscanf(fid, "%c") ;
       fclose(fid) ;
       s = strsplit(sf, "\n") ;
-      [S, E, TE, M, T, NM, SP] = regexp(s, "I.* solver.cpp.*(Iteration|output)") ;
+      [S, E, TE, M, T, NM, SP] = regexp(s, "I.* solver.cpp.*(Iteration|output #0|output #1)") ;
       I = cellfun(@(c) ~isempty(c), S) ;
       s = s(I) ;
       

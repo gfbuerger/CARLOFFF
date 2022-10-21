@@ -15,7 +15,7 @@ JMDL = 1 : 4 ;
 
 ### plots
 alpha = 0.05 ;
-qEta = sum(any(any(pdd.x(:,1,:,:) > 0, 3), 4)) / rows(pdd.x) ;
+qEta = sum(any(any(pdd.x(:,jVAR,:,:) > 0, 3), 4)) / rows(pdd.x) ;
 global COL
 
 ## training curves
@@ -194,10 +194,10 @@ for mdl = C
    h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
    xlim(s.id([1 end],1)) ;
    ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
-   xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
+   xlabel("year") ; ylabel(sprintf("P")) ;
    if STATS(3) < alpha
       xt = mean(get(h, "xdata")) - 5 ;
-      text(xt, 0.9*ylim()(2), sprintf("p<%.2f", alpha), "color", 0*COL(1,:)) ;
+      text(xt, 0.9*ylim()(2), sprintf("{\\ittr=%.2f}", 100*B(2)), "color", 0*COL(1,:)) ;
    endif
    set(gca, "fontsize", 14)
    ax2 = subplot(2, 3, 3*(jMDL-1) + 3) ; hold on
@@ -210,8 +210,8 @@ for mdl = C
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
    printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
-   text(xn, xx, sprintf("{\\it\\rho} = %.2f", r), "color", COL(3,:)) ;
-   set(gca, "fontsize", 14)
+   text(xn, xx, sprintf("{\\it\\rho = %.2f}", r), "color", COL(3,:)) ;
+   set(gca, "fontsize", 14, "XTick", [0.4 0.6], "YTick", [0.4 0.6]) ;
    yl = [min(ylim(ax1)(1), ylim(ax2)(1)) max(ylim(ax1)(2), ylim(ax2)(2))] ;
    set([ax1 ax2], "ylim", yl)
 endfor
@@ -250,10 +250,10 @@ for mdl = Call
    h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
    xlim(s.id([1 end],1)) ;
    ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
-   xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
+   xlabel("year") ; ylabel(sprintf("P")) ;
    if STATS(3) < alpha
       xt = get(h, "xdata")(1) + 5 ;
-      text(xt, 0.9*ylim()(2), sprintf("p<%.2f", alpha), "color", 0*COL(1,:)) ;
+      text(xt, 0.9*ylim()(2), sprintf("{\\ittr=%.2f}", 100*B(2)), "color", 0*COL(1,:)) ;
    endif
    set(gca, "fontsize", 14)
    ax(jPLT,2) = subplot(nMDL, 3, 3*(jPLT-1) + 3) ; hold on
@@ -267,7 +267,7 @@ for mdl = Call
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
    printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
-   text(xn, xx, sprintf("{\\it\\rho} = %.2f", r), "color", COL(3,:)) ;
+   text(xn, xx, sprintf("{\\it\\rho = %.2f}", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14)
    yl = [min(ylim(ax(jPLT,1))(1), ylim(ax(jPLT,2))(1)) max(ylim(ax(jPLT,1))(2), ylim(ax(jPLT,2))(2))] ;
    set(ax(jPLT,:), "ylim", yl)
@@ -293,17 +293,18 @@ for mdl = C
       eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
       [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
-      printf("%s, %s:\t%.2f\t%.2f\n", mdl, SIM{j}, 100*B(2), STATS(3)) ;
+      ct(j) = 100*B(2) ;
       stats(j,:) = STATS ;
       yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
       h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
-      xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
+      xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
-   ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
+   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
+   ylim([0.25 0.7]) ;
    for j = 2:rows(stats)
       if stats(j,3) < alpha
 	 xt = mean(get(h(j), "xdata")) - 10 ;
-	 text(xt, 0.84*ylim()(2), "p<0.05", "color", COL(j+1,:)) ;
+	 text(xt, 1.2*ylim()(1), sprintf("{\\ittr=%.2f}", ct(j)), "color", COL(j+1,:)) ;
       endif
    endfor
    legend(h, {"CLIM" NSIM{2:end}}, "box", "off", "location", "southeast") ;
@@ -340,17 +341,18 @@ for mdl = Call
       eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
       [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
-      printf("%s, %s:\t%.2f\t%.2f\n", mdl, SIM{j}, 100*B(2), STATS(3)) ;
+      ct(j) = 100 * B(2) ;
       stats(j,:) = STATS ;
       yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
       h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
-      xlabel("year") ; ylabel(sprintf("P_{CatRaRE}")) ;
+      xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
-   ylim([0.7*ylim()(1) 1.2*ylim()(2)]) ;
+   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
+   ylim([0.25 0.7]) ;
    for j = 2:rows(stats)
       if stats(j,3) < alpha
 	 xt = mean(get(h(j), "xdata")) - 10 ;
-	 text(xt, 0.84*ylim()(2), "p<0.05", "color", COL(j+1,:)) ;
+	 text(xt, 1.2*ylim()(1), sprintf("{\\ittr=%.2f}", ct(j)), "color", COL(j+1,:)) ;
       endif
    endfor
    htit = title(sprintf("%s", Calln{jMDL}), "fontsize", 20) ;
