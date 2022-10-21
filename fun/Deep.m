@@ -58,13 +58,13 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
       endif
    endfor
 
+   [solver deploy] = proto_upd(:, ptr, pdd, proto, Dd) ;
+
    if strcmp(De, ".netonly")
       res = struct("crossentropy", NaN, "th", NaN, "skl", NaN, "prob", NaN) ;
       weights = "" ;
       return ;
    endif
-
-   [solver deploy] = proto_upd(:, ptr, pdd, proto, Dd) ;
 
    ## train model
    Solver = caffe.Solver(solver) ;

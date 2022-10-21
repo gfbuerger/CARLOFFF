@@ -3,7 +3,7 @@ average_loss: 20
 debug_info: false
 test_iter: 100
 # Carry out testing every 1000 training iterations.
-test_interval: 20
+test_interval: 30
 # The base learning rate, momentum and the weight decay of the network.
 base_lr: 0.001
 momentum: 0.99
@@ -13,7 +13,7 @@ weight_decay: 0.001
 lr_policy: "poly"
 power: 3
 # Display every 200 iterations
-display: 5
+display: 10
 # The maximum number of iterations
 max_iter: 500
 # solver mode: CPU or GPU
