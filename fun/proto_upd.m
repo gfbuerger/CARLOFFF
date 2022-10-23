@@ -5,51 +5,62 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
 
    global REG NH
 
-   if exist(wss = sprintf("models/%s/solver.tpl", proto), "file") == 2
-      ss = fileread(wss) ;
+   ## solver
+   if exist(wSolver = sprintf("models/%s/solver.tpl", proto), "file") == 2
+      Solver = fileread(wSolver) ;
    else
-      ss = fileread(wss = "models/solver.tpl") ;
+      Solver = fileread(wSolver = "models/solver.tpl") ;
    endif
-   ss = [ss "net: \"DATA_tpl/PROTO_tpl.IND_tpl.PDD_tpl.prototxt\"\n"] ;
-   ss = [ss "snapshot_prefix: \"DATA_tpl/PROTO_tpl.IND_tpl.PDD_tpl\"\n"] ;
-   
-   if exist(wsn1 = sprintf("models/%s/data.tpl", proto), "file") == 2
-      sn1 = fileread(wsn1) ;
+   Solver = [Solver "net: \"DATA_tpl/PROTO_tpl.IND_tpl.PDD_tpl.prototxt\"\n"] ;
+   Solver = [Solver "snapshot_prefix: \"DATA_tpl/PROTO_tpl.IND_tpl.PDD_tpl\"\n"] ;
+
+   ## Data
+   if exist(wData = sprintf("models/%s/data.tpl", proto), "file") == 2
+      Data = fileread(wData) ;
    else
-      sn1 = fileread(wsn1 = "models/data.tpl") ;
+      Data = fileread(wData = "models/data.tpl") ;
    endif
-   if exist(wsn2 = sprintf("models/%s/net.tpl", proto), "file") == 2
-      sn2 = fileread(wsn2) ;
+   ## net
+   if exist(wNet = sprintf("models/%s/net.tpl", proto), "file") == 2
+      Net = fileread(wNet) ;
    else
-      sn2 = fileread(wsn2 = "models/net.tpl") ;
+      Net = fileread(wNet = "models/net.tpl") ;
    endif
-   if exist(wsn3 = sprintf("models/%s/loss.tpl", proto), "file")
-      sn3 = fileread(wsn3) ;
+   ## loss
+   if exist(wLoss = sprintf("models/%s/loss.tpl", proto), "file")
+      Loss = fileread(wLoss) ;
    else
-      sn3 = fileread(wsn3 = "models/loss.tpl") ;
+      Loss = fileread(wLoss = "models/loss.tpl") ;
    endif
 
-   sd1 = fileread(sprintf("models/inp.tpl", proto)) ;
-   sd2 = fileread(sprintf("models/deploy.tpl", proto)) ;
-   
-   sn = strcat(sn1, sn2, sn3) ;
-   sd = strcat(sd1, sn2, sd2) ;
+   Proto = strcat(Data, Net, Loss) ;
+
+   ## deploy
+   if exist(wDeploy = sprintf("models/%s/deploy.tpl", proto), "file") == 2
+      Deploy = fileread(wDeploy) ;
+   elseif exist(wDeploy = "models/deploy.tpl", "file") == 2
+      Deploy = fileread(wDeploy) ;
+   else
+      Inp = fileread(sprintf("models/inp.tpl", proto)) ;
+      Prob = fileread(sprintf("models/prob.tpl", proto)) ;
+      Deploy = strcat(Inp, Net, Prob) ;
+   endif
 
    solver = sprintf("%s/%s.%s.%s_solver.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
-   if isnewer(slv = strrep(solver, "solver", "solver_upd"), solver)
-      solver = slv ;
+   if isnewer(Lossv = strrep(solver, "solver", "solver_upd"), solver)
+      solver = Lossv ;
    endif
    net = sprintf("%s/%s.%s.%s.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
    deploy = sprintf("%s/%s.%s.%s_deploy.prototxt", Dd, proto, ptr.ind, pdd.lname) ;
 
-   if ~isnewer(solver, wss)
-      print_str(ptr, pdd, proto, Dd, ss, solver) ;
+   if ~isnewer(solver, wSolver)
+      print_str(ptr, pdd, proto, Dd, Solver, solver) ;
    endif
-   if ~isnewer(net, wsn1, wsn2, wsn3)
-      print_str(ptr, pdd, proto, Dd, sn, net) ;
+   if ~isnewer(net, wData, wNet, wLoss)
+      print_str(ptr, pdd, proto, Dd, Proto, net) ;
    endif
-   if ~isnewer(deploy, wsn1, wsn2)
-      print_str(ptr, pdd, proto, Dd, sd, deploy) ;
+   if ~isnewer(deploy, wData, wNet, wDeploy)
+      print_str(ptr, pdd, proto, Dd, Deploy, deploy) ;
    endif
 
 endfunction

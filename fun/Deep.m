@@ -18,9 +18,11 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 	    [st msg] = rmdir(Sa, "s") ;
 	 otherwise
       endswitch
-      printf("%s --> %s\n", fullfile(pwd, Dd), Sa) ;
+      cwd = pwd ;
+      printf("%s --> %s\n", fullfile(cwd, Dd), Sa) ;
       cd(sprintf("models/%s", proto)) ;
       symlink(sprintf("../../data/%s/%s", area, res), area) ;
+      cd(cwd) ;
    endif
 
    if exist(sprintf("%s/CAL_lmdb", Dd), "dir") ~= 7 & 0
@@ -78,32 +80,26 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
    tic ;
    if exist("state", "var") == 0
-      printf("Solver at iteration: 0\n") ;
       Solver.solve() ;
    else
       Solver.restore(state) ;
       iter = Solver.iter ;
       printf("Solver at iteration: %d\n", iter) ;
       if ~isnewer(state, solver, deploy, h5f(pdd.lname, "CAL"))
-	 if BATCH || true
+	 if BATCH
 	    n = iter ;
 	 else
-	    n = input("retrain model?\n[]: do nothing\n0: full\nn>0: n more iterations\n") ;
+	    n = input("retrain model?\n[],0: do nothing\nn>0: n more iterations\n") ;
 	 endif
-	 if ~isempty(n)
-	    switch n > 0
-	       case 0
-		  printf("from scratch\n") ;
-		  Solver.solve() ;
-	       otherwise
-		  printf("<-- %s\n", state) ;
-		  Solver.step(n) ;
-	    endswitch
+	 if ~isempty(n) && n > 0
+	    printf("<-- %s\n", state) ;
+	    Solver.step(n) ;
 	 endif
       endif
    endif
    printf("training time:\t%10.5g\n", toc) ;
-   pause(15) ;
+   pause(10) ;
+   caffe.reset_all() ;
    state = strtrim(ls("-1t", pat)(1,:)) ;
    
    ## apply model

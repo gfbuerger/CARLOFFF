@@ -64,6 +64,7 @@ endif
 [~, ~] = mkdir(sprintf("data/%s.%02d", REG, NH)) ; [~, ~] = mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
 
 if isnewer(afile = sprintf("data/ind/ind.%s.ob", GREG), glob("data/ind/*.nc"){:})
+   printf("<-- %s\n", afile) ;
    load(afile) ;
 else
    V = read_ana(GLON, GLAT, NH) ;
@@ -71,11 +72,13 @@ else
    for k = VAR
       eval(sprintf("%s = V.%s ;", k{:}, k{:})) ;
    endfor
+   printf("--> %s\n", afile) ;
    save(afile, VAR{:}, "VAR") ;
 endif
 
-PDD = {"xWEI" "cape" "cp" "regnie" "RR" "CatRaRE"}{1} ;
+PDD = {"xWEI" "cape" "cp" "regnie" "RR" "CatRaRE"}{6} ;
 if exist(pdfile = sprintf("data/%s.%s_%02d.ob", REG, PDD, CNVDUR), "file") == 2
+   printf("<-- %s\n", pdfile) ;
    load(pdfile) ;
 else
    ## select predictand
@@ -85,6 +88,7 @@ else
    pdd.lname = sprintf("%s_%02d", pdd.name, CNVDUR) ; 
    ## aggregate
    pdd = agg(pdd, NH) ;
+   printf("--> %s\n", pdfile) ;
    save(pdfile, "pdd") ;
 endif
 
@@ -92,6 +96,7 @@ FILL = true ;
 ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname), afile, pdfile)
 
+   printf("<-- %s\n", ptfile) ;
    load(ptfile) ;
 
 else
@@ -104,6 +109,7 @@ else
    ## normalize with mean and std
    ptr.x = nrm_ptr(ptr.x) ;
 
+   printf("--> %s\n", ptfile) ;
    save(ptfile, "ptr") ;
    
 endif
@@ -207,14 +213,15 @@ for jNET = 1 : length(NET)
 
       init_rnd() ;
       ptr.img = arr2img(ptr.x, RES{jNET}) ;
+      pfx = sprintf("%s/%s.%s.%s", sfx, net, ptr.ind, pdd.lname) ;
       switch SOLV
 	 case ""
-	    solverstate = sprintf("%s/%s.%s.%s_iter_0.solverstate", sfx, net, ptr.ind, pdd.lname) ;
+	    solverstate = sprintf("%s_iter_0.solverstate", pfx) ;
 	 case "netonly"
-	    solverstate = sprintf("%s/%s.%s.%s.netonly", sfx, net, ptr.ind, pdd.lname) ;
+	    solverstate = sprintf("%s.netonly", pfx) ;
 	 case "cont"
-##	    solverstate = sprintf("%s/%s.cape_iter_*.solverstate", sfx, net) ;
-	    solverstate = sprintf("%s/%s.%s.%s_iter_*.solverstate", sfx, net, ptr.ind, pdd.lname) ;
+	    siter = table_pick(sprintf("%s_solver.prototxt", pfx), "max_iter") ;
+	    solverstate = sprintf("%s_iter_%s.solverstate", pfx, siter) ;
 	 otherwise
 	    if ~strcmp(strsplit(SOLV, "/"){2}, net)
 	       warning("SOLV not matching %s, continuing\n", net) ;
@@ -297,6 +304,7 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
+exit
 
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
