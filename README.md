@@ -16,17 +16,19 @@ with ETS = 0.54. The best performing classical scheme was a Random Forest with
 Regardless of the method, increasing trends are predicted for the probability of
 CatRaRE-type events, from ERA5 as well as from the CORDEX fields.
 
+## Octave call
+
 The main program call is
 
 octave carlofff.m
 
 In carlofff.m, the main variables and their defaults are:
 
-GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ; GREG = "DE" ; # predictor region
-LON = GLON ; LAT = GLAT ; REG = "DE" ; # predictand region (whole Germany)
-ID = [2001 5 1 0 ; 2020 8 31 23] ;
-MON = 5 : 8 ;
-IND = "01010000010" ; # default atm. indices (cape, tcw, cp)
+GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ; GREG = "DE" ; # predictor region  
+LON = GLON ; LAT = GLAT ; REG = "DE" ; # predictand region (whole Germany)  
+ID = [2001 5 1 0 ; 2020 8 31 23] ;  
+MON = 5 : 8 ;  
+IND = "01010000010" ; # default atm. indices (cape, tcw, cp)  
 CNVDUR = 9 ; # maximum duration
 
 It is expected that Caffe is installed under /opt/caffe.
