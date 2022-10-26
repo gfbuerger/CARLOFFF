@@ -1,7 +1,7 @@
 ## usage: varargout = plot_log (h, lfile, loss = "loss", gap = 1, pse = 10, plog = 0, c = 100)
 ##
 ##
-function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap = 1, pse = 10, plog = 0, c = 100)
+function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap = 1, pse = 10, plog = 0)
 
    phase = {"Train" "Test"} ;
    
@@ -49,6 +49,7 @@ function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap 
 	 n = min(numel(Iter), numel(x)) ;
 	 if plog set(h, "yscale", "log") ; endif
 	 II = gap <= Iter ;
+	 c = 10^(ceil(log10(Iter(II)(end)))-1) ;
 	 hp = [hp plot(1/c * Iter(II), x(II))] ;
 	 xlabel(sprintf("iterations (x%d)", c)) ; ylabel(loss) ;
 	 set(h, "ygrid", "on") ;

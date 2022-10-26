@@ -30,7 +30,7 @@ title(net)
 hgsave(sprintf("nc/paper/loss.%s.og", net)) ;
 print(sprintf("nc/paper/loss.%s.svg", net)) ;
 
-GAP = [1 1 1 1 1 1 1 1 1] ;
+GAP = [1 1 1 1 1 150 1 1 1] ;
 clf ; j = 0 ; clear H ;
 for net = NET((1:9) ~= jNET)
    net = net{:} ;
@@ -43,9 +43,8 @@ for net = NET((1:9) ~= jNET)
    title(net)
 endfor
 delete(H(:,3)) ;
-##set(H(:,1), "linewidth", 1) ; set(H(:,2), "linewidth", 2) ;
-##set(ax, "ylim", [0.2 0.71]) ;
 set(findobj("-property", "fontsize"), "fontsize", 12) ;
+set(ax, "xtick", 2:2:8) ;
 hgsave(sprintf("nc/paper/loss.og")) ;
 print(sprintf("nc/paper/loss.svg")) ;
 

@@ -18,7 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
-ID = [2001 5 1 0 ; 2021 8 31 23] ;
+ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # default atm. indices
 ##[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
@@ -136,7 +136,7 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
-jVAR = 1 ; # Eta
+jVAR = 3 ; # Eta
 w = squeeze(pdd.x(:,jVAR,:,:)) ;
 pdd.q = quantile(w(:), Q0) ;
 pdd.c = any(any(w > pdd.q, 2), 3) ;
@@ -146,7 +146,7 @@ if 0 write_H(pdd.c) ; endif
 
 %% write train (CAL) & test (VAL) data
 ptr.YCAL = [2001 5 1 0 ; 2010 8 31 23] ;
-ptr.YVAL = [2011 5 1 0 ; 2021 8 31 23] ;
+ptr.YVAL = [2011 5 1 0 ; 2020 8 31 23] ;
 ##ptr.YCAL = ptr.YVAL = [2001 5 1 0 ; 2020 8 31 23] ;
 
 if 0
@@ -304,7 +304,6 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
-exit
 
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
