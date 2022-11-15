@@ -87,7 +87,7 @@ else
    eval(sprintf("pdd = selpdd(PDD, LON, LAT, ID, Q0, %s) ;", VAR{jV}))
    pdd.lname = sprintf("%s_%02d", pdd.name, CNVDUR) ; 
    ## aggregate
-   pdd = agg(pdd, NH) ;
+   pdd = agg(pdd, NH, @nanmax) ;
    printf("--> %s\n", pdfile) ;
    save(pdfile, "pdd") ;
 endif
@@ -139,6 +139,8 @@ endif
 jVAR = 3 ; # Eta
 w = squeeze(pdd.x(:,jVAR,:,:)) ;
 pdd.q = quantile(w(:), Q0) ;
+pdd.q = 5.69 ;	    # optimal PC for MoC(HiOS, Eta)
+pdd.lname = "HiOS" ;
 pdd.c = any(any(w > pdd.q, 2), 3) ;
 printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(w(:) > 0) sum(w(:) == 0)] / numel(w)) ;
 printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(pdd.c) sum(~pdd.c)] / rows(pdd.c)) ;

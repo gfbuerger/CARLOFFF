@@ -18,8 +18,8 @@ function [iout, lout] = oversmpl (i, l, IMB)
    if strcmp(IMB, "SMOTE")
       if Lnan = (exist("knnsearch", "file") ~= 2), pkg load nan ; endif
       options.Class = l ;
-      ii = reshape(i, N(1), []) ;
-      [iout lout] = smote(ii, rows(I)./sum(I), 5, options) ;
+      k = max(ceil(rows(I)./sum(I))) ;
+      [iout lout] = smote(i, [], k, options) ;
       iout = reshape(iout, [], num2cell(N){2:end}) ;
       if Lnan, pkg unload nan ; endif
       return ;
