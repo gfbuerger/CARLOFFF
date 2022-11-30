@@ -38,8 +38,6 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    ## deploy
    if exist(wDeploy = sprintf("models/%s/deploy.tpl", proto), "file") == 2
       Deploy = fileread(wDeploy) ;
-   elseif exist(wDeploy = "models/deploy.tpl", "file") == 2
-      Deploy = fileread(wDeploy) ;
    else
       Inp = fileread(sprintf("models/inp.tpl", proto)) ;
       Prob = fileread(sprintf("models/prob.tpl", proto)) ;
