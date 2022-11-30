@@ -28,7 +28,7 @@ else
    CNVDUR = str2num(CNVDUR) ;
 endif
 if isempty(JVAR = getenv("JVAR"))
-   JVAR = [2 4 10] ;
+   JVAR = [2:4 10] ;
 else
    JVAR = str2num(char(strsplit(JVAR))) ;
 endif

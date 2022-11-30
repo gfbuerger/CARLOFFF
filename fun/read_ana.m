@@ -13,12 +13,16 @@ function retval = read_ana (GLON, GLAT, NH, svar=[])
    JLAT = GLAT(1) <= lat & lat <= GLAT(2) ;
 
    for j = 1 : length(F)
+
       nc = ncinfo(F{j}) ;
       k = find(cellfun(@(c) length(c), {nc.Variables.Size}) > 1) ;
       VAR(j) = v = {nc.Variables.Name}(k) ;
       if ~isempty(svar) && ~strcmp(v, svar) continue ; endif
       LVAR{j} = nc.Variables(k).Attributes(6).Value ;
       x = squeeze(ncread(F{j}, v{:})) ;
+      if strcmp(VAR{j}, "cin")
+	 x(isnan(x(:))) = 1000 ;
+      endif
       x = permute(x, [3 1 2]) ; # all data are N x W x H
       if Llat x = flip(x, 3) ; endif
       id = nctime(F{j}) ;
@@ -29,6 +33,7 @@ function retval = read_ana (GLON, GLAT, NH, svar=[])
       eval(sprintf("retval.%s.lon = lon(JLON) ;", v{:})) ;
       eval(sprintf("retval.%s.lat = lat(JLAT) ;", v{:})) ;
       eval(sprintf("retval.%s.name = VAR{j} ;", v{:})) ;
+
       ## aggregate
       eval(sprintf("retval.%s = agg(retval.%s, NH) ;", v{:}, v{:})) ;
 

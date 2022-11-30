@@ -20,7 +20,7 @@ function v = agg (u, nh, fun=@nanmean)
    v.id = squeeze(v.id(1,:,1:4)) ;
    v.x = reshape(v.x, [nq N(1)/nq N(2:end)]) ;
 
-   v.x = squeeze(feval(fun, v.x, [], 1)) ;
+   v.x = squeeze(feval(fun, v.x)) ;
    v.x = reshape(v.x, [N(1)/nq N(2:end)]) ;
    
 endfunction
