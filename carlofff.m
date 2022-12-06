@@ -20,7 +20,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
-IND = "01010000010" ; # default atm. indices
+IND = "01010000010" ; # read these atm. indices
 ##[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
 if isempty(CNVDUR = getenv("CNVDUR"))
    CNVDUR = 9 ;
@@ -38,7 +38,7 @@ endif
 SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
-Q0 = 0.99 ;
+Q0 = {0.99 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
 IMB = "SIMPLE" ;
 SKL = {"HSS" "ETS"} ;
 
@@ -139,8 +139,7 @@ endif
 jVAR = 3 ; # Eta
 w = squeeze(pdd.x(:,jVAR,:,:)) ;
 pdd.q = quantile(w(:), Q0) ;
-pdd.q = 5.69 ;	    # optimal PC for MoC(HiOS, Eta)
-pdd.lname = "HiOS" ;
+pdd.lname = sprintf("%s_%.2f", pdd.lname, 100 * Q0) ;
 pdd.c = any(any(w > pdd.q, 2), 3) ;
 printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(w(:) > 0) sum(w(:) == 0)] / numel(w)) ;
 printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(pdd.c) sum(~pdd.c)] / rows(pdd.c)) ;
@@ -274,9 +273,9 @@ for jNET = 1 : length(NET)
    [~, i] = max(skl(:,jSKL)) ;
 
    pfx = sprintf("%s/%s.%s.%s", sfx, net, ind, pdd.lname) ;
-   d1file = sprintf("%s.01", dfile) ;
-   if exist(d1file, "file") == 2 && isnewer(d1file, dfile)
-      rename(sprintf("%s.%02d", dfile, i), dfile) ;
+   difile = sprintf("%s.%02d", dfile, i) ;
+   if exist(difile, "file") == 2 && ~isnewer(dfile, difile)
+      rename(difile, dfile) ;
       delete(ls("-1t", sprintf("%s.*", dfile))) ;
       wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
       rename(wfile, wfile(1:end-3)) ;
