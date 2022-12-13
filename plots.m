@@ -156,6 +156,70 @@ set(findobj("-property", "fontsize"), "fontsize", 16) ;
 hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
 print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
+## reliability curves
+jNET = 2 ;
+clf ;
+jNET++ ;
+net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
+load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname)) ;
+[r b] = rlb(deep.prob.x(:,2), pdd.c, 10) ;
+plot([0 1], [0 1], "k--", b, r, "color", colD(jNET,:)) ;
+axis square
+title(net)
+hgsave(sprintf("nc/paper/rlb.%s.og", net)) ;
+print(sprintf("nc/paper/rlb.%s.svg", net)) ;
+
+clf ; j = 0 ; clear ax h r
+for kMDL = 1 : length(MDL)
+   mdl = MDL{kMDL} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{kMDL}) ;
+   if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ind, pdd.lname), "file") == 2
+      load(pfile) ;
+   else
+      warning("file not found: %s", pfile) ;
+   endif
+   [r(:,kMDL) b] = rlb(shallow.prob.x(:,2), pdd.c, 10) ;
+   ax(++j) = subaxis(2, 2, j, "SpacingH", 0.07, "SpacingV", 0.17) ;
+   plot(b, r(:,kMDL), "color", colS(kMDL,:), [0 1], [0 1], "k--") ;
+   title(mdl)
+   pos = get(gca, "position") ;
+   ix(j) = axes("position",[pos(1)+0.22 pos(2)+0.01 pos(3)/3 pos(4)/3]) ;
+   [nn xx] = hist(shallow.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
+   bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   set(get(get(gca, "children"), "baseline"), "visible", "off") ;
+   set(gca, "XTick", [], "YTick", [], "box", "off", "ycolor", "none")
+endfor
+set(ax, "fontsize", 14, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
+xlabel(ax(3), "forecast prob.") ; ylabel(ax(3), "observed freq.")
+set(findobj("-property", "fontsize"), "fontsize", 12) ;
+hgsave(sprintf("nc/paper/Shallow.rlb.og")) ;
+print(sprintf("nc/paper/Shallow.rlb.svg")) ;
+
+clf ; j = 0 ; clear ax h r
+for kNET = 1 : length(NET)
+   net = NET{kNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{kNET}) ;
+   if exist(pfile = sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname), "file") == 2
+      load(pfile) ;
+   else
+      warning("file not found: %s", pfile) ;
+   endif
+   [r(:,kNET) b] = rlb(deep.prob.x(:,2), pdd.c, 10) ;
+   ax(++j) = subaxis(3, 3, j, "SpacingH", 0.07, "SpacingV", 0.17) ;
+   plot(b, r(:,kNET), "color", colD(kNET,:), [0 1], [0 1], "k--") ;
+   title(net)
+   pos = get(gca, "position") ;
+   ix(j) = axes("position",[pos(1)+0.14 pos(2)+0.01 pos(3)/3 pos(4)/3]) ;
+   [nn xx] = hist(deep.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
+   bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   set(get(get(gca, "children"), "baseline"), "visible", "off") ;
+   set(gca, "XTick", [], "YTick", [], "box", "off", "ycolor", "none")
+endfor
+set(ax, "fontsize", 14, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
+xlabel(ax(7), "forecast prob.") ; ylabel(ax(7), "observed freq.")
+set(findobj("-property", "fontsize"), "fontsize", 12) ;
+hgsave(sprintf("nc/paper/Deep.rlb.og")) ;
+print(sprintf("nc/paper/Deep.rlb.svg")) ;
+
+
 
 ## plot scatter of obs vs sim annual probs!!
 C1 = cellfun(@(mdl) sprintf("Shallow.%s", mdl), MDL, "UniformOutput", false) ;
