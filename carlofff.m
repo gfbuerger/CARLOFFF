@@ -38,7 +38,7 @@ endif
 SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
-Q0 = {0.99 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
+Q0 = {0.99 0.995 0.9986}{2} ; # 2nd optimal PC for MoC(HiOS, Eta)
 IMB = "SIMPLE" ;
 SKL = {"HSS" "ETS"} ;
 
@@ -158,38 +158,40 @@ endif
 ## Shallow
 MDL = {"lasso" "tree" "nnet" "nls"} ;
 ptr.ind = ind ;
-PCA = {{} []}{2} ;
-if iscell(PCA)
-   ptr.ind = ["R" ind] ;
-endif
-if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
-   load(mfile) ;
-else
-   clear skl ;
-   for jMDL = 1 : length(MDL)
-      mdl = MDL{jMDL} ;
-      if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
-	 printf("<-- %s\n", sfile) ;
-	 load(sfile) ;
-	 if 0
-	    strucdisp(shallow.skl) ;
-	    plot_fit(mdl, shallow.fit) ;
-	    set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
-	    set(findall("type", "axes"), "fontsize", 24) ;
-	    set(findall("type", "text"), "fontsize", 22) ;
+for PCA = {{} []}
+   PCA = PCA{:} ;
+   if iscell(PCA)
+      ptr.ind = ["R" ind] ;
+   endif
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
+      load(mfile) ;
+   else
+      clear skl ;
+      for jMDL = 1 : length(MDL)
+	 mdl = MDL{jMDL} ;
+	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
+	    printf("<-- %s\n", sfile) ;
+	    load(sfile) ;
+	    if 0
+	       strucdisp(shallow.skl) ;
+	       plot_fit(mdl, shallow.fit) ;
+	       set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+	       set(findall("type", "axes"), "fontsize", 24) ;
+	       set(findall("type", "text"), "fontsize", 22) ;
+	    endif
+	 else
+	    varargin = {} ;
+	    ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
+	    shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, SKL, varargin{:}) ;
+	    printf("--> %s\n", sfile) ;
+	    save("-text", sfile, "shallow") ;
 	 endif
-      else
-	 varargin = {} ;
-##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
-	 shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, SKL, varargin{:}) ;
-	 printf("--> %s\n", sfile) ;
-	 save("-text", sfile, "shallow") ;
-      endif
-      skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
-   endfor
-   skl = real(skl) ;
-   save("-text", mfile, "skl") ;
-endif
+	 skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
+      endfor
+      skl = real(skl) ;
+      save("-text", mfile, "skl") ;
+   endif
+endfor
 
 ## Deep
 ## divergent: CIFAR-10, SqueezeNet
