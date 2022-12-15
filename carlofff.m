@@ -157,11 +157,13 @@ endif
 
 ## Shallow
 MDL = {"lasso" "tree" "nnet" "nls"} ;
-ptr.ind = ind ;
+MDL = {"lasso" "tree" "nls"} ;
 for PCA = {{} []}
    PCA = PCA{:} ;
    if iscell(PCA)
       ptr.ind = ["R" ind] ;
+   else
+      ptr.ind = ind ;
    endif
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
       load(mfile) ;
