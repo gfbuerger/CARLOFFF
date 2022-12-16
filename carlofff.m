@@ -38,7 +38,7 @@ endif
 SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
-Q0 = {0.99 0.995 0.9986}{2} ; # 2nd optimal PC for MoC(HiOS, Eta)
+Q0 = {0.99 0.995 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
 IMB = "SIMPLE" ;
 SKL = {"HSS" "ETS"} ;
 
@@ -310,6 +310,12 @@ for jNET = 1 : length(NET)
 
 endfor
 
+profshow ;
+profile off ;
+T = profile("info") ;
+save -text prof.ot T
+exit
+
 ### historical and future simulations
 load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
@@ -431,10 +437,5 @@ for jSIM = 1 : length(SIM)
    endif
 
 endfor
-
-profshow ;
-profile off ;
-T = profile("info") ;
-save -text prof.ot T
 
 source plots.m ;
