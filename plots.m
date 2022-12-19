@@ -145,7 +145,7 @@ set(ax(1), "xlim", vl, "ylim", vl, "xgrid", "on", "ygrid", "on") ;
 set(ax(2), "xgrid", "on", "ygrid", "on") ;
 xlabel(SKL{jSKL}) ; ylabel("crossentropy") ;
 hlS = legend(ax(1), hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
-hlD = legend(hgD, NET, "box", "off", "location", "southwest") ;
+hlD = legend(ax(2), hgD, NET, "box", "off", "location", "southwest") ;
 set(findall(hlS, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
 pos = get(ax(1), "position") ; pos(1) -= 0.05 ; set(ax(1), "position", pos)
 pos = get(ax(2), "position") ; pos(1) += 0.05 ; set(ax(2), "position", pos)

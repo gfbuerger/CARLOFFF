@@ -139,7 +139,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       trainParamsEnsemble = m5pparamsensemble(50) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
-	       fit.par = m5pbuild(xx, yy, [], [], trainParamsEnsemble) ;
+	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
 	       if trainParamsEnsemble.numTrees > 1
 		  fit.model = @(par, x) mean(cell2mat(cellfun(@(p) m5ppredict(p, x), par, "UniformOutput", false)'), 2) ;
 	       else
