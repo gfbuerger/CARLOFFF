@@ -1,7 +1,7 @@
 layer {
   name: "ip1"
   type: "InnerProduct"
-  bottom: "pool1"
+  bottom: "data"
   top: "ip1"
   inner_product_param {
     num_output: 7
