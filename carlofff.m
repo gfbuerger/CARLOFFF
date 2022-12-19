@@ -156,7 +156,6 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nnet" "nls"} ;
 MDL = {"lasso" "tree" "nls"} ;
 for PCA = {{} []}
    PCA = PCA{:} ;
@@ -198,9 +197,9 @@ endfor
 ## Deep
 ## divergent: CIFAR-10, SqueezeNet
 ## shape mismatch: Inception-v4
-JNET = 1 : 9 ;
-NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"}(JNET) ;
-RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}(JNET) ;
+JNET = 1 : 10 ;
+NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg" "NNet"}(JNET) ;
+RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32] [32 32]}(JNET) ;
 ptr.ind = ind ;
 jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
