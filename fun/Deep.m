@@ -111,6 +111,9 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
    endif
    net = caffe.Net(deploy, weights, 'test') ;
 
+   ## number of parameters
+   count = compute_caffe_parameters(net_model, net_weights) ;
+
    for PHS = {"CAL" "VAL"}
 
       PHS = PHS{:} ;
@@ -149,6 +152,6 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
    prob.id = datevec(t(Is)) ;
    prob.x = [prb.CAL ; prb.VAL](Is,:) ;
    
-   res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob) ;
+   res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob, "count", count) ;
    
 endfunction
