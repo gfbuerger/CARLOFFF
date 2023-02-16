@@ -3,8 +3,6 @@
 ## update proto files
 function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
 
-   global REG NH
-
    ## solver
    if exist(wSolver = sprintf("models/%s/solver.tpl", proto), "file") == 2
       Solver = fileread(wSolver) ;
@@ -69,7 +67,7 @@ endfunction
 ## print suitable string to ofile
 function print_str (ptr, pdd, proto, Dd, str, ofile)
 
-   global REG NH
+   global PFX NH
 
    N = size(ptr.img) ;
    if length(N) < 3
@@ -80,7 +78,7 @@ function print_str (ptr, pdd, proto, Dd, str, ofile)
 
    str = strrep(str, "PROTO_tpl", proto);
    str = strrep(str, "IND_tpl", ptr.ind);
-   str = strrep(str, "REG_tpl", REG);
+   str = strrep(str, "PFX_tpl", PFX);
    str = strrep(str, "NH_tpl", NHs);
    str = strrep(str, "DATA_tpl", Dd);
    str = strrep(str, "PDD_tpl", pdd.lname);

@@ -3,14 +3,15 @@
 ## read DWD REGNIE
 function pdd = regnie (rfile, Y0, Y1, R0)
 
-   global LON LAT REG MON
+   global REG MON
 
    nr = 971 ; nc = 611 ;
    xdelta = 1/60 ; ydelta = 1/120 ;
    lon =  6 - 10 * xdelta + (0:nc-1) * xdelta ;
    lat = 55 + 10 * ydelta - (0:nr-1) * ydelta ;
    [lon lat] = meshgrid(lon, lat) ;
-   I = LON(1) <= lon & lon <= LON(2) & LAT(2) <= lat & lat <= LAT(1) ;
+   glon = [REG.geo{1}(1) REG.geo{2}(1)] ; glat = [REG.geo{1}(2) REG.geo{3}(4)] ;
+   I = glon(1) <= lon & lon <= glon(2) & glat(2) <= lat & lat <= glat(1) ;
    
    mkdir(tt = tempname) ;
    mkdir("data/regnie") ;

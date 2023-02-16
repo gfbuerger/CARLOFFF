@@ -3,7 +3,7 @@
 ##
 function h = plot_fit (mdl, fit)
 
-   global REG NH
+   global PFX NH
 
    switch mdl
 
@@ -33,7 +33,7 @@ function h = plot_fit (mdl, fit)
    set(findall("type", "axes"), "fontsize", 20) ;
    set(findall("type", "text"), "fontsize", 6) ;
 
-   hgsave(sprintf("nc/%s.%02d/%s.og", REG, NH, mdl)) ;
-   print(sprintf("nc/%s.%02d/%s.svg", REG, NH, mdl)) ;
+   hgsave(sprintf("nc/%s.%02d/%s.og", PFX, NH, mdl)) ;
+   print(sprintf("nc/%s.%02d/%s.svg", PFX, NH, mdl)) ;
    
 endfunction

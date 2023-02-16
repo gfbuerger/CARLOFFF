@@ -3,7 +3,7 @@
 %%
 function s = read_klamex (fin)
 
-   global isoctave LON LAT MON REG CNVDUR
+   global isoctave MON REG PFX CNVDUR
 
    if isoctave(), pkg load io ; end
 
@@ -20,7 +20,8 @@ function s = read_klamex (fin)
    D = D(Icnv,:) ;
 
    lon = D(:,dlon) ; lat = D(:,dlat) ;
-   I = lookup(LON, lon) == 1 & lookup(LAT, lat) == 1 ;
+   glon = [REG.geo{1}(1) REG.geo{2}(1)] ; glat = [REG.geo{1}(2) REG.geo{3}(4)] ;
+   I = lookup(glon, lon) == 1 & lookup(glat, lat) == 1 ;
    D = D(I,:) ;
    
    t1 = datenum(num2str(D(:,5), '%d'), 'yyyymmddHHMM') ;
@@ -38,6 +39,6 @@ function s = read_klamex (fin)
    s.id = id(II,1:4) ;
    s.x = D(II,Jx) ;
    s.lon = D(II,dlon) ; s.lat = D(II,dlat) ;
-   s.reg = REG ;
+   s.reg = PFX ;
    
 endfunction

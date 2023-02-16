@@ -3,7 +3,7 @@
 ##
 function plot_prob (s, pdd, d, d0)
 
-   global REG
+   global PFX
    
    I1 = sdate(s.id, d) ;
    I2 = sdate(pdd.id, d) ;
@@ -32,6 +32,6 @@ function plot_prob (s, pdd, d, d0)
    xlabel(sprintf("%s", ds)) ;
    ylabel("probability") ;
 
-   title(sprintf("typical %s events and %s predictions", REG, s.name)) ;
+   title(sprintf("typical %s events and %s predictions", PFX, s.name)) ;
    
 endfunction

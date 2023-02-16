@@ -3,19 +3,19 @@
 ## plot pattern and probs for D, d
 function [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, cx = 1, sfx = "svg")
 
-   global REG NH
+   global PFX NH
 
    ds = datestr(datenum(d), "yyyy-mm") ;
 
    h1 = figure(1) ;
-   clf ;
+   clf ; pause(2) ;
    plot_prob(s, pdd, D, d) ;
    set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
-   printf("--> nc/%s.%02d/%s.%s\n", REG, NH, ds, sfx) ;
-   print(sprintf("nc/%s.%02d/%s.%s", REG, NH, ds, sfx)) ;
+   printf("--> nc/%s.%02d/%s.%s\n", PFX, NH, ds, sfx) ;
+   print(sprintf("nc/%s.%02d/%s.%s", PFX, NH, ds, sfx)) ;
 
    h2 = figure(2, "position", [0.7 0.4 0.3 0.6]) ;
-   clf ; hold on
+   clf ; hold on ; pause(2) ;
 
    I = sdate(ptr.id, d) ;
    xm = squeeze(ptr.x(I,:,:)) ;

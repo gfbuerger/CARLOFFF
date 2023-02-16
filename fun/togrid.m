@@ -3,7 +3,7 @@
 ## transform parametric to grid
 function v = togrid (u, lon, lat)
 
-   global LON LAT
+   global GLON GLAT
 
    v = u ;
 
@@ -19,8 +19,8 @@ function v = togrid (u, lon, lat)
    
    v.id = datevec(tv)(:,1:4) ;
 
-   JLON = LON(1) <= lon & lon <= LON(2) ;
-   JLAT = LAT(1) <= lat & lat <= LAT(2) ;
+   JLON = GLON(1) <= lon & lon <= GLON(2) ;
+   JLAT = GLAT(1) <= lat & lat <= GLAT(2) ;
 
    v.lon = lon(JLON) ;
    v.lat = lat(JLAT) ;

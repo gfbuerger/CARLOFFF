@@ -1,7 +1,7 @@
 
 profile on
 
-global isoctave LON LAT GREG REG NH MON IMB CNVDUR
+global isoctave PFX REG NH MON IMB CNVDUR
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -9,26 +9,21 @@ addpath ~/carlofff/fun
 [~, ~] = mkdir("data") ;
 cd ~/carlofff
 [glat glon] = borders("germany") ;
-##GLON = [min(glon) max(glon)] ; GLAT = [min(glat) max(glat)] ;
-GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ; GREG = "DE" ;
-LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
-##LON = [6 10] ; LAT = [51 54] ; REG = "NW" ; # Nordwest
-##LON = [10 14] ; LAT = [51 54] ; REG = "NE" ; # Nordost
-##LON = [6 10] ; LAT = [47.5 51] ; REG = "SW" ; # Südwest
-##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
-##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
-##GLON = LON ; GLAT = LAT ; GREG = REG ;
+REG.name = {"NW" "NE" "SW" "SE"} ;
+PFX = "DE" ;
+GLON = [6 10 14] ; GLAT = [47.5 51 54] ;
+REG.geo = {[GLON([1 2]) ; GLAT([1 2])] ...
+	      [GLON([2 3]) ; GLAT([1 2])] [GLON([1 2]) ; GLAT([2 3])] [GLON([2 3]) ; GLAT([2 3])]} ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # read these atm. indices
-##[CNVDUR JVAR] = read_env("CNVDUR", "JVAR") ;
 if isempty(CNVDUR = getenv("CNVDUR"))
    CNVDUR = 9 ;
 else
    CNVDUR = str2num(CNVDUR) ;
 endif
 if isempty(JVAR = getenv("JVAR"))
-   JVAR = [2:4 10] ;
+   JVAR = [2 4 10] ;
 else
    JVAR = str2num(char(strsplit(JVAR))) ;
 endif
@@ -61,9 +56,9 @@ if isoctave()
 else
    addpath /opt/caffeML/matlab
 endif
-[~, ~] = mkdir(sprintf("data/%s.%02d", REG, NH)) ; [~, ~] = mkdir(sprintf("nc/%s.%02d", REG, NH)) ;
+[~, ~] = mkdir(sprintf("data/DE.%02d", PFX, NH)) ; [~, ~] = mkdir(sprintf("nc/%s.%02d", PFX, NH)) ;
 
-if isnewer(afile = sprintf("data/ind/ind.%s.ob", GREG), glob("data/ind/*.nc"){:})
+if isnewer(afile = sprintf("data/ind/ind.%s.ob", PFX), glob("data/ind/*.nc"){:})
    printf("<-- %s\n", afile) ;
    load(afile) ;
 else
@@ -77,7 +72,7 @@ else
 endif
 
 PDD = {"xWEI" "cape" "cp" "regnie" "RR" "CatRaRE"}{6} ;
-if exist(pdfile = sprintf("data/%s.%s_%02d.ob", REG, PDD, CNVDUR), "file") == 2
+if exist(pdfile = sprintf("data/%s.%s_%02d.ob", PFX, PDD, CNVDUR), "file") == 2
    printf("<-- %s\n", pdfile) ;
    load(pdfile) ;
 else
@@ -94,7 +89,7 @@ endif
 
 FILL = true ;
 ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
-if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname), afile, pdfile)
+if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", PFX, NH, ind, pdd.lname), afile, pdfile)
 
    printf("<-- %s\n", ptfile) ;
    load(ptfile) ;
@@ -136,13 +131,9 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
+## select classes
 jVAR = 3 ; # Eta
-w = squeeze(pdd.x(:,jVAR,:,:)) ;
-pdd.q = quantile(w(:), Q0) ;
-pdd.lname = sprintf("%s_%.2f", pdd.lname, 100 * Q0) ;
-pdd.c = any(any(w > pdd.q, 2), 3) ;
-printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(w(:) > 0) sum(w(:) == 0)] / numel(w)) ;
-printf("class rates: %.1f %%  %.1f %%\n", 100 * [sum(pdd.c) sum(~pdd.c)] / rows(pdd.c)) ;
+pdd = classes(pdd, jVAR, Q0) ;
 if 0 write_H(pdd.c) ; endif
 
 %% write train (CAL) & test (VAL) data
@@ -164,13 +155,13 @@ for PCA = {{} []}
    else
       ptr.ind = ind ;
    endif
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", PFX, NH, ptr.ind, pdd.lname), ptfile, pdfile)
       load(mfile) ;
    else
       clear skl ;
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
+	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", PFX, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
 	    printf("<-- %s\n", sfile) ;
 	    load(sfile) ;
 	    if 0
@@ -204,8 +195,8 @@ ptr.ind = ind ;
 jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
-   net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
-   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
+   net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", PFX, NH, RES{jNET}) ;
+   mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", PFX, NH, net, ind, pdd.lname) ;
    dfile = sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname) ;
 
    if isnewer(mfile, ptfile, pdfile, dfile)
@@ -299,7 +290,7 @@ for jNET = 1 : length(NET)
    endif
    
    if 0
-      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, REG, NH, net, ind, pdd.lname) ;
+      model = sprintf("models/%s/%s.%02d/%s.%s.%s_deploy.prototxt", net, PFX, NH, net, ind, pdd.lname) ;
       weights = sprintf("%s/%s.%s.%s.caffemodel", sfx, net, ind, pdd.lname) ;
       printf("<-- %s\n", weights) ;
       deploy = caffe.Net(model, weights, 'test') ;
@@ -316,7 +307,7 @@ save -text prof.ot T
 exit
 
 ### historical and future simulations
-load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
+load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", PFX, NH, ind, pdd.lname)) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 JSIM = 1:3 ;
 SIM = {"ana" "historical" "rcp85"}(JSIM) ;
@@ -368,8 +359,8 @@ for jSIM = 1 : length(SIM)
 
    sim = SIM{jSIM} ;
 
-   glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.lname)) ;
-   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s_iter_*.caffemodel", REG, NH, ind, pdd.lname))) ;
+   glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", PFX, NH, ptr.ind, pdd.lname)) ;
+   glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s_iter_*.caffemodel", PFX, NH, ind, pdd.lname))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
@@ -402,7 +393,7 @@ for jSIM = 1 : length(SIM)
 
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname) ;
+	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", PFX, NH, mdl, ptr.ind, pdd.lname) ;
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
 	 out = sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
@@ -411,7 +402,7 @@ for jSIM = 1 : length(SIM)
       
       for jNET = 1 : length(NET(JNET))
 	 net = NET(JNET){jNET} ; res = RES(JNET){jNET} ;
-	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.lname) ;
+	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, PFX, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2
 	    warning("model not found: %s\n", model) ;

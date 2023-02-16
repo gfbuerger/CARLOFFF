@@ -3,7 +3,7 @@
 %%
 function s = read_dwd (fin)
 
-   global isoctave LON LAT MON
+   global isoctave GLON GLAT MON
 
    if isoctave(), pkg load io ; end
 
@@ -22,7 +22,7 @@ function s = read_dwd (fin)
    D = D(2:end,:) ;
 
    lon = D(:,3) ; lat = D(:,4) ;
-   I = lookup(LON, lon) == 1 & lookup(LAT, lat) == 1 ;
+   I = lookup(GLON, lon) == 1 & lookup(GLAT, lat) == 1 ;
    D = D(I,:) ;
    
    t = D(:,2) ; d = D(:,jd) ;
