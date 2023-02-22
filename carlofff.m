@@ -12,8 +12,11 @@ cd ~/carlofff
 REG.name = {"NW" "NE" "SW" "SE"} ;
 PFX = "DE" ;
 GLON = [6 10 14] ; GLAT = [47.5 51 54] ;
-REG.geo = {[GLON([1 2]) ; GLAT([1 2])] ...
-	      [GLON([2 3]) ; GLAT([1 2])] [GLON([1 2]) ; GLAT([2 3])] [GLON([2 3]) ; GLAT([2 3])]} ;
+for jLON = 1 : length(GLON) - 1
+   for jLAT = 1 : length(GLAT) - 1
+      REG.geo{jLON,jLAT} = [GLON([jLON jLON + 1]) ; GLAT([jLAT jLAT + 1])] ;
+   endfor
+endfor
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # read these atm. indices
@@ -56,7 +59,7 @@ if isoctave()
 else
    addpath /opt/caffeML/matlab
 endif
-[~, ~] = mkdir(sprintf("data/DE.%02d", PFX, NH)) ; [~, ~] = mkdir(sprintf("nc/%s.%02d", PFX, NH)) ;
+[~, ~] = mkdir(sprintf("data/%s.%02d", PFX, NH)) ; [~, ~] = mkdir(sprintf("nc/%s.%02d", PFX, NH)) ;
 
 if isnewer(afile = sprintf("data/ind/ind.%s.ob", PFX), glob("data/ind/*.nc"){:})
    printf("<-- %s\n", afile) ;

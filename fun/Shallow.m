@@ -7,7 +7,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
    if strcmp(class(PCA), "char") ; pkg load tisean ; endif
    init_mdl(mdl) ;	 
 
-   Lfun = @(beta, x) beta(1) + x * beta(2:end) ;
+   Lfun = @(beta, x) beta(1,:) + x * beta(2:end,:) ;
 
    if Lcv = ~isfield(pdd, "fit")
       for phs = {"CAL" "VAL"}
@@ -20,7 +20,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
    X = ptr.x ;
    N = size(X) ;
    prob.id = ptr.id ;
-   prob.x = nan(N(1), 2) ;
+   prob.x = nan(N(1), size(pdd.c, 2)) ;
 
    if ndims(X) > 2
 
@@ -37,7 +37,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	 else
 
-	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", PFX, NH, ptr.vars{j}), sprintf("data/atm.%s.ob", PFX)) || ~Lcv 
+	    ptfile = sprintf("data/%s.%02d/%s.%s.ob", PFX, NH, ptr.ind, pdd.lname) ;
+	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", PFX, NH, ptr.vars{j}), ptfile) || ~Lcv 
 	       load(efile)
 	       printf("<-- %s [%d]\n", efile, columns(E)) ;
 	    else
@@ -74,8 +75,11 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       if Lcv
 	 x = PC(ptr.(phs),:) ;
-	 c = unique(pdd.c(pdd.(phs))) ;
-	 y = ismember(pdd.c(pdd.(phs)), c(end)) ;
+	 c = unique(pdd.c(pdd.(phs),:)) ;
+	 y = pdd.c(pdd.(phs),:) ;
+	 if numel(c) < 3
+	    y = ismember(y, c(end)) ;
+	 endif
       else
 	 x = PC ;	 
       endif
@@ -93,7 +97,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	    case "lasso"
 
-	       model = glm_logistic(yy,xx) ;
+	       model = glm_multinomial(yy, xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
 	       if 0
 		  plot_penalized(fit) ;
@@ -118,8 +122,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       fit.jLasso = jLasso ;
 
 	       ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
-	       fit.par = fit.beta(:,jLasso) ;
-	       fit.model = @(par, x) logistic_cdf(Lfun(par, x)) ;
+	       fit.par = reshape(fit.beta(:,jLasso), size(fit.beta, 1)/size(yy, 2), size(yy, 2), []) ;
+	       fit.model = @(par, x) softmax(logistic_cdf(Lfun(par, x))) ;
 	       printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
 	    case "nnet"
@@ -137,9 +141,10 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       
 	    case "tree"
 
+	       yc = arrayfun(@(i) nthargout(2, @max, yy(i,:), [], 2), 1 : size(yy, 1))' ;
 	       trainParamsEnsemble = m5pparamsensemble(50) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
-	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
+	       fit.par = m5pbuild_new(xx, yc, [], [], trainParamsEnsemble) ;
 	       if trainParamsEnsemble.numTrees > 1
 		  fit.model = @(par, x) mean(cell2mat(cellfun(@(p) m5ppredict(p, x), par, "UniformOutput", false)'), 2) ;
 	       else
@@ -164,17 +169,15 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       endif
 
       if Lcv
-	 w = feval(fit.model, fit.par, x) ;
-	 prob.x(ptr.(phs),:) = [1 - w w] ;
+	 prob.x(ptr.(phs),:) = feval(fit.model, fit.par, x) ;
       else
-	 w = feval(pdd.fit.model, pdd.fit.par, x) ;
-	 res = [1 - w w] ;
+	 res = feval(pdd.fit.model, pdd.fit.par, x) ;
 	 return ;
       endif
 
-      ce.(phs) = crossentropy(pdd.c(pdd.(phs)), prob.x(ptr.(phs),:)) ;
-
-      [th.(phs) skl.(phs)] = skl_est(prob.x(ptr.(phs),end), pdd.c(pdd.(phs)), SKL) ;
+      c = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
+      ce.(phs) = crossentropy(softmax(pdd.c(pdd.(phs),:)), prob.x(ptr.(phs),:)) ;
+      [th.(phs) skl.(phs)] = skl_est(prob.x(ptr.(phs),:), c, SKL) ;
       
    endfor
 

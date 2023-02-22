@@ -3,18 +3,18 @@
 ## oversample i, l using IMB
 function [iout, lout] = oversmpl (i, l, IMB)
 
-   printf("oversampling with: %s\n", IMB) ;
-
-   if isempty(IMB) || strcmpi("IMB", "NONE")
+   if isempty(IMB) || strcmpi("IMB", "NONE") || numel(unique(l)) > 2
       [iout lout] = deal(i, l) ;
       return ;
    endif
+
+   printf("oversampling with: %s\n", IMB) ;
    
    N = size(i) ;
-   
+
    lu = unique(l) ;
    I = l == lu' ;
-
+   
    if strcmp(IMB, "SMOTE")
       if Lnan = (exist("knnsearch", "file") ~= 2), pkg load nan ; endif
       options.Class = l ;
@@ -28,7 +28,7 @@ function [iout, lout] = oversmpl (i, l, IMB)
    [~, j] = min(sum(I)) ;
    I = I(:,j) ;
 
-   n = floor(sum(~I) / sum(I)) ;
+   n = floor(sum(~I) ./ sum(I)) ;
    fI = repmat(find(I), n, 1) ;
    fnI = find(~I) ;
 
