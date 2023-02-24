@@ -146,9 +146,9 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       trainParamsEnsemble.getOOBContrib = false ;
 	       fit.par = m5pbuild_new(xx, yc, [], [], trainParamsEnsemble) ;
 	       if trainParamsEnsemble.numTrees > 1
-		  fit.model = @(par, x) mean(cell2mat(cellfun(@(p) m5ppredict(p, x), par, "UniformOutput", false)'), 2) ;
+		  fit.model = @(par, x) softmax(cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yc), "UniformOutput", false)')) ;
 	       else
-		  fit.model = @(par, x) m5ppredict(par, x) ;
+		  fit.model = @(par, x) cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yc), "UniformOutput", false)') ;
 	       endif
 
 	    otherwise
@@ -242,7 +242,7 @@ function init_mdl (mdl)
       case "nnet"
 	 pkg load nnet
       case "tree"
-	 addpath ~/oct/nc/M5PrimeLab ;
+	 addpath ~/oct/nc/M5PrimeLab ~/oct/nc/M5PrimeLab/private ;
       otherwise
 	 pkg load optim
    endswitch
