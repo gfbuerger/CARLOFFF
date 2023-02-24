@@ -239,7 +239,7 @@ function init_mdl (mdl)
       case "tree"
 	 addpath ~/oct/nc/M5PrimeLab ~/oct/nc/M5PrimeLab/private ;
       otherwise
-	 pkg load optim
+	 pkg load optim	parallel
    endswitch
    
 endfunction
