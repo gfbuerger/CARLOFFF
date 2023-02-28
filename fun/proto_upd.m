@@ -18,12 +18,14 @@ function [solver deploy] = proto_upd (BLD = false, ptr, pdd, proto, Dd)
    else
       Data = fileread(wData = "models/data.tpl") ;
    endif
+
    ## net
    if exist(wNet = sprintf("models/%s/net.tpl", proto), "file") == 2
       Net = fileread(wNet) ;
    else
       Net = fileread(wNet = "models/net.tpl") ;
    endif
+
    ## loss
    if exist(wLoss = sprintf("models/%s/loss.tpl", proto), "file")
       Loss = fileread(wLoss) ;
@@ -75,8 +77,10 @@ function print_str (ptr, pdd, proto, Dd, str, ofile)
    endif
 
    NHs = sprintf("%02d", NH);
-
+   Nc = size(pdd.c, 2) ;
+   
    str = strrep(str, "PROTO_tpl", proto);
+   str = strrep(str, "NCLASS_tpl", num2str(Nc));
    str = strrep(str, "IND_tpl", ptr.ind);
    str = strrep(str, "PFX_tpl", PFX);
    str = strrep(str, "NH_tpl", NHs);

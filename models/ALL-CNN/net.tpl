@@ -285,7 +285,7 @@ layer {
     lr_mult: 1
   }
   convolution_param {
-    num_output: 2
+    num_output: NCLASS_tpl
     kernel_size: 1
     stride: 1
     weight_filler {

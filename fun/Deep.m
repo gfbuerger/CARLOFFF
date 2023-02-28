@@ -36,24 +36,24 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
       unlink(tt) ;
    endif
 
-   h5f = @(pddn, PHS) sprintf("%s/%s.%s.%s.txt", Dd, ptr.ind, pddn, PHS) ;
+   h5f = @(pddn, phs) sprintf("%s/%s.%s.%s.txt", Dd, ptr.ind, pddn, phs) ;
 
-   for PHS = {"CAL" "VAL"}
-      PHS = PHS{:} ;
-      eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", PHS, PHS)) ;
-      eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", PHS, PHS)) ;
-      if ~isnewer(of = h5f(pdd.lname, PHS), ptr.ptfile) || ~isempty(IMB)
-	 labels = pdd.c(pdd.(PHS)) ;
-	 images = ptr.img(ptr.(PHS), :, :, :) ;
+   for phs = {"CAL" "VAL"}
+      phs = phs{:} ;
+      eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", phs, phs)) ;
+      eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", phs, phs)) ;
+      if ~isnewer(of = h5f(pdd.lname, phs), ptr.ptfile) || ~isempty(IMB)
+	 labels = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
+	 images = ptr.img(ptr.(phs), :, :, :) ;
 
-	 if strcmp(PHS, "CAL")
+	 if strcmp(phs, "CAL")
 	    ## oversampling
 	    [images labels] = oversmpl(images, labels, IMB) ;
 	 endif
 	 
 	 if 0
-	    ifile = sprintf('%s/%s-images-idx3-ubyte', Dd, PHS) ;
-	    lfile = sprintf('%s/%s-labels-idx1-ubyte', Dd, PHS) ;
+	    ifile = sprintf('%s/%s-images-idx3-ubyte', Dd, phs) ;
+	    lfile = sprintf('%s/%s-labels-idx1-ubyte', Dd, phs) ;
 	    save_bin(images, ifile, labels, lfile) ;
 	 endif
 	 save_hdf5(of, ptr.scale * images, labels, rnd) ;
@@ -112,38 +112,36 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
    net = caffe.Net(deploy, weights, 'test') ;
 
    ## number of parameters
-   count = compute_caffe_parameters(net_model, net_weights) ;
+   count = compute_caffe_parameters(net) ;
 
-   for PHS = {"CAL" "VAL"}
+   for phs = {"CAL" "VAL"}
 
-      PHS = PHS{:} ;
+      phs = phs{:} ;
 
       if 0
 
-	 [images labels] = load_hdf5(h5f(pdd.lname, PHS)) ;
+	 [images labels] = load_hdf5(h5f(pdd.lname, phs)) ;
 	 labels_h5 = labels ;
-	 n = size(labels, 1) ;
-	 prb.(PHS) = nan(n, 2) ;
+	 N = size(labels) ;
+	 prb.(phs) = nan(N) ;
 	 for i = 1 : n
 	    data = squeeze(images(i,1,:,:))' ;
 	    phat = net.forward({single(data)}) ;
-	    prb.(PHS)(i,:) = phat{1} ;
+	    prb.(phs)(i,:) = phat{1} ;
 	 end
 
       else
 
-	 labels = pdd.c(pdd.(PHS)) ;
-	 prb.(PHS) = apply_net(ptr.scale*ptr.img, net, ptr.(PHS)) ;
-         if size(prb.(PHS), 2) ~= 2
-            warning("incorrect dimensions: %s, %s", proto, PHS)
-            prb.(PHS) = prb.(PHS)' ;
-         endif
+	 labels = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
+	 prb.(phs) = apply_net(ptr.scale*ptr.img, net, ptr.(phs)) ;
 
       endif
       
-      ce.(PHS) = crossentropy(labels, prb.(PHS)) ;
+      ce.(phs) = crossentropy(softmax(pdd.c(pdd.(phs),:)), prb.(phs)) ;
 
-      [th.(PHS) skl.(PHS)] = skl_est(prb.(PHS)(:,end), labels, SKL) ;
+      labels = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
+      wskl = skl_est(prb.(phs), labels, SKL) ;
+      th.(phs) = wskl.th ; skl.(phs) = wskl.skl ; rpss.(phs) = wskl.rpss ;
       
    endfor
 
@@ -152,6 +150,6 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
    prob.id = datevec(t(Is)) ;
    prob.x = [prb.CAL ; prb.VAL](Is,:) ;
    
-   res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob, "count", count) ;
+   res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob, "count", count, "rpss", rpss) ;
    
 endfunction

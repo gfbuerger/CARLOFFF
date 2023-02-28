@@ -172,7 +172,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       c = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
       ce.(phs) = crossentropy(softmax(pdd.c(pdd.(phs),:)), prob.x(ptr.(phs),:)) ;
-      [th.(phs) skl.(phs) rpss.(phs)] = skl_est(prob.x(ptr.(phs),:), c, SKL) ;
+      wskl = skl_est(prob.x(ptr.(phs),:), c, SKL) ;
+      th.(phs) = wskl.th ; skl.(phs) = wskl.skl ; rpss.(phs) = wskl.rpss ;
       
    endfor
 

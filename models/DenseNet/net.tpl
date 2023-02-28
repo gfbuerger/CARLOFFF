@@ -3002,7 +3002,7 @@ layer {
   bottom: "Pooling3"
   top: "out"
   inner_product_param {
-    num_output: 2
+    num_output: NCLASS_tpl
     bias_term: true
     weight_filler {
       type: "xavier"

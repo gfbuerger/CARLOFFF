@@ -1,13 +1,13 @@
-## usage: pdd = selpdd (PDD, LON, LAT, ID, Q0, s)
+## usage: pdd = selpdd (PDD, ID, Q0, s)
 ##
 ## select predictands
-function pdd = selpdd (PDD, LON, LAT, ID, Q0, s)
+function pdd = selpdd (PDD, ID, Q0, s)
 
    global MON
    
    switch PDD
       case {"cape" "cp"}
-	 pdd = ptr2pdd(s, LON, LAT, Q0) ;
+	 pdd = ptr2pdd(s, Q0) ;
       case "regnie"
 	 R0 = 10 ; # from climate explorer
 	 rfile = "https://opendata.dwd.de/climate_environment/CDC/grids_germany/daily/regnie" ;

@@ -15,7 +15,7 @@ function save_hdf5 (of, images, labels, lrnd = false)
 
    if lrnd
       warning("using scrambled data") ;
-      labels = labels(randperm(length(labels)),:) ;
+      labels = labels(randperm(size(labels, 1)),:) ;
    endif
    
    labels = flipdim(labels) ;

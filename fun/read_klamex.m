@@ -20,8 +20,9 @@ function s = read_klamex (fin)
    D = D(Icnv,:) ;
 
    lon = D(:,dlon) ; lat = D(:,dlat) ;
-   glon = [REG.geo{1}(1) REG.geo{2}(1)] ; glat = [REG.geo{1}(2) REG.geo{3}(4)] ;
-   I = lookup(glon, lon) == 1 & lookup(glat, lat) == 1 ;
+   [LON LAT] = geo2ll(REG.geo) ;
+
+   I = lookup(LON, lon) == 1 & lookup(LAT, lat) == 1 ;
    D = D(I,:) ;
    
    t1 = datenum(num2str(D(:,5), '%d'), 'yyyymmddHHMM') ;

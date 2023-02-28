@@ -4,6 +4,6 @@ layer {
     bottom: "data"
     top: "out"
     inner_product_param {
-  num_output: 2
+  num_output: NCLASS_tpl
       }
 }

@@ -1,16 +1,18 @@
-## usage: retval = read_ana (GLON, GLAT, NH, svar=[])
+## usage: retval = read_ana (geo, NH, svar=[])
 ##
 ## read ERA5 data
-function retval = read_ana (GLON, GLAT, NH, svar=[])
+function retval = read_ana (geo, NH, svar=[])
 
    pkg load netcdf
+
+   [LON LAT] = geo2ll(geo) ;
 
    F = glob("data/ind/*.nc")' ;
    lon = ncread(F{1}, "longitude") ;
    lat = ncread(F{1}, "latitude") ;
    if (Llat = lat(1) > lat(end)) lat = flip(lat) ; endif
-   JLON = GLON(1) <= lon & lon <= GLON(2) ;
-   JLAT = GLAT(1) <= lat & lat <= GLAT(2) ;
+   JLON = LON(1) <= lon & lon <= LON(2) ;
+   JLAT = LAT(1) <= lat & lat <= LAT(2) ;
 
    for j = 1 : length(F)
 

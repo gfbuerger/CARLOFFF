@@ -1,7 +1,7 @@
-## usage: [th skl rpss] = skl_est (p, o, SKL)
+## usage: res = skl_est (p, o, SKL)
 ##
 ## estimate skill
-function [th skl rpss] = skl_est (p, o, SKL)
+function res = skl_est (p, o, SKL)
 
    addpath ~/oct/nc/MLToolbox/MeteoLab/Validation
 
@@ -9,7 +9,8 @@ function [th skl rpss] = skl_est (p, o, SKL)
    pt(:,1,:) = p ;
 
    [rps, rpss] = validationRPS(ot, pt) ;
-
+   res.rpss = rpss ;
+   
    o = (o == unique(o(:))') ;
    
    np = 10 ;
@@ -30,5 +31,8 @@ function [th skl rpss] = skl_est (p, o, SKL)
 	 endfor
       endfor
    endfor
+
+   res.th = th ;
+   res.skl = skl ;
    
 endfunction

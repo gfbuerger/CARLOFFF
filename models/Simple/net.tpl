@@ -74,7 +74,7 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 2
+    num_output: NCLASS_tpl
     weight_filler {
       type: "gaussian"
       std: 0.1

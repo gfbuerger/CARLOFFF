@@ -6,12 +6,15 @@ global isoctave PFX REG NH MON IMB CNVDUR
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
 addpath ~/carlofff/fun
+
 [~, ~] = mkdir("data") ;
 cd ~/carlofff
 [glat glon] = borders("germany") ;
 REG.name = {"NW" "NE" "SW" "SE"} ;
-PFX = "DE" ;
+REG.name = {"DE"} ;
+PFX = "1R" ;
 GLON = [6 10 14] ; GLAT = [47.5 51 54] ;
+GLON = [6 14] ; GLAT = [47.5 54] ;
 for jLON = 1 : length(GLON) - 1
    for jLAT = 1 : length(GLAT) - 1
       REG.geo{jLON,jLAT} = [GLON([jLON jLON + 1]) ; GLAT([jLAT jLAT + 1])] ;
@@ -65,7 +68,7 @@ if isnewer(afile = sprintf("data/ind/ind.%s.ob", PFX), glob("data/ind/*.nc"){:})
    printf("<-- %s\n", afile) ;
    load(afile) ;
 else
-   V = read_ana(GLON, GLAT, NH) ;
+   V = read_ana(REG.geo, NH) ;
    VAR = fieldnames(V)' ;
    for k = VAR
       eval(sprintf("%s = V.%s ;", k{:}, k{:})) ;
@@ -82,7 +85,7 @@ else
    ## select predictand
    jV = find(strcmp(PDD, VAR)) ; if isempty(jV) jV = 1 ; endif
    str = sprintf("%s,", VAR{:}) ; str = str(1:end-1) ;
-   eval(sprintf("pdd = selpdd(PDD, LON, LAT, ID, Q0, %s) ;", VAR{jV}))
+   eval(sprintf("pdd = selpdd(PDD, ID, Q0, %s) ;", VAR{jV}))
    pdd.lname = sprintf("%s_%02d", pdd.name, CNVDUR) ; 
    ## aggregate
    pdd = agg(pdd, NH, @nanmax) ;
@@ -159,6 +162,7 @@ for PCA = {{} []}
       ptr.ind = ind ;
    endif
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", PFX, NH, ptr.ind, pdd.lname), ptfile, pdfile)
+      printf("<-- %s\n", mfile) ;
       load(mfile) ;
    else
       clear skl ;
@@ -181,7 +185,7 @@ for PCA = {{} []}
 	    printf("--> %s\n", sfile) ;
 	    save("-text", sfile, "shallow") ;
 	 endif
-	 skl(jMDL,:) = [shallow.rpss.VAL shallow.crossentropy.VAL] ;
+	 skl(jMDL,:) = [cellfun(@(s) mean(diag(shallow.skl.VAL.(s))), SKL) shallow.crossentropy.VAL] ;
       endfor
       skl = real(skl) ;
       save("-text", mfile, "skl") ;
@@ -198,13 +202,16 @@ ptr.ind = ind ;
 jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
-   net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", PFX, NH, RES{jNET}) ;
+   net = NET{jNET} ;
+   [~, ~] = mkdir(sfx = sprintf("data/%s.%02d/%dx%d", PFX, NH, RES{jNET})) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", PFX, NH, net, ind, pdd.lname) ;
    dfile = sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname) ;
 
    if isnewer(mfile, ptfile, pdfile, dfile)
 
+      printf("<-- %s\n", mfile) ;
       load(mfile) ;
+      printf("<-- %s\n", dfile) ;
       load(dfile) ;
       
    else
@@ -238,9 +245,9 @@ for jNET = 1 : length(NET)
 	 endif
 
 	 kfail = 0 ; wskl = 0 ;
-	 while ++kfail <= 5 && wskl <= 0.3
+	 while ++kfail <= 5 && wskl < 0.3
 	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	    wskl = deep.skl.VAL.(SKL{jSKL}) ;
+	    wskl = deep.skl.VAL.(SKL{jSKL}) ; wskl = 1 ;
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 
@@ -252,7 +259,7 @@ for jNET = 1 : length(NET)
 	 state = strrep(weights, ".caffemodel", ".solverstate") ;
 	 rename(weights, sprintf("%s.%02d", weights, i)) ;
 	 rename(state, sprintf("%s.%02d", state, i)) ;
-	 skl(i,:) = [cellfun(@(s) deep.skl.VAL.(s), SKL) deep.crossentropy.VAL] ;
+	 skl(i,:) = [cellfun(@(s) mean(diag(deep.skl.VAL.(s))), SKL) deep.crossentropy.VAL] ;
 	 save("-text", sfile, "skl") ;
 	 i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;

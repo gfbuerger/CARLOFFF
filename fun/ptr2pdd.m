@@ -1,7 +1,11 @@
-## usage: pdd = ptr2pdd (s, LON, LAT, Q0)
+## usage: pdd = ptr2pdd (s, Q0)
 ##
 ## select areal ptr from s
-function pdd = ptr2pdd (s, LON=[6 11], LAT=[52 53], Q0=0.8)
+function pdd = ptr2pdd (s, Q0=0.8)
+
+   global REG
+
+   [LON LAT] = geo2ll(REG.geo) ;
 
    Ilon = LON(1) <= s.lon & s.lon <= LON(2) ;
    Ilat = LAT(1) <= s.lat & s.lat <= LAT(2) ;
