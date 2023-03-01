@@ -17,7 +17,7 @@ function res = classes (pdd, jVAR, Q0)
       reg = REG.geo{jREG} ;
       Ilon = reg(1,1) <= res.lon & res.lon <= reg(1,2) ;
       Ilat = reg(2,1) <= res.lat & res.lat <= reg(2,2) ;
-      c(:,jREG+1) = sum(sum(w(:,Ilon,Ilat) > res.q, 2), 3) ;
+      c(:,jREG+1) = any(any(w(:,Ilon,Ilat) > res.q, 2), 3) ;
    endfor
 
    c(:,1) = all(c(:,2:end) == 0, 2) ;
