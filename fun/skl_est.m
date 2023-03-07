@@ -3,16 +3,14 @@
 ## estimate skill
 function res = skl_est (p, o, SKL)
 
-   addpath ~/oct/nc/MLToolbox/MeteoLab/Validation
+##   addpath ~/oct/nc/MLToolbox/MeteoLab/Validation
 
-   ot(:,1,:) = o ;
-   pt(:,1,:) = p ;
+##   ot(:,1,:) = o ;
+##   pt(:,1,:) = p ;
 
-   [rps, rpss] = validationRPS(ot, pt) ;
-   res.rpss = rpss ;
-   
-   o = (o == unique(o(:))') ;
-   
+##   [rps, rpss] = validationRPS(ot, pt) ;
+##   res.rpss = rpss ;
+
    np = 10 ;
    pr = linspace(min(p(:)), max(p(:)), np) ;
    dp = range(pr) / np ;

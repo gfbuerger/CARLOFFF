@@ -77,7 +77,7 @@ function print_str (ptr, pdd, proto, Dd, str, ofile)
    endif
 
    NHs = sprintf("%02d", NH);
-   Nc = size(pdd.c, 2) ;
+   Nc = numel(unique(pdd.c(:))) ;
    
    str = strrep(str, "PROTO_tpl", proto);
    str = strrep(str, "NCLASS_tpl", num2str(Nc));

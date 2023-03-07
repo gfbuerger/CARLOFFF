@@ -3,8 +3,9 @@
 ## oversample i, l using IMB
 function [iout, lout] = oversmpl (i, l, IMB)
 
-   if isempty(IMB) || strcmpi("IMB", "NONE") || numel(unique(l)) > 2
-      [iout lout] = deal(i, l) ;
+   [iout lout] = deal(i, l) ;
+
+   if isempty(IMB) || strcmpi("IMB", "NONE")
       return ;
    endif
 
@@ -12,12 +13,15 @@ function [iout, lout] = oversmpl (i, l, IMB)
    
    N = size(i) ;
 
-   lu = unique(l) ;
-   I = l == lu' ;
+   if size(l, 2) == 1
+      I = c2l(l) ;
+   else
+      I = l > 0 ;
+   endif
    
-   if strcmp(IMB, "SMOTE")
+   if strcmp(IMB, "SMOTE") && 0 # knnsearch not installed
       if Lnan = (exist("knnsearch", "file") ~= 2), pkg load nan ; endif
-      options.Class = l ;
+      options.Class = l(:,end) ;
       k = max(ceil(rows(I)./sum(I))) ;
       [iout lout] = smote(i, [], k, options) ;
       iout = reshape(iout, [], num2cell(N){2:end}) ;
@@ -28,25 +32,24 @@ function [iout, lout] = oversmpl (i, l, IMB)
    [~, j] = min(sum(I)) ;
    I = I(:,j) ;
 
-   n = floor(sum(~I) ./ sum(I)) ;
-   fI = repmat(find(I), n, 1) ;
+   n = sum(~I) - sum(I) ;
+   if n == 0 return ; endif
+
+   ## create n new cases of I and append
+   fI = randi(sum(I), n, 1) ;
+   fI = [find(I) ; find(I)(fI)] ;
+
    fnI = find(~I) ;
 
-   fnI = fnI(randperm(length(fnI))) ;
-   fI = fI(randperm(length(fI))) ;
+   ## concatenate cases
+   idx.type = "()" ; idx.subs = repmat({":"}, 1, ndims(i)) ;
+   idx.subs{1} = fnI ; inI = subsref(i, idx) ;
+   idx.subs{1} = fI ; iI = subsref(i, idx) ;
+   iout = [inI ; iI] ;
+   lout = [l(fnI,:) ; l(fI,:)] ;
 
-   lout = [l(fnI) ; l(fI)] ;
-   iout = [i(fnI,:,:,:) ; i(fI,:,:,:)] ;
-
-   k = floor(length(lout) / 2) ;
-   
-   lout = reshape(lout(1:2*k), k, 2) ;
-   iout = reshape(iout(1:2*k,:,:,:), [k 2 N(2:end)]) ;
-
-   lout = permute(lout, [2 1]) ;
-   iout = permute(iout, [2 1 3 4 5]) ;
-
-   lout = reshape(lout, 2*k, 1) ;
-   iout = reshape(iout, [2*k, N(2:end)]) ;
+   ## shuffle result
+   iout = iout(randperm(size(iout, 1)),:) ;
+   lout = lout(randperm(size(lout, 1)),:) ;
    
 endfunction

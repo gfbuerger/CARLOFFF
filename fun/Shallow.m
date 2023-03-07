@@ -20,7 +20,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
    X = ptr.x ;
    N = size(X) ;
    prob.id = ptr.id ;
-   prob.x = nan(N(1), size(pdd.c, 2)) ;
+   prob.x = nan(N(1), numel(unique(pdd.c))) ;
 
    if ndims(X) > 2
 
@@ -75,11 +75,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       if Lcv
 	 x = PC(ptr.(phs),:) ;
-	 c = unique(pdd.c(pdd.(phs),:)) ;
 	 y = pdd.c(pdd.(phs),:) ;
-	 if numel(c) < 3
-	    y = ismember(y, c(end)) ;
-	 endif
       else
 	 x = PC ;	 
       endif
@@ -97,7 +93,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	    case "lasso"
 
-	       model = glm_multinomial(yy, xx) ;
+	       yl = c2l(yy) ;
+	       model = glm_multinomial(yl, xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
 	       if 0
 		  plot_penalized(fit) ;
@@ -122,8 +119,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       fit.jLasso = jLasso ;
 
 	       ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
-	       fit.par = reshape(fit.beta(:,jLasso), size(fit.beta, 1)/size(yy, 2), size(yy, 2), []) ;
-	       fit.model = @(par, x) softmax(logistic_cdf(Lfun(par, x))) ;
+	       fit.par = reshape(fit.beta(:,jLasso), size(fit.beta, 1)/size(yl, 2), size(yl, 2), []) ;
+	       fit.model = @(par, x) logistic_cdf(Lfun(par, x)) ;
 	       printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
 	    case "nnet"
@@ -141,22 +138,22 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       
 	    case "tree"
 
-	       yc = arrayfun(@(i) nthargout(2, @max, yy(i,:), [], 2), 1 : size(yy, 1))' ;
 	       trainParamsEnsemble = m5pparamsensemble(50) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
-	       fit.par = m5pbuild_new(xx, yc, [], [], trainParamsEnsemble) ;
+	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
 	       if trainParamsEnsemble.numTrees > 1
-		  fit.model = @(par, x) softmax(cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yc), "UniformOutput", false)')) ;
+		  fit.model = @(par, x) softmax(cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yy), "UniformOutput", false)')) ;
 	       else
-		  fit.model = @(par, x) cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yc), "UniformOutput", false)') ;
+		  fit.model = @(par, x) cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yy), "UniformOutput", false)') ;
 	       endif
 
 	    otherwise
 
-	       model = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
+	       yl = c2l(yy) ;
+	       model = @(beta, x) logistic_cdf(Lfun(beta, x)) ;
 	       beta0 = zeros(size(xx, 2)+1, 1) ;
 	       opt = optimset("Display", "iter") ;
-	       par = cell2mat(pararrayfun(nproc, @(j) nlinfit (xx, yy(:,j), model, beta0, opt), 1 : size(yy, 2), "UniformOutput", false)) ;
+	       par = cell2mat(pararrayfun(nproc, @(j) nlinfit (xx, yl(:,j), model, beta0, opt), 1 : size(yl, 2), "UniformOutput", false)) ;
 	       fit = struct("model", model, "par", par) ;
 	       
 	 endswitch
@@ -170,14 +167,15 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 return ;
       endif
 
-      c = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
-      ce.(phs) = crossentropy(softmax(pdd.c(pdd.(phs),:)), prob.x(ptr.(phs),:)) ;
-      wskl = skl_est(prob.x(ptr.(phs),:), c, SKL) ;
-      th.(phs) = wskl.th ; skl.(phs) = wskl.skl ; rpss.(phs) = wskl.rpss ;
+      lc = c2l(pdd.c(pdd.(phs),:)) ;
+      ce.(phs) = crossentropy(lc, prob.x(ptr.(phs),:)) ;
+      wskl = skl_est(prob.x(ptr.(phs),:), lc, SKL) ;
+
+      th.(phs) = wskl.th ; skl.(phs) = wskl.skl ;
       
    endfor
 
-   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce, "rpss", rpss) ;
+   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce) ;
 
 endfunction
 

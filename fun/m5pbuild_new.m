@@ -430,7 +430,7 @@ if verbose
     if isempty(trainParamsEnsemble)
         printinfo(model);
     end
-    fprintf('Execution time: %0.2f seconds\n', time);
+    fprintf('Execution time: %0.2f minutes\n', time/60);
 end
 warning(origWarningState);
 end

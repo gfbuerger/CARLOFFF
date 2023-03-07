@@ -43,7 +43,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", phs, phs)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", phs, phs)) ;
       if ~isnewer(of = h5f(pdd.lname, phs), ptr.ptfile) || ~isempty(IMB)
-	 labels = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
+	 labels = pdd.c(pdd.(phs),:) - 1 ;
 	 images = ptr.img(ptr.(phs), :, :, :) ;
 
 	 if strcmp(phs, "CAL")
@@ -132,24 +132,23 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
       else
 
-	 labels = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
 	 prb.(phs) = apply_net(ptr.scale*ptr.img, net, ptr.(phs)) ;
 
       endif
-      
-      ce.(phs) = crossentropy(softmax(pdd.c(pdd.(phs),:)), prb.(phs)) ;
 
-      labels = arrayfun(@(i) nthargout(2, @max, pdd.c(i,:), [], 2), find(pdd.(phs))) ;
-      wskl = skl_est(prb.(phs), labels, SKL) ;
-      th.(phs) = wskl.th ; skl.(phs) = wskl.skl ; rpss.(phs) = wskl.rpss ;
-      
+      lc = c2l(pdd.c(pdd.(phs),:)) ;
+      ce.(phs) = crossentropy(lc, prb.(phs)) ;
+
+      wskl = skl_est(prb.(phs), lc, SKL) ;
+      th.(phs) = wskl.th ; skl.(phs) = wskl.skl ;
+
    endfor
 
    t = [datenum(pdd.id(pdd.CAL,:)) ; datenum(pdd.id(pdd.VAL,:))] ;
    [~, Is] = sort(t) ;
    prob.id = datevec(t(Is)) ;
    prob.x = [prb.CAL ; prb.VAL](Is,:) ;
-   
-   res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob, "count", count, "rpss", rpss) ;
+
+   res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob, "count", count) ;
    
 endfunction

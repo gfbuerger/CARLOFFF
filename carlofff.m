@@ -13,8 +13,7 @@ cd ~/carlofff
 REG.name = {"NW" "NE" "SW" "SE"} ;
 REG.name = {"DE"} ;
 PFX = "1R" ;
-GLON = [6 10 14] ; GLAT = [47.5 51 54] ;
-GLON = [6 14] ; GLAT = [47.5 54] ;
+GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ;
 for jLON = 1 : length(GLON) - 1
    for jLAT = 1 : length(GLAT) - 1
       REG.geo{jLON,jLAT} = [GLON([jLON jLON + 1]) ; GLAT([jLAT jLAT + 1])] ;
@@ -40,7 +39,7 @@ SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = {0.99 0.995 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
-IMB = "SIMPLE" ;
+IMB = {"SIMPLE" "SMOTE" ""}{3} ;
 SKL = {"HSS" "ETS"} ;
 
 ##{
@@ -86,9 +85,14 @@ else
    jV = find(strcmp(PDD, VAR)) ; if isempty(jV) jV = 1 ; endif
    str = sprintf("%s,", VAR{:}) ; str = str(1:end-1) ;
    eval(sprintf("pdd = selpdd(PDD, ID, Q0, %s) ;", VAR{jV}))
-   pdd.lname = sprintf("%s_%02d", pdd.name, CNVDUR) ; 
    ## aggregate
    pdd = agg(pdd, NH, @nanmax) ;
+   ## select classes
+   jVAR = 3 ; # Eta
+   pdd = classes(pdd, jVAR, Q0) ;
+   pdd.lname = sprintf("%s_%02d_%.2f", pdd.name, CNVDUR, 100 * Q0) ; 
+   if 0 write_H(pdd.c) ; endif
+
    printf("--> %s\n", pdfile) ;
    save(pdfile, "pdd") ;
 endif
@@ -137,11 +141,6 @@ if 0
    disp(ndcorr(ptr.x(:,1,:,:), pdd.x)) ;
 endif
 
-## select classes
-jVAR = 3 ; # Eta
-pdd = classes(pdd, jVAR, Q0) ;
-if 0 write_H(pdd.c) ; endif
-
 %% write train (CAL) & test (VAL) data
 ptr.YCAL = [2001 5 1 0 ; 2010 8 31 23] ;
 ptr.YVAL = [2011 5 1 0 ; 2020 8 31 23] ;
@@ -188,6 +187,7 @@ for PCA = {{} []}
 	 skl(jMDL,:) = [cellfun(@(s) mean(diag(shallow.skl.VAL.(s))), SKL) shallow.crossentropy.VAL] ;
       endfor
       skl = real(skl) ;
+      printf("--> %s\n", mfile) ;
       save("-text", mfile, "skl") ;
    endif
 endfor
@@ -247,7 +247,7 @@ for jNET = 1 : length(NET)
 	 kfail = 0 ; wskl = 0 ;
 	 while ++kfail <= 5 && wskl < 0.3
 	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	    wskl = deep.skl.VAL.(SKL{jSKL}) ; wskl = 1 ;
+	    wskl = diag(deep.skl.VAL.(SKL{jSKL}))(2:end) ;
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 

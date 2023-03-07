@@ -9,7 +9,7 @@
 % This function can be used to over-sample minority classes in a dataset.
 %
 %   Use:
-%       [X,C,Xn,Cn] = smote(X, [N, k], {options}) 
+%       [X,C,Xn,Cn] = smote(X, N, k, options) 
 %
 %   Input:
 %       X: Original dataset. Each row is an observation, and each column a
@@ -56,7 +56,7 @@
 % Author: Bjarke Skogstad Larsen <bjarke.skogstad@acarix.com>
 % Updated: 2020-05-07
 %
-function [X,C,Xn,Cn] = smote(X, N, k, options)
+function [X,C,Xn,Cn] = smote(X, N, k=5, options)
     
     % Handle optional Class vector
     if isfield(options,'Class')
