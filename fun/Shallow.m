@@ -249,7 +249,8 @@ endfunction
 function prob = clprob (par, x, u)
 
 ##   prob = mean(m5ppredict(par, x), 2) ;
-   [~, J] = min(abs(m5ppredict(par, x)(:,end) - u), [], 2) ;
+   w = m5ppredict(par, x)(:,end) ;
+   [~, J] = min(abs(w - u), [], 2) ;
    prob = u(J)' ;
 
 endfunction
