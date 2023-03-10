@@ -140,11 +140,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       trainParamsEnsemble = m5pparamsensemble(50) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
 	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
-	       if trainParamsEnsemble.numTrees > 1
-		  fit.model = @(par, x) mean(cell2mat(cellfun(@(p) m5ppredict(p, x), par, "UniformOutput", false)'), 2) ;
-	       else
-		  fit.model = @(par, x) m5ppredict(par, x) ;
-	       endif
+	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
 
 	    otherwise
 
@@ -244,4 +240,16 @@ function init_mdl (mdl)
 	 pkg load optim
    endswitch
    
+endfunction
+
+
+## usage: prob = clprob (par, x, u)
+##
+##
+function prob = clprob (par, x, u)
+
+##   prob = mean(m5ppredict(par, x), 2) ;
+   [~, J] = min(abs(m5ppredict(par, x)(:,end) - u), [], 2) ;
+   prob = u(J)' ;
+
 endfunction

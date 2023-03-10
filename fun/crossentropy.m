@@ -3,9 +3,12 @@
 ##
 function res = crossentropy (o, p)
 
-   c = unique(o)' ;
+   eps = 1e-3 ;
 
+   c = unique(o)' ;
    o = o == c ;
+
+   p = p + eps ;
 
    if columns(o) == 1
       o = [o 1-o] ;
