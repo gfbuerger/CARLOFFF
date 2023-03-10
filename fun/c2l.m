@@ -1,9 +1,9 @@
-## usage: l = c2l (c)
+## usage: [l uc] = c2l (c)
 ##
 ##
-function l = c2l (c)
+function [l uc] = c2l (c)
 
-   cu = unique(c) ;
-   l = (c == cu') ;
+   uc = unique(c)' ;
+   l = (c == uc) ;
 
 endfunction

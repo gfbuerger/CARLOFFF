@@ -89,11 +89,12 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 I = all(~isnan([xx yy]), 2) ;
 	 xx = xx(I,:) ; yy = yy(I,:) ;
 
+	 [yl uy] = c2l(yy) ; # make 1-hot classes
+
 	 switch mdl
 
 	    case "lasso"
 
-	       yl = c2l(yy) ;
 	       model = glm_multinomial(yl, xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
 	       if 0
@@ -141,15 +142,10 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       trainParamsEnsemble = m5pparamsensemble(50) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
 	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
-	       if trainParamsEnsemble.numTrees > 1
-		  fit.model = @(par, x) softmax(cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yy), "UniformOutput", false)')) ;
-	       else
-		  fit.model = @(par, x) cell2mat(arrayfun(@(c) sum(round(m5ppredict(par, x)) == c, 2), unique(yy), "UniformOutput", false)') ;
-	       endif
+	       fit.model = @(par, x) clprob(par, x, uy) ;
 
 	    otherwise
 
-	       yl = c2l(yy) ;
 	       model = @(beta, x) logistic_cdf(Lfun(beta, x)) ;
 	       beta0 = zeros(size(xx, 2)+1, 1) ;
 	       opt = optimset("Display", "iter") ;
@@ -241,4 +237,17 @@ function init_mdl (mdl)
 	 pkg load optim	parallel
    endswitch
    
+endfunction
+
+
+## usage: prob = clprob (par, x, u)
+##
+##
+function prob = clprob (par, x, u)
+
+   w = m5ppredict(par, x)(:,end) ;
+   [~, J] = min(abs(w - u), [], 2) ;
+
+   prob = c2l(u(J)') ;
+
 endfunction

@@ -3,6 +3,8 @@
 ##
 function res = crossentropy (o, p)
 
+   p = p + 1e-3 ;   # numeric stability
+
    I = all(isfinite(log(p)), 2) ;
    
    ce = @(o, p) -(o * log(p)') ;
