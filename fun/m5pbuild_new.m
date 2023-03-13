@@ -381,9 +381,13 @@ else
             end
         end
 
-	pkg load parallel
-	models = pararrayfun(nproc, @(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
-	model = models ;
+	if 0
+	   pkg load parallel
+	   model = pararrayfun(nproc, @(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
+	else
+	   model = arrayfun(@(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
+	endif
+
         if trainParamsEnsemble.getOOBError || trainParamsEnsemble.getOOBContrib
             ensembleResults.OOBNum = OOBNum;
         end
