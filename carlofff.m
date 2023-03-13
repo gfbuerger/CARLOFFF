@@ -1,7 +1,7 @@
 
 profile on
 
-global isoctave PFX REG NH MON IMB CNVDUR
+global isoctave PFX REG NH MON IMB CNVDUR BLD
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -12,7 +12,7 @@ cd ~/carlofff
 [glat glon] = borders("germany") ;
 REG.name = {"NW" "NE" "SW" "SE"} ;
 REG.name = {"DE"} ;
-PFX = "1R" ;
+PFX = "1R" ; BLD = true ;
 GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ;
 for jLON = 1 : length(GLON) - 1
    for jLAT = 1 : length(GLAT) - 1
