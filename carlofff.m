@@ -238,6 +238,7 @@ for jNET = 1 : length(NET)
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
 	    load(sfile) ;
+	    skl = skl(~any(skl(:,[1 2]) < 0.3, 2),:) ; # retry low skill
 	    if rows(skl) >= i
 	       i++ ;
 	       continue ;
