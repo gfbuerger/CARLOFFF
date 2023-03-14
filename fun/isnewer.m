@@ -4,8 +4,10 @@ function res = isnewer (file1, varargin)
    ##
    ## check if file1 is newer than files in varargin
 
+   global BLD = false
+
    tick = 0 ;
-   if ~exist(file1, "file")
+   if BLD || ~exist(file1, "file")
       res = false ;
       return ;
    else
