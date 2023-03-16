@@ -12,7 +12,7 @@ cd ~/carlofff
 [glat glon] = borders("germany") ;
 REG.name = {"NW" "NE" "SW" "SE"} ;
 REG.name = {"DE"} ;
-PFX = "1R" ; BLD = true ;
+PFX = "1R" ; BLD = ~true ;
 GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ;
 for jLON = 1 : length(GLON) - 1
    for jLAT = 1 : length(GLAT) - 1
@@ -246,7 +246,7 @@ for jNET = 1 : length(NET)
 	 endif
 
 	 kfail = 0 ; wskl = 0 ;
-	 while ++kfail <= 5 && wskl < 0.3
+	 while ++kfail <= 10 && wskl < 0.3
 	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
 	    wskl = diag(deep.skl.VAL.(SKL{jSKL}))(2:end) ;
 	 endwhile
