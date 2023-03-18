@@ -83,19 +83,24 @@ clear Pskl ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,1) = skl(:,[jSKL end]) ;
+w = load(sprintf("nc/%s.%02d/skl.NNet.R%s.%s.ot", REG, NH, ind, pdd.lname)) ;
+Pskl(:,:,1) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,2) = skl(:,[jSKL end]) ;
+w = load(sprintf("nc/%s.%02d/skl.NNet.R%s.%s.ot", REG, NH, ind, pdd.lname)) ;
+Pskl(:,:,2) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
 ## with EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,3) = skl(:,[jSKL end]) ;
+w = load(sprintf("nc/%s.%02d/skl.NNet.%s.%s.ot", REG, NH, ind, pdd.lname)) ;
+Pskl(:,:,3) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,4) = skl(:,[jSKL end]) ;
+w = load(sprintf("nc/%s.%02d/skl.NNet.%s.%s.ot", REG, NH, ind, pdd.lname)) ;
+Pskl(:,:,4) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
 
 Pskl = Pskl(JMDL,:,:) ;
+MDL = {"lasso" "tree" "nls" "nnet"} ;
 
 colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
@@ -110,10 +115,10 @@ xlabel([SKL{jSKL} " with cape"]) ; ylabel([SKL{jSKL} " without cape"]) ;
 
 ax(2) = subplot(1, 2, 2) ; hold on ;
 jPLT = 0 ;
-for jMDL = 1 : rows(Pskl)
+for jMDL = 1 : length(MDL)
    jPLT++ ;
-   hgS(jPLT) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,end,4), sz, colS(jMDL,:), "filled", "s") ;
-   printf("%s:\t%7.3f\n", MDL{jMDL}, Pskl(jMDL,1,4)) ;
+   hgS(jPLT) = scatter(Pskl(jPLT,1,4), Pskl(jPLT,end,4), sz, colS(jPLT,:), "filled", "s") ;
+   printf("%s:\t%7.3f\n", MDL{jMDL}, Pskl(jPLT,1,4)) ;
 endfor
 
 ## Deep
@@ -143,7 +148,7 @@ plot(ax(1), vl, vl, "k--") ;
 set(ax, "xlim", vl) ; set(ax(1), "ylim", vl) ; set(ax(2), "ylim", yl) ;
 set(ax(1), "xlim", vl, "ylim", vl, "xgrid", "on", "ygrid", "on") ;
 set(ax(2), "xgrid", "on", "ygrid", "on") ;
-xlabel(SKL{jSKL}) ; ylabel("crossentropy") ;
+xlabel(ax(2), SKL{jSKL}) ; ylabel(ax(2), "crossentropy") ;
 hlS = legend(ax(1), hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
 hlD = legend(ax(2), hgD, NET, "box", "off", "location", "southwest") ;
 set(findall(hlS, "type", "axes"), "xcolor", "none", "ycolor", "none") ;

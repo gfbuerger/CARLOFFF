@@ -241,16 +241,3 @@ function init_mdl (mdl)
    endswitch
    
 endfunction
-
-
-## usage: prob = clprob (par, x, u)
-##
-##
-function prob = clprob (par, x, u)
-
-##   prob = mean(m5ppredict(par, x), 2) ;
-   w = m5ppredict(par, x)(:,end) ;
-   [~, J] = min(abs(w - u), [], 2) ;
-   prob = u(J)' ;
-
-endfunction
