@@ -161,6 +161,8 @@ function [model, time, ensembleResults] = m5pbuild_new(Xtr, Ytr, trainParams, ..
 
 % Last update: November 6, 2020
 
+   global PARALLEL
+   
 if nargin < 2
     error('Not enough input arguments.');
 end
@@ -381,11 +383,12 @@ else
             end
         end
 
-	if 0
+	ltree = @(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred) ;
+	if PARALLEL
 	   pkg load parallel
-	   model = pararrayfun(nproc, @(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
+	   model = pararrayfun(nproc, ltree, 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
 	else
-	   model = arrayfun(@(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
+	   model = arrayfun(ltree, 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
 	endif
 	
         if trainParamsEnsemble.getOOBError || trainParamsEnsemble.getOOBContrib

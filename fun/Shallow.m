@@ -37,7 +37,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	 else
 
-	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), sprintf("data/atm.%s.ob", GREG)) || ~Lcv 
+	    ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ptr.ind, pdd.lname) ;
+	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), ptfile) || ~Lcv
 	       load(efile)
 	       printf("<-- %s [%d]\n", efile, columns(E)) ;
 	    else
