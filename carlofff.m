@@ -314,10 +314,9 @@ profshow ;
 profile off ;
 T = profile("info") ;
 save -text prof.ot T
-exit
 
 ### historical and future simulations
-load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ind, pdd.lname)) ;
+load(ptfile) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 JSIM = 1:3 ;
 SIM = {"ana" "historical" "rcp85"}(JSIM) ;
