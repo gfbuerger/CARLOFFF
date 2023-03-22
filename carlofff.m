@@ -157,7 +157,7 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nls"} ;
+MDL = {"lasso" "tree" "nnet" "nls"} ;
 for PCA = {{} []}
    PCA = PCA{:} ;
    if iscell(PCA)
@@ -165,7 +165,7 @@ for PCA = {{} []}
    else
       ptr.ind = ind ;
    endif
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile) && 0
       load(mfile) ;
    else
       clear skl ;

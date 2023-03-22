@@ -37,9 +37,9 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	 else
 
-	    ptfile = sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ptr.ind, pdd.lname) ;
-	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}), ptfile) || ~Lcv
-	       load(efile)
+	    efile = sprintf("data/%s.%02d/eof.%s.ob", REG, NH, ptr.vars{j}) ;
+	    if ~Lcv || isnewer(efile, sprintf("data/%s.%02d/%s.%s.ob", REG, NH, ptr.ind, pdd.lname))
+	       load(efile) ;
 	       printf("<-- %s [%d]\n", efile, columns(E)) ;
 	    else
 	       x = squeeze(X(ptr.CAL,j,:)) ;
@@ -133,7 +133,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       Net.trainParam.epochs = 100 ;
 	       Net.trainParam.mu_max = 1e12 ;
 	       fit.par = train(Net, xx', yy') ;
-	       fit.model = @(net, x) sim(net, x')' ;
+	       fit.model = @(net, x) max(0, min(1, sim(net, x')))' ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
 	       
 	    case "tree"

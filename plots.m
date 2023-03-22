@@ -83,24 +83,19 @@ clear Pskl ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-w = load(sprintf("nc/%s.%02d/skl.NNet.R%s.%s.ot", REG, NH, ind, pdd.lname)) ;
-Pskl(:,:,1) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
+Pskl(:,:,1) = skl(:,[jSKL end]) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-w = load(sprintf("nc/%s.%02d/skl.NNet.R%s.%s.ot", REG, NH, ind, pdd.lname)) ;
-Pskl(:,:,2) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
+Pskl(:,:,2) = skl(:,[jSKL end]) ;
 ## with EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-w = load(sprintf("nc/%s.%02d/skl.NNet.%s.%s.ot", REG, NH, ind, pdd.lname)) ;
-Pskl(:,:,3) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
+Pskl(:,:,3) = skl(:,[jSKL end]) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-w = load(sprintf("nc/%s.%02d/skl.NNet.%s.%s.ot", REG, NH, ind, pdd.lname)) ;
-Pskl(:,:,4) = [skl(:,[jSKL end]) ; mean(w.skl)(:,[jSKL end])] ;
+Pskl(:,:,4) = skl(:,[jSKL end]) ;
 
 Pskl = Pskl(JMDL,:,:) ;
-MDL = {"lasso" "tree" "nls" "nnet"} ;
 
 colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
