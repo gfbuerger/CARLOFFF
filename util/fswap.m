@@ -17,4 +17,6 @@ function fswap (ifile, ofile)
    save(ofile, fld) ;
    system(sprintf("touch -t %s %s", t, ofile)) ;
 
+   delete(ifile) ;
+
 endfunction
