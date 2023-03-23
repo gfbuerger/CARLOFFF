@@ -170,7 +170,6 @@ print(sprintf("nc/paper/rlb.%s.svg", net)) ;
 
 clf ; j = 0 ; clear ax h r
 for kMDL = 1 : length(MDL)
-   ++kMDL
    mdl = MDL{kMDL} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{kMDL}) ;
    if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, ind, pdd.lname), "file") == 2
       load(pfile) ;
@@ -183,7 +182,7 @@ for kMDL = 1 : length(MDL)
    plot(b, r(:,kMDL), "color", colS(kMDL,:), [0 1], [0 1], "k--") ;
    title(mdl)
    pos = get(gca, "position") ;
-   ix(j) = axes("position",[pos(1)+0.21 pos(2)+0.02 pos(3)/3 pos(4)/3]) ;
+   ix(j) = axes("position",[pos(1)+0.21 pos(2)+0.05 pos(3)/3 pos(4)/3]) ;
    [nn xx] = hist(shallow.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
    bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
    set(get(get(gca, "children"), "baseline"), "visible", "off") ;
@@ -204,19 +203,19 @@ for kNET = 1 : length(NET)
       warning("file not found: %s", pfile) ;
    endif
    [r(:,kNET) b] = rlb(deep.prob.x(:,2), pdd.c, 10) ;
-   ax(++j) = subaxis(3, 3, j, "SpacingH", 0.07, "SpacingV", 0.17) ;
+   ax(++j) = subplot(3, 3, j) ;
    plot(b, r(:,kNET), "color", colD(kNET,:), [0 1], [0 1], "k--") ;
    title(net)
    pos = get(gca, "position") ;
-   ix(j) = axes("position",[pos(1)+0.14 pos(2)+0.01 pos(3)/3 pos(4)/3]) ;
+   ix(j) = axes("position",[pos(1)+0.12 pos(2)+0.03 pos(3)/3 pos(4)/3]) ;
    [nn xx] = hist(deep.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
    bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
    set(get(get(gca, "children"), "baseline"), "visible", "off") ;
    set(gca, "XTick", [], "YTick", [], "box", "off", "ycolor", "none")
 endfor
-set(ax, "fontsize", 14, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
+set(ax, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
 xlabel(ax(7), "forecast prob.") ; ylabel(ax(7), "observed freq.")
-set(findobj("-property", "fontsize"), "fontsize", 12) ;
+set(findobj("-property", "fontsize"), "fontsize", 14) ;
 hgsave(sprintf("nc/paper/Deep.rlb.og")) ;
 print(sprintf("nc/paper/Deep.rlb.svg")) ;
 
