@@ -172,7 +172,7 @@ clf ; j = 0 ; clear ax h r
 for kMDL = 1 : length(MDL)
    ++kMDL
    mdl = MDL{kMDL} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{kMDL}) ;
-   if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ind, pdd.lname), "file") == 2
+   if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, ind, pdd.lname), "file") == 2
       load(pfile) ;
    else
       warning("file not found: %s", pfile) ;
