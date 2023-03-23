@@ -171,7 +171,7 @@ for PCA = {{} []}
       clear skl ;
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
+	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
 	    printf("<-- %s\n", sfile) ;
 	    load(sfile) ;
 	    if 0
@@ -186,7 +186,7 @@ for PCA = {{} []}
 	    ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
 	    shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, SKL, varargin{:}) ;
 	    printf("--> %s\n", sfile) ;
-	    save("-text", sfile, "shallow") ;
+	    save(sfile, "shallow") ;
 	 endif
 	 skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
       endfor
