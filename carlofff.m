@@ -1,7 +1,7 @@
 
 profile on
 
-global isoctave LON LAT GREG REG NH MON IMB CNVDUR BLD
+global isoctave LON LAT GREG REG NH MON IMB CNVDUR BLD VERBOSE
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -18,7 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
-BLD = ~true ;
+BLD = ~true ; VERBOSE = ~true ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # read these atm. indices
@@ -165,7 +165,7 @@ for PCA = {{} []}
    else
       ptr.ind = ind ;
    endif
-   if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile) && 0
+   if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
       load(mfile) ;
    else
       clear skl ;
