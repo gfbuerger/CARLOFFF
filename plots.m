@@ -180,7 +180,7 @@ for kMDL = 1 : length(MDL)
 ##   ax(++j) = subaxis(2, 2, j, "SpacingH", 0.07, "SpacingV", 0.17) ;
    ax(++j) = subplot(2, 2, j) ;
    plot(b, r(:,kMDL), "color", colS(kMDL,:), [0 1], [0 1], "k--") ;
-   title(mdl)
+   title(upper(mdl))
    pos = get(gca, "position") ;
    ix(j) = axes("position",[pos(1)+0.21 pos(2)+0.05 pos(3)/3 pos(4)/3]) ;
    [nn xx] = hist(shallow.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
