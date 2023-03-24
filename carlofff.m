@@ -402,7 +402,7 @@ for jSIM = 1 : length(SIM)
 
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ptr.ind, pdd.lname) ;
+	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, ptr.ind, pdd.lname) ;
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
 	 out = sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;

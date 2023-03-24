@@ -236,7 +236,7 @@ function init_mdl (mdl)
       case "nnet"
 	 pkg load nnet
       case "tree"
-	 addpath ~/oct/nc/M5PrimeLab ;
+	 addpath ~/oct/nc/M5PrimeLab ~/oct/nc/M5PrimeLab/private ;
       otherwise
 	 pkg load optim
    endswitch
