@@ -112,7 +112,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
    net = caffe.Net(deploy, weights, 'test') ;
 
    ## number of parameters
-   count = compute_caffe_parameters(net_model, net_weights) ;
+   count = compute_caffe_parameters(net) ;
 
    for PHS = {"CAL" "VAL"}
 
