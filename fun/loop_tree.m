@@ -1,4 +1,6 @@
-function modelNew = loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred)
+function modelNew = loop_tree(v, Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred)
+
+   rand ("state", v) ;
 
    addpath ~/oct/nc/M5PrimeLab ;
 
