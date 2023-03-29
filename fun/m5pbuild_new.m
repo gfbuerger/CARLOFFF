@@ -325,7 +325,6 @@ else
     warning('off', 'MATLAB:nearlySingularMatrix');
     warning('off', 'MATLAB:singularMatrix');
 end
-ttt = tic;
 
 % For the original binary and continuous variables beta = 1
 % For synthetic binary variables created from original categorical variables beta < 1
@@ -432,12 +431,10 @@ else
     
 end
 
-time = toc(ttt);
 if verbose
     if isempty(trainParamsEnsemble)
         printinfo(model);
     end
-    fprintf('Execution time: %0.2f seconds\n', time);
 end
 warning(origWarningState);
 end

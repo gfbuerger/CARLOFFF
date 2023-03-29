@@ -1,7 +1,9 @@
-## usage: fswap (ifile, ofile)
+## usage: fswap (ifile)
 ##
 ## swap ifile and ofile (preserve timestamp)
-function fswap (ifile, ofile)
+function fswap (ifile)
+
+   ofile = [ifile(1:end-1) "b"] ;
 
    if exist(ifile, "file") ~= 2 return ; endif
    

@@ -39,7 +39,7 @@ endif
 SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
-Q0 = {0.99 0.995 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
+Q0 = {0.99 0.991 0.995 0.9986}{2} ; # 2nd optimal PC for MoC(HiOS, Eta)
 IMB = "SIMPLE" ;
 SKL = {"HSS" "ETS"} ;
 
@@ -368,7 +368,7 @@ for jSIM = 1 : length(SIM)
 
    sim = SIM{jSIM} ;
 
-   glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ot", REG, NH, ptr.ind, pdd.lname)) ;
+   glb = glob(sprintf("data/%s.%02d/Shallow.*.%s.%s.ob", REG, NH, ptr.ind, pdd.lname)) ;
    glb = union(glb, glob(sprintf("models/*/%s.%02d/*.%s.%s_iter_*.caffemodel", REG, NH, ind, pdd.lname))) ;
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
@@ -437,4 +437,6 @@ for jSIM = 1 : length(SIM)
 
 endfor
 
-source plots.m ;
+if ~isempty(graphics_toolkit)
+   source plots.m ;
+endif

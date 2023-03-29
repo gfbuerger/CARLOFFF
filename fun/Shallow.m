@@ -90,6 +90,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 I = all(~isnan([xx yy]), 2) ;
 	 xx = xx(I,:) ; yy = yy(I,:) ;
 
+	 tic ;
+
 	 switch mdl
 
 	    case "lasso"
@@ -158,6 +160,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       
 	 endswitch
 	 
+	 fprintf('Execution time: %0.2f hours\n', toc/(60*60));
+
       endif
 
       if Lcv
