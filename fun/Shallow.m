@@ -132,7 +132,12 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
 	       Net.trainParam.show = NaN ;
 	       Net.trainParam.goal = 0 ;
-	       Net.trainParam.epochs = 100 ;
+	       if size(xx, 2) > 1000
+		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
+		  Net.trainParam.epochs = 1 ;
+	       else
+		  Net.trainParam.epochs = 100 ;
+	       endif
 	       Net.trainParam.mu_max = 1e12 ;
 	       fit.par = train(Net, xx', yy') ;
 	       fit.model = @(net, x) max(0, min(1, sim(net, x')))' ;
@@ -149,12 +154,16 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(columns(xx)+1, 1) ;
-	       opt = optimset("Display", "iter") ;
-
-	       fit.par = nlinfit (xx, yy, modelfun, beta0, opt) ;
+	       if size(xx, 2) > 1000
+		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
+		  opt = optimset("MaxIter", 2, "debug", ~true) ;
+	       else
+		  opt = optimset("debug", ~true) ;
+	       endif
+##	       fit.par = nlinfit (xx, yy, modelfun, beta0, opt) ;
 ##	       F = @(beta) sumsq(modelfun(beta,xx) - yy) ;
 ##	       [fit.par resid cvg outp] = nonlin_residmin(F, beta0, opt) ;
-##	       [fit.par resid cvg outp] = nonlin_curvefit(modelfun, beta0, xx, yy, opt) ;
+	       [fit.par resid cvg outp] = nonlin_curvefit(modelfun, beta0, xx, yy, opt) ;
 
 	       fit.model = @(beta, x) modelfun(beta, x) ;
 	       

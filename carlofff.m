@@ -1,7 +1,7 @@
 
 profile on
 
-global isoctave LON LAT GREG REG NH MON IMB CNVDUR BLD VERBOSE
+global isoctave LON LAT GREG REG NH MON IMB CNVDUR BLD VERBOSE PARALLEL
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -18,7 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
-BLD = ~true ; VERBOSE = ~true ;
+BLD = ~true ; VERBOSE = ~true ; PARALLEL = true ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # read these atm. indices
@@ -39,9 +39,11 @@ endif
 SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
-Q0 = {0.99 0.991 0.995 0.9986}{2} ; # 2nd optimal PC for MoC(HiOS, Eta)
+Q0 = {0.99 0.9910 0.995 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
 IMB = "SIMPLE" ;
-SKL = {"HSS" "ETS"} ;
+SKL = {"HSS" "ETS"} ; jSKL = 2 ; # ETS
+
+init_rnd() ;
 
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
@@ -166,6 +168,7 @@ for PCA = {{} []}
       ptr.ind = ind ;
    endif
    if isnewer(mfile = sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ptr.ind, pdd.lname), ptfile, pdfile)
+      printf("<-- %s\n", mfile) ;
       load(mfile) ;
    else
       clear skl ;
@@ -202,7 +205,6 @@ JNET = 1 : 9 ;
 NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"}(JNET) ;
 RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}(JNET) ;
 ptr.ind = ind ;
-jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
@@ -211,7 +213,9 @@ for jNET = 1 : length(NET)
 
    if isnewer(mfile, ptfile, pdfile, dfile)
 
+      printf("<-- %s\n", mfile) ;
       load(mfile) ;
+      printf("<-- %s\n", dfile) ;
       load(dfile) ;
       
    else
