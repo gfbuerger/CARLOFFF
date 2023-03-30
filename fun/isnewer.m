@@ -9,19 +9,17 @@ function res = isnewer (file1, varargin)
 
    tick = 0 ;
    if BLD || ~exist(file1, "file")
-      res = false ;
-      return ;
-   else
-      res = true ;
-   endif
 
-##   if iscell(varargin)
-##      varargin = [varargin{:}] ;
-##   endif
-   
-   for i = 1:nargin-1
-      res = res && all(birth(file1) > birth(varargin{i}) + tick)  ;
-   endfor
+      res = false ;
+
+   else
+
+      res = true ;
+      for i = 1:nargin-1
+	 res = res && all(birth(file1) > birth(varargin{i}) + tick)  ;
+      endfor
+
+   endif
 
    if VERBOSE && ~res
       ls("-l", file1, varargin{:}) ;
