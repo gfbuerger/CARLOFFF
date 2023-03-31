@@ -409,8 +409,7 @@ for jSIM = 1 : length(SIM)
 	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, ptr.ind, pdd.lname) ;
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
-	 out = sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
-	 eval(out) ;
+	 eval(sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim)) ;
       endfor
       
       for jNET = 1 : length(NET(JNET))

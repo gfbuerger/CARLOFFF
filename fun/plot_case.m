@@ -43,8 +43,4 @@ function [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, cx = 1, sfx = "svg")
    set(findall("type", "axes"), "fontsize", 24) ;
    set(findall("type", "text"), "fontsize", 24) ;
 
-   printf("--> nc/%s.%s.%s\n", ptr.name, ds, sfx) ;
-   hgsave(sprintf("nc/%s.%s.og", ptr.name, ds)) ;
-   print(sprintf("nc/%s.%s.%s", ptr.name, ds, sfx)) ;
-
 endfunction
