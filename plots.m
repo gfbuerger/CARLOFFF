@@ -63,6 +63,10 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
 plot_case(ana.cape, pdd, deep.prob, D, d, jVAR, cx = 5, "svg") ;
+printf("--> nc/%s.%s.%s\n", ptr.name, ds, sfx) ;
+hgsave(sprintf("nc/%s.%s.og", ptr.name, ds)) ;
+print(sprintf("nc/%s.%s.%s", ptr.name, ds, sfx)) ;
+
 
 if 0 		    # Eta for case
    clf ;
