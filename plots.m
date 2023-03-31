@@ -159,22 +159,11 @@ hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
 print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
 ## reliability curves
-jNET = 2 ;
-clf ;
-jNET++ ;
-net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
-load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname)) ;
-[r b] = rlb(deep.prob.x(:,2), pdd.c, 10) ;
-plot([0 1], [0 1], "k--", b, r, "color", colD(jNET,:)) ;
-axis square
-title(net)
-hgsave(sprintf("nc/paper/rlb.%s.og", net)) ;
-print(sprintf("nc/paper/rlb.%s.svg", net)) ;
-
+set(gcf, "position", get(groot, "defaultfigureposition")) ;
 clf ; j = 0 ; clear ax h r
 for kMDL = 1 : length(MDL)
    mdl = MDL{kMDL} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{kMDL}) ;
-   if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, ind, pdd.lname), "file") == 2
+   if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, IND, pdd.lname), "file") == 2
       load(pfile) ;
    else
       warning("file not found: %s", pfile) ;
