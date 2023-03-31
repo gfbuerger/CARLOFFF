@@ -141,10 +141,13 @@ for jNET = 1 : length(NET)
    scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, colD(jNET,:), "d", "filled") ;
    axes(ax(2)) ;
 endfor
-axis tight ;
-vl = [xlim(ax(2))(1)-0.02 xlim(ax(2))(2)+0.02] ; yl = [ylim(ax(2))(1)-0.02 ylim(ax(2))(2)+0.02] ;
-plot(ax(1), vl, vl, "k--") ;
-set(ax, "xlim", vl) ; set(ax(1), "ylim", vl) ; set(ax(2), "ylim", yl) ;
+arrayfun(@(a) axis(a, "tight"), ax) ;
+xl = [xlim(ax(2))(1)-0.01 xlim(ax(2))(2)+0.01] ;
+plot(ax(1), xl, xl, "k--") ;
+yl = [0.37 xlim(ax(2))(2)-0.02] ;
+set(ax, "xlim", xl) ; set(ax(1), "ylim", yl) ;
+yl = [ylim(ax(2))(1)-0.02 ylim(ax(2))(2)+0.02] ;
+set(ax(2), "ylim", yl) ;
 set(ax, "xgrid", "on", "ygrid", "on") ;
 xlabel(ax(2), SKL{jSKL}) ; ylabel(ax(2), "crossentropy") ;
 hlS = legend(ax(1), hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
@@ -289,7 +292,7 @@ figure(1, "position", [0.7 0.3 0.3 0.7]) ; sz = 20 ;
 JMa = setxor(JM, 1 : length(MDL) + length(NET)) ;
 Call = union(C1, C2, "stable")(JMa) ;
 Calln = union(C1n, C2n, "stable")(JMa) ;
-clf ; hold on ;
+clf ; hold on ; clear ax
 jPLT = jMDL = 0 ; nMDL = round(length(Call)/2) ; fs = 14 ;
 for mdl = Call
    jPLT++ ; jMDL++ ;

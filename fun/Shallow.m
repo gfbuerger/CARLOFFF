@@ -80,7 +80,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       else
 	 x = PC ;	 
       endif
-      
+
       if Lcv && strcmp(phs, "CAL")
 
 	 ## oversampling
