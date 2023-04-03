@@ -4,7 +4,7 @@ set(0, "defaultfigureunits", "normalized", "defaultfigurepapertype", "A4") ;
 set(0, "defaultfigurepaperunits", "normalized", "defaultfigurepaperpositionmode", "auto") ;
 set(0, "defaultfigureposition", [0.7 0.7 0.3 0.3]) ;
 set(0, "defaultaxesgridalpha", 0.3)
-set(0, "defaultaxesfontname", "Linux Biolinum", "defaulttextfontname", "Linux Biolinum") ;
+set(0, "defaultaxesfontname", "Libertinus Sans", "defaulttextfontname", "Linux Biolinum") ;
 
 set(0, "defaultaxesfontsize", 18, "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
 
@@ -52,8 +52,8 @@ print(sprintf("nc/paper/loss.svg")) ;
 ### cases
 jNET = 3 ;
 net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
-load(sprintf("data/ana.%s.ob", ind)) ;
-load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname)) ;
+load(sprintf("data/ind/ind.%s.ob", GREG)) ;
+load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, IND, pdd.lname)) ;
 clf ; jVAR = 3 ;
 ## June 2013
 D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 31] ;
@@ -62,10 +62,13 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 ## May 2016
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
-plot_case(ana.cape, pdd, deep.prob, D, d, jVAR, cx = 5, "svg") ;
-printf("--> nc/%s.%s.%s\n", ptr.name, ds, sfx) ;
-hgsave(sprintf("nc/%s.%s.og", ptr.name, ds)) ;
-print(sprintf("nc/%s.%s.%s", ptr.name, ds, sfx)) ;
+ds = datestr(datenum(d), "yyyy-mm") ;
+[h1 h2] = plot_case(cape, pdd, deep.prob, D, d, jVAR, cx = 5) ;
+printf("--> nc/%s.%02d/%s.svg\n", REG, NH, ds) ;
+print(h1, sprintf("nc/%s.%02d/%s.svg", REG, NH, ds)) ;
+printf("--> nc/cape.%s.svg\n", ds) ;
+hgsave(h2, sprintf("nc/cape.%s.og", ds)) ;
+print(h2, sprintf("nc/cape.%s.svg", ds)) ;
 
 
 if 0 		    # Eta for case
@@ -117,7 +120,7 @@ jPLT = 0 ;
 for jMDL = 1 : length(MDL)
    jPLT++ ;
    hgS(jPLT) = scatter(Pskl(jPLT,1,4), Pskl(jPLT,end,4), sz, colS(jPLT,:), "filled", "s") ;
-   printf("%s:\t%7.3f\n", MDL{jMDL}, Pskl(jPLT,1,4)) ;
+   printf("%s:\t%7.2f\n", MDL{jMDL}, Pskl(jPLT,1,4)) ;
 endfor
 
 ## Deep
@@ -129,7 +132,7 @@ for jNET = 1 : length(NET)
    ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
    load(mfile) ;
-   printf("<-- %s: %7.3f %7.3f\n", mfile, [mean(skl(:,jSKL)) max(skl(:,jSKL))]) ;
+   printf("<-- %s: %7.2f %7.2f\n", mfile, [mean(skl(:,jSKL)) max(skl(:,jSKL))]) ;
    hg(jNET) = hggroup() ;
    scatter(skl(:,jSKL), skl(:,end), sz/4, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
    hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
