@@ -16,4 +16,6 @@ function res = clprob (par, x, u)
 	 res = u(J)' ;
    endswitch
 
+   res = res(:,end) ;
+
 endfunction
