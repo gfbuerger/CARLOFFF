@@ -3,8 +3,6 @@
 ## oversample i, l using IMB
 function [iout, lout] = oversmpl (i, l, IMB)
 
-   printf("oversampling with: %s\n", IMB) ;
-
    if isempty(IMB) || strcmpi("IMB", "NONE")
       [iout lout] = deal(i, l) ;
       return ;
@@ -28,12 +26,14 @@ function [iout, lout] = oversmpl (i, l, IMB)
    [~, j] = min(sum(I)) ;
    I = I(:,j) ;
 
-   n = floor(sum(~I) / sum(I)) ;
-   fI = repmat(find(I), n, 1) ;
-   fnI = find(~I) ;
+   if (n = floor(sum(~I) / sum(I))) > 1
+      printf("oversampling with: %s\n", IMB) ;
+   endif
 
-   fnI = fnI(randperm(length(fnI))) ;
+   fI = repmat(find(I), n, 1) ;
    fI = fI(randperm(length(fI))) ;
+   fnI = find(~I) ;
+   fnI = fnI(randperm(length(fnI))) ;
 
    lout = [l(fnI) ; l(fI)] ;
    iout = [i(fnI,:,:,:) ; i(fI,:,:,:)] ;
