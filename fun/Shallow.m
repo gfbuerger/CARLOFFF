@@ -177,6 +177,14 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       if Lcv
 	 w = feval(fit.model, fit.par, x) ;
 	 prob.x(ptr.(phs),:) = [1 - w w] ;
+	 eskl.(phs) = [] ;
+	 if strcmp(mdl, "tree")
+	    w = m5ppredict_new(fit.par, x) ;
+	    u = unique(pdd.c(:))' ;
+	    J = cell2mat(arrayfun(@(j) nthargout(2, @min, abs(w(:,j) - u), [], 2), 1 : size(w, 2), "UniformOutput", false)) ;
+	    w = u(J) ;
+	    eskl.(phs) = arrayfun(@(j) MoC("ETS", pdd.c(pdd.(phs)), w(:,j)), 1 : size(w, 2)) ;
+	 endif
       else
 	 w = feval(pdd.fit.model, pdd.fit.par, x) ;
 	 res = [1 - w w] ;
@@ -189,7 +197,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       
    endfor
 
-   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce) ;
+   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce, "eskl", eskl) ;
 
 endfunction
 
