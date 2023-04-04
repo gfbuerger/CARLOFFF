@@ -29,11 +29,8 @@ function h = plot_fit (mdl, fit)
 
    endswitch
    
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+   set(findall("-property", "fontname"), "fontname", "Libertinus Sans") ;
    set(findall("type", "axes"), "fontsize", 20) ;
-   set(findall("type", "text"), "fontsize", 6) ;
+   set(findall("type", "text"), "fontsize", 20) ;
 
-   hgsave(sprintf("nc/%s.%02d/%s.og", REG, NH, mdl)) ;
-   print(sprintf("nc/%s.%02d/%s.svg", REG, NH, mdl)) ;
-   
 endfunction

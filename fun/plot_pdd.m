@@ -64,7 +64,7 @@ function plot_pdd (s, jVAR = 1)
 ##   title(ax(2), sprintf("long-term {\\bf mean} %s", s.vars{jVAR})) ;
 ##   title(ax(3), sprintf("long-term {\\bf max} %s", s.vars{jVAR})) ;
 
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+   set(findall("-property", "fontname"), "fontname", "Libertinus Sans") ;
 ##   set(findall("type", "axes"), "fontsize", 14) ;
 ##   set(findall("type", "text"), "fontsize", 22) ;
    print(sprintf("nc/ERA5_stat.%s.png", s.vars{jVAR}))

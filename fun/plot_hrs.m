@@ -21,7 +21,7 @@ function h = plot_hrs (s, jVAR)
 ##   plot([H(1) H(end)], [500 500], "--k") ;
    title("#events in the hour") ;
 
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 30) ;
+   set(findall("-property", "fontname"), "fontname", "Libertinus Sans", "fontsize", 30) ;
 
    hgsave(sprintf("nc/%s.ERA5_hrs.%s.og", s.reg, s.vars{jVAR}))
    print(sprintf("nc/%s.ERA5_hrs.%s.png", s.reg, s.vars{jVAR}))

@@ -1,7 +1,7 @@
 
 profile on
 
-global isoctave LON LAT GREG REG NH MON IMB CNVDUR BLD VERBOSE PARALLEL
+global isoctave LON LAT GREG REG NH MON IMB CNVDUR BLD VERBOSE PARALLEL MAXX
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -18,7 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
-BLD = ~true ; VERBOSE = ~true ; PARALLEL = true ;
+BLD = ~true ; VERBOSE = ~true ; PARALLEL = true ; MAXX = Inf ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # read these atm. indices
@@ -180,7 +180,7 @@ for PCA = {{} []}
 	    if 0
 	       strucdisp(shallow.skl) ;
 	       plot_fit(mdl, shallow.fit) ;
-	       set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+	       set(findall("-property", "fontname"), "fontname", "Libertinus Sans") ;
 	       set(findall("type", "axes"), "fontsize", 24) ;
 	       set(findall("type", "text"), "fontsize", 22) ;
 	    endif
@@ -377,7 +377,7 @@ for jSIM = 1 : length(SIM)
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
-   if isnewer(ptfile = sprintf("data/%s.%s.%s.ob", sim, ind, pdd.lname), glb{:})
+   if isnewer(ptfile = sprintf("data/%s.%s.%s.ob", sim, ptr.ind, pdd.lname), glb{:})
 
       printf("<-- %s\n", ptfile) ;
       load(ptfile) ;

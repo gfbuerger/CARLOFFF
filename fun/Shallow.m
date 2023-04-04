@@ -3,7 +3,7 @@
 ## calibrate and apply Shallow models
 function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, varargin)
 
-   global GREG REG NH IMB
+   global GREG REG NH IMB MAXX
    if strcmp(class(PCA), "char") ; pkg load tisean ; endif
    init_mdl(mdl) ;	 
 
@@ -98,11 +98,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       model = glm_logistic(yy,xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
-	       if 0
-		  plot_penalized(fit) ;
-		  title("LASSO logistic regression") ;
-		  print("nc/LASSO_lreg.png") ;
-	       endif
 	       AIC = goodness_of_fit("aic", fit) ;
 	       BIC = goodness_of_fit("bic", fit, model) ;
 	       CV = fit.CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
@@ -132,7 +127,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
 	       Net.trainParam.show = NaN ;
 	       Net.trainParam.goal = 0 ;
-	       if size(xx, 2) > 1000
+	       if size(xx, 2) > MAXX
 		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
 		  Net.trainParam.epochs = 1 ;
 	       else
@@ -154,7 +149,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(columns(xx)+1, 1) ;
-	       if size(xx, 2) > 1000
+	       if size(xx, 2) > MAXX
 		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
 		  opt = optimset("MaxIter", 2, "debug", ~true) ;
 	       else
@@ -170,6 +165,12 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 endswitch
 	 
 	 fprintf('Execution time: %0.2f hours\n', toc/(60*60));
+
+	 if 0
+	    plot_fit (mdl, fit)
+	    hgsave(sprintf("nc/%s.%02d/%s.og", REG, NH, mdl)) ;
+	    print(sprintf("nc/%s.%02d/%s.svg", REG, NH, mdl)) ;
+   	 endif
 
       endif
 

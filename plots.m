@@ -4,7 +4,7 @@ set(0, "defaultfigureunits", "normalized", "defaultfigurepapertype", "A4") ;
 set(0, "defaultfigurepaperunits", "normalized", "defaultfigurepaperpositionmode", "auto") ;
 set(0, "defaultfigureposition", [0.7 0.7 0.3 0.3]) ;
 set(0, "defaultaxesgridalpha", 0.3)
-set(0, "defaultaxesfontname", "Libertinus Sans", "defaulttextfontname", "Linux Biolinum") ;
+set(0, "defaultaxesfontname", "Libertinus Sans", "defaulttextfontname", "Libertinus Sans") ;
 
 set(0, "defaultaxesfontsize", 18, "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
 
@@ -144,9 +144,10 @@ for jNET = 1 : length(NET)
    scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, colD(jNET,:), "d", "filled") ;
    axes(ax(2)) ;
 endfor
-arrayfun(@(a) axis(a, "tight"), ax) ;
-xl = [xlim(ax(2))(1)-0.01 xlim(ax(2))(2)+0.01] ;
+axis(ax(1), "tight") ;
+xl = xlim(ax(1)) ; yl = ylim(ax(1)) ;
 plot(ax(1), xl, xl, "k--") ;
+set(ax(1), "xlim", xl, "ylim", yl) ;
 yl = [0.37 xlim(ax(2))(2)-0.02] ;
 set(ax, "xlim", xl) ; set(ax(1), "ylim", yl) ;
 yl = [ylim(ax(2))(1)-0.02 ylim(ax(2))(2)+0.02] ;
@@ -162,8 +163,8 @@ set(findobj("-property", "fontsize"), "fontsize", 16) ;
 set(hlS, "position", [0.43 0.69 0.10 0.24])
 set(hlD, "position", [0.44 0.12 0.10 0.5])
 
-hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
-print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
+hgsave(sprintf("nc/paper/SI/%s_scatter.og", SKL{jSKL})) ;
+print(sprintf("nc/paper/SI/%s_scatter.svg", SKL{jSKL})) ;
 
 ## reliability curves
 set(gcf, "position", get(groot, "defaultfigureposition")) ;

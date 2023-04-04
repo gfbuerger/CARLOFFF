@@ -8,7 +8,7 @@ function [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, cx = 1)
    h1 = figure(1) ;
    clf ;
    plot_prob(s, pdd, D, d) ;
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum", "fontsize", 24) ;
+   set(findall("-property", "fontname"), "fontname", "Libertinus Sans", "fontsize", 24) ;
 
    h2 = figure(2, "position", [0.7 0.4 0.3 0.6]) ;
    clf ; hold on
@@ -35,7 +35,7 @@ function [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, cx = 1)
       sn = sprintf("{\\it{E_{T,A}}} = %.0f", xn) ; sx = sprintf("{\\it{E_{T,A}}} = %.0f", xx) ;
       legend([hx hn], {sx sn}, "box", "off", "location", "northeast") ;
    endif
-   set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+   set(findall("-property", "fontname"), "fontname", "Libertinus Sans") ;
    set(findall("type", "axes"), "fontsize", 24) ;
    set(findall("type", "text"), "fontsize", 24) ;
 
