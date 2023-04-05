@@ -194,6 +194,7 @@ for PCA = {{} []}
 	 skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
       endfor
       skl = real(skl) ;
+      printf("--> %s\n", mfile) ;
       save("-text", mfile, "skl") ;
    endif
 endfor
