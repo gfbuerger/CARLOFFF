@@ -145,13 +145,13 @@ for jNET = 1 : length(NET)
    axes(ax(2)) ;
 endfor
 axis(ax(1), "tight") ;
-xl = xlim(ax(1)) ; yl = ylim(ax(1)) ;
-plot(ax(1), xl, xl, "k--") ;
-set(ax(1), "xlim", xl, "ylim", yl) ;
-yl = [0.37 xlim(ax(2))(2)-0.02] ;
-set(ax, "xlim", xl) ; set(ax(1), "ylim", yl) ;
-yl = [ylim(ax(2))(1)-0.02 ylim(ax(2))(2)+0.02] ;
-set(ax(2), "ylim", yl) ;
+xl = [xlim(ax(1))(1) - 0.02 xlim(ax(1))(2) + 0.02] ;
+yl = [ylim(ax(1))(1) - 0.02 ylim(ax(1))(2) + 0.02] ;
+vn = min([xl yl](:)) ; vx = max([xl yl](:)) ;
+plot(ax(1), [vn vx], [vn vx], "k--") ;
+axis(ax(1), "tight") ;
+xl = [0.43 0.55] ; yl = [0.34 0.55] ;
+set(ax(2), "xlim", xl, "ylim", yl) ;
 set(ax, "xgrid", "on", "ygrid", "on") ;
 xlabel(ax(2), SKL{jSKL}) ; ylabel(ax(2), "crossentropy") ;
 hlS = legend(ax(1), hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
@@ -161,10 +161,10 @@ pos = get(ax(1), "position") ; pos(1) -= 0.05 ; set(ax(1), "position", pos)
 pos = get(ax(2), "position") ; pos(1) += 0.05 ; set(ax(2), "position", pos)
 set(findobj("-property", "fontsize"), "fontsize", 16) ;
 set(hlS, "position", [0.43 0.69 0.10 0.24])
-set(hlD, "position", [0.44 0.12 0.10 0.5])
+set(hlD, "position", [0.438 0.2 0.10 0.5])
 
-hgsave(sprintf("nc/paper/SI/%s_scatter.og", SKL{jSKL})) ;
-print(sprintf("nc/paper/SI/%s_scatter.svg", SKL{jSKL})) ;
+hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
+print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
 
 ## reliability curves
 set(gcf, "position", get(groot, "defaultfigureposition")) ;
