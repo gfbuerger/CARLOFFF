@@ -150,7 +150,7 @@ yl = [ylim(ax(1))(1) - 0.02 ylim(ax(1))(2) + 0.02] ;
 vn = min([xl yl](:)) ; vx = max([xl yl](:)) ;
 plot(ax(1), [vn vx], [vn vx], "k--") ;
 axis(ax(1), "tight") ;
-xl = [0.43 0.55] ; yl = [0.34 0.55] ;
+xl = [0.425 0.55] ; yl = [0.33 0.58] ;
 set(ax(2), "xlim", xl, "ylim", yl) ;
 set(ax, "xgrid", "on", "ygrid", "on") ;
 xlabel(ax(2), SKL{jSKL}) ; ylabel(ax(2), "crossentropy") ;
@@ -161,7 +161,7 @@ pos = get(ax(1), "position") ; pos(1) -= 0.05 ; set(ax(1), "position", pos)
 pos = get(ax(2), "position") ; pos(1) += 0.05 ; set(ax(2), "position", pos)
 set(findobj("-property", "fontsize"), "fontsize", 16) ;
 set(hlS, "position", [0.43 0.69 0.10 0.24])
-set(hlD, "position", [0.438 0.2 0.10 0.5])
+set(hlD, "position", [0.438 0.17 0.10 0.5])
 
 hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
 print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
@@ -431,41 +431,3 @@ endfor
 set(findobj("-property", "fontsize"), "fontsize", fs) ;
 hgsave(sprintf("nc/paper/GCM_RCM.2.og")) ;
 print(sprintf("nc/paper/GCM_RCM.2.svg")) ;
-
-
-
-COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
-set(0, "defaultaxesfontsize", 18) ;
-set(0, "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
-MDL = {"Shallow.tree" "Deep.CIFAR_10"} ; 
-clf ; jMDL = 0 ;
-for iMDL = [2 1]
-   jMDL++ ;
-   ax(jMDL) = subplot(1, 2, jMDL) ; hold on ; clear h ;
-   mdl = MDL{iMDL} ;
-   h(1) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
-   for jSIM = 1 : length(SIM)
-      eval(sprintf("sim = %s ;", SIM{jSIM})) ;
-      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", mdl)) ;
-      scatter(s.id(:,1), s.x(:,2), 6, 0.8*COL(jSIM+1,:), "filled") ; axis tight
-      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
-      stats(jSIM,:) = STATS ;
-      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(1+jSIM) = plot(s.id(:,1), yf, "color", COL(1+jSIM,:), "linewidth", 4) ;
-      ##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
-      xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
-   endfor
-   ##   set(gca, "ygrid", "on") ;
-   for jSIM = 1 : 2
-      if stats(jSIM,3) < alpha
-	 xt = mean(get(h(1+jSIM), "xdata")) ;
-	 text(xt, 0.72, {"\\it p<0.05"}, "color", COL(1+jSIM,:)) ;
-      endif
-   endfor
-   title(toupper(strrep(mdl, "_", "\\_"))) ;
-   legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", "southeast") ;
-endfor
-set(ax, "ylim", [0.35 0.75]) ;
-
-hgsave(sprintf("nc/paper/Shallow.sim.og")) ;
-print(sprintf("nc/paper/Shallow.sim.svg")) ;
