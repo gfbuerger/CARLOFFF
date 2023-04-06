@@ -384,12 +384,7 @@ else
 
 	rstate = randi(1000000, 625, trainParamsEnsemble.numTrees) ;
 
-	if PARALLEL
-	   pkg load parallel
-	   model = pararrayfun(nproc, @(i) loop_tree(rstate(:,i), Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
-	else
-	   model = arrayfun(@(i) loop_tree(rstate(:,i), Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
-	endif
+	model = parfun(@(i) loop_tree(rstate(:,i), Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
 	
         if trainParamsEnsemble.getOOBError || trainParamsEnsemble.getOOBContrib
             ensembleResults.OOBNum = OOBNum;
