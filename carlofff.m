@@ -249,10 +249,10 @@ for jNET = 1 : length(NET)
 	    endif
 	 endif
 
-	 kfail = 0 ; wskl = 0 ;
-	 while ++kfail <= 5 && wskl <= 0.3
+	 kfail = 0 ; wskl = Inf ;
+	 while ++kfail <= 5 && wskl > 0.5
 	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	    wskl = deep.skl.VAL.(SKL{jSKL}) ;
+	    wskl = deep.crossentropy.VAL ;
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 
