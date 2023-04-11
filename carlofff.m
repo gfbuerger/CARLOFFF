@@ -250,7 +250,7 @@ for jNET = 1 : length(NET)
 	 endif
 
 	 kfail = 0 ; wskl = Inf ;
-	 while ++kfail <= 5 && wskl > 0.5
+	 while ++kfail <= 50 && wskl > 0.5
 	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
 	    wskl = deep.crossentropy.VAL ;
 	 endwhile
@@ -418,8 +418,7 @@ for jSIM = 1 : length(SIM)
 	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, REG, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2
-	    warning("model not found: %s\n", model) ;
-	    continue ;
+	    error("model not found: %s", model) ;
 	 endif
 	 siter = table_pick(sprintf("%s_solver.prototxt", pfx), "max_iter") ;
 	 weights = sprintf("%s_iter_%s.caffemodel", pfx, siter) ;
