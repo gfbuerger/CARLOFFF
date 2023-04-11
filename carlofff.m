@@ -440,6 +440,6 @@ for jSIM = 1 : length(SIM)
 
 endfor
 
-if ~isempty(graphics_toolkit)
+if ~isempty(graphics_toolkit) && ~strcmp(graphics_toolkit, "gnuplot")
    source plots.m ;
 endif

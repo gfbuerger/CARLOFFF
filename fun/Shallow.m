@@ -124,18 +124,18 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       Pr = [min(xx) ; max(xx)]' ;
 	       SS = [7 3 1] ; # based on some tests
-	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
-	       Net.trainParam.show = NaN ;
-	       Net.trainParam.goal = 0 ;
-	       if size(xx, 2) > MAXX
-		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
-		  Net.trainParam.epochs = 1 ;
-	       else
-		  Net.trainParam.epochs = 100 ;
-	       endif
-	       Net.trainParam.mu_max = 1e12 ;
-	       fit.par = train(Net, xx', yy') ;
-	       fit.model = @(net, x) max(0, min(1, sim(net, x')))' ;
+	       Net = arrayfun(@(i) newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse"), 1:20) ;
+	       for i = 1 : length(Net)
+		  Net(i).trainParam.show = NaN ;
+		  Net(i).trainParam.goal = 0 ;
+		  if size(xx, 2) > MAXX
+		     warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
+		     Net(i).trainParam.epochs = 1 ;
+		  endif
+	       endfor
+##	       Net.trainParam.mu_max = 1e12 ;
+	       fit.par = parfun(@(net) train(net, xx', yy'), Net) ;
+	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
 	       
 	    case "tree"
@@ -256,7 +256,7 @@ function init_mdl (mdl)
       case "lasso"
 	 source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
       case "nnet"
-	 pkg load nnet
+	 pkg load nnet parallel
       case "tree"
 	 addpath ~/oct/nc/M5PrimeLab ~/oct/nc/M5PrimeLab/private ;
       otherwise

@@ -61,7 +61,7 @@ function varargout = parfun (varargin)
 	    endif
 	    [c{:}] = feval(pfun, varargin{:}, "ErrorHandler", @errfun) ;
 	 else
-	    if numel(varargin{2}) > nproc
+	    if min(numel(varargin{2}), nproc) > 1
 	       pkg load parallel
 	       varargin = [ncpu, varargin] ;
 	       pfun = ["par" pfun] ;
