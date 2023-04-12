@@ -150,7 +150,7 @@ yl = [ylim(ax(1))(1) - 0.02 ylim(ax(1))(2) + 0.02] ;
 vn = min([xl yl](:)) ; vx = max([xl yl](:)) ;
 plot(ax(1), [vn vx], [vn vx], "k--") ;
 axis(ax(1), "tight") ;
-xl = [0.425 0.55] ; yl = [0.33 0.58] ;
+xl = [0.425 0.55] ; yl = [0.33 0.51] ;
 set(ax(2), "xlim", xl, "ylim", yl) ;
 set(ax, "xgrid", "on", "ygrid", "on") ;
 xlabel(ax(2), SKL{jSKL}) ; ylabel(ax(2), "crossentropy") ;
