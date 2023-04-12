@@ -234,6 +234,7 @@ Cn = union(C1n, C2n, "stable")(JM) ;
 COL = [1 1 1 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
 figure(1, "position", [0.7 0.7 0.4 0.34]) ; sz = 40 ;
 [o.id o.x] = annstat(pdd.id, real(pdd.c), @nanmean) ;
+Y = [1979 2005] ;
 oC = sdate(o.id, [2001 1 1 ; 2010 1 1]) ;
 oV = sdate(o.id, [2011 1 1 ; 2020 1 1]) ;
 
@@ -252,9 +253,10 @@ for mdl = C
    scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
    scatter(s.id(sC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
    scatter(s.id(sV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
-   [B, BINT, R, RINT, STATS] = regress(s.x, [ones(rows(s.x),1) s.id(:,1)]) ;
-   yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-   h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
+   su = selper(s, Y(1), Y(2)) ;
+   [B, BINT, R, RINT, STATS] = regress(su.x, [ones(rows(su.x),1) su.id(:,1)]) ;
+   yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+   h = plot(su.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
    xlim(s.id([1 end],1)) ;
    ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
    xlabel("year") ; ylabel(sprintf("P")) ;
@@ -308,9 +310,10 @@ for mdl = Call
    scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
    scatter(s.id(sC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
    scatter(s.id(sV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
-   [B, BINT, R, RINT, STATS] = regress(s.x, [ones(rows(s.x),1) s.id(:,1)]) ;
-   yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-   h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
+   su = selper(s, Y(1), Y(2)) ;
+   [B, BINT, R, RINT, STATS] = regress(su.x, [ones(rows(su.x),1) su.id(:,1)]) ;
+   yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+   h = plot(su.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
    xlim(s.id([1 end],1)) ;
    ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
    xlabel("year") ; ylabel(sprintf("P")) ;
@@ -355,11 +358,16 @@ for mdl = C
       eval(sprintf("sim = %s ;", sim{:})) ;
       eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
-      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      if strcmp(sim.prob.name, "historical")
+	 su = selper(s, Y(1), Y(2)) ;
+      else
+	 su = s ;
+      endif
+      [B, BINT, R, RINT, STATS] = regress(su.x(:,2), [ones(rows(su.x),1) su.id(:,1)]) ;
       ct(j) = 100*B(2) ;
       stats(j,:) = STATS ;
-      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
+      yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+      h(j) = plot(su.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
       xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
    printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
@@ -403,11 +411,16 @@ for mdl = Call
       eval(sprintf("sim = %s ;", sim{:})) ;
       eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
-      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      if strcmp(sim.prob.name, "historical")
+	 su = selper(s, Y(1), Y(2)) ;
+      else
+	 su = s ;
+      endif
+      [B, BINT, R, RINT, STATS] = regress(su.x(:,2), [ones(rows(su.x),1) su.id(:,1)]) ;
       ct(j) = 100 * B(2) ;
       stats(j,:) = STATS ;
-      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
+      yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+      h(j) = plot(su.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
       xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
    printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
