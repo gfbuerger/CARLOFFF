@@ -274,7 +274,7 @@ for mdl = C
    xlabel("OBS") ; ylabel(sprintf("%s", Cn{jMDL})) ;
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
-   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
+   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)<alpha) ;
    text(xn, xx, sprintf("{\\it\\rho = %.2f}", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14, "XTick", [0.4 0.6], "YTick", [0.4 0.6]) ;
    yl = [min(ylim(ax1)(1), ylim(ax2)(1)) max(ylim(ax1)(2), ylim(ax2)(2))] ;
@@ -332,7 +332,7 @@ for mdl = Call
    xlabel("OBS") ; ylabel(sprintf("%s", Calln{jMDL})) ;
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
-   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
+   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)<alpha) ;
    text(xn, xx, sprintf("{\\it\\rho = %.2f}", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14)
    yl = [min(ylim(ax(jPLT,1))(1), ylim(ax(jPLT,2))(1)) max(ylim(ax(jPLT,1))(2), ylim(ax(jPLT,2))(2))] ;
@@ -370,7 +370,7 @@ for mdl = C
       h(j) = plot(su.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
       xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
-   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
+   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<alpha, ct(3), stats(3,3)<alpha) ;
    ylim([0.25 0.7]) ;
    for j = 2:rows(stats)
       if stats(j,3) < alpha
@@ -423,7 +423,7 @@ for mdl = Call
       h(j) = plot(su.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
       xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
-   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
+   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<alpha, ct(3), stats(3,3)<alpha) ;
    ylim([0.25 0.7]) ;
    for j = 2:rows(stats)
       if stats(j,3) < alpha
