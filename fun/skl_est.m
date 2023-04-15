@@ -1,7 +1,7 @@
-## usage: [th skl] = skl_est (p, o, SKL)
+## usage: [th skl] = skl_est (p, o, SKL, thi = [])
 ##
 ## estimate skill
-function [th skl] = skl_est (p, o, SKL)
+function [th skl] = skl_est (p, o, SKL, thi = [])
 
    np = 10 ;
    pr = linspace(min(p), max(p), np) ;
@@ -9,13 +9,24 @@ function [th skl] = skl_est (p, o, SKL)
    
    for s = SKL
       s = s{:} ;
-      fval = arrayfun(@(th) -MoC(s, o, p > th), pr) ;
-      [~, j] = min(fval) ;
 
-      [thx fval] = fminbnd(@(th) -MoC(s, o, p > th), pr(j) - dp, pr(j) + dp) ;
+      if isempty(thi)
 
-      th.(s) = thx ;
-      skl.(s) = -fval ;
+	 fval = arrayfun(@(th) -MoC(s, o, p > th), pr) ;
+	 [~, j] = min(fval) ;
+
+	 [thx fval] = fminbnd(@(th) -MoC(s, o, p > th), pr(j) - dp, pr(j) + dp) ;
+
+	 th.(s) = thx ;
+	 skl.(s) = -fval ;
+
+      else
+
+	 th.(s) = thi.(s) ;
+	 skl.(s) = MoC(s, o, p > th.(s)) ;
+
+      endif
+
    endfor
 
 endfunction

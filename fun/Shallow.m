@@ -73,6 +73,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       phs = phs{:} ;
 
+      if strcmp(phs, "CAL")  th = [] ; endif
+
       if Lcv
 	 x = PC(ptr.(phs),:) ;
 	 c = unique(pdd.c(pdd.(phs))) ;
@@ -193,7 +195,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       ce.(phs) = crossentropy(pdd.c(pdd.(phs)), prob.x(ptr.(phs),:)) ;
 
-      [th.(phs) skl.(phs)] = skl_est(prob.x(ptr.(phs),end), pdd.c(pdd.(phs)), SKL) ;
+      [th skl.(phs)] = skl_est(prob.x(ptr.(phs),end), pdd.c(pdd.(phs)), SKL, th) ;
       
    endfor
 

@@ -118,6 +118,8 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
       PHS = PHS{:} ;
 
+      if strcmp(PHS, "CAL")  th = [] ; endif # first CAL then VAL !
+
       if 0
 
 	 [images labels] = load_hdf5(h5f(pdd.lname, PHS)) ;
@@ -143,7 +145,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
       
       ce.(PHS) = crossentropy(labels, prb.(PHS)) ;
 
-      [th.(PHS) skl.(PHS)] = skl_est(prb.(PHS)(:,end), labels, SKL) ;
+      [th skl.(PHS)] = skl_est(prb.(PHS)(:,end), labels, SKL, th) ;
       
    endfor
 
@@ -151,7 +153,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
    [~, Is] = sort(t) ;
    prob.id = datevec(t(Is)) ;
    prob.x = [prb.CAL ; prb.VAL](Is,:) ;
-   
+
    res = struct("crossentropy", ce, "th", th, "skl", skl, "prob", prob, "count", count) ;
    
 endfunction
