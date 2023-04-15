@@ -145,7 +145,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
       
       ce.(PHS) = crossentropy(labels, prb.(PHS)) ;
 
-      [th skl.(PHS)] = skl_est(prb.(PHS)(:,end), labels, SKL, th) ;
+      [skl.(PHS) th] = skl_est(prb.(PHS)(:,end), labels, SKL, th) ;
       
    endfor
 

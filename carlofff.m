@@ -41,7 +41,7 @@ NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = {0.99 0.9910 0.995 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
 IMB = "NONE" ;
-SKL = {"HSS" "ETS"} ; jSKL = 2 ; # ETS
+SKL = {"HSS" "ETS" "BSS"} ; jSKL = 2 ; # ETS
 
 init_rnd() ;
 

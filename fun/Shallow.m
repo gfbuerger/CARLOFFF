@@ -195,7 +195,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       ce.(phs) = crossentropy(pdd.c(pdd.(phs)), prob.x(ptr.(phs),:)) ;
 
-      [th skl.(phs)] = skl_est(prob.x(ptr.(phs),end), pdd.c(pdd.(phs)), SKL, th) ;
+      [skl.(phs) th] = skl_est(prob.x(ptr.(phs),end), pdd.c(pdd.(phs)), SKL, th) ;
       
    endfor
 
