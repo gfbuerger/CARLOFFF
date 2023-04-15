@@ -11,6 +11,8 @@ set(0, "defaultaxesfontsize", 18, "defaulttextfontsize", 18, "defaultlinelinewid
 
 addpath ~/oct/nc/maxdistcolor
 JMDL = 1 : 4 ;
+colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
+colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 ##col = col(randperm(ncol),:) ;
 
 ### plots
@@ -104,8 +106,6 @@ Pskl(:,:,4) = skl(:,[jSKL end]) ;
 
 Pskl = Pskl(JMDL,:,:) ;
 
-colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
-colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ; clear ax
 ax(1) = subplot(1, 2, 1) ; hold on ;
