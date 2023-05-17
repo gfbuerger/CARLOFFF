@@ -150,7 +150,7 @@ yl = [ylim(ax(1))(1) - 0.02 ylim(ax(1))(2) + 0.02] ;
 vn = min([xl yl](:)) ; vx = max([xl yl](:)) ;
 plot(ax(1), [vn vx], [vn vx], "k--") ;
 axis(ax(1), "tight") ;
-xl = [0.425 0.55] ; yl = [0.33 0.51] ;
+xl = [0.415 0.525] ; yl = [0.33 0.51] ;
 set(ax(2), "xlim", xl, "ylim", yl) ;
 set(ax, "xgrid", "on", "ygrid", "on") ;
 xlabel(ax(2), SKL{jSKL}) ; ylabel(ax(2), "crossentropy") ;
@@ -163,8 +163,8 @@ set(findobj("-property", "fontsize"), "fontsize", 16) ;
 set(hlS, "position", [0.43 0.69 0.10 0.24])
 set(hlD, "position", [0.438 0.17 0.10 0.5])
 
-hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
-print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
+hgsave(sprintf("nc/paper/SI/%s_scatter.og", SKL{jSKL})) ;
+print(sprintf("nc/paper/SI/%s_scatter.svg", SKL{jSKL})) ;
 
 ## reliability curves
 set(gcf, "position", get(groot, "defaultfigureposition")) ;
@@ -184,7 +184,8 @@ for kMDL = 1 : length(MDL)
    pos = get(gca, "position") ;
    ix(j) = axes("position",[pos(1)+0.21 pos(2)+0.05 pos(3)/3 pos(4)/3]) ;
    [nn xx] = hist(shallow.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
-   bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   bar(xx, nn/size(shallow.prob.x,1), "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   ylim([0 0.35]) ;
    set(get(get(gca, "children"), "baseline"), "visible", "off") ;
    set(gca, "XTick", [], "YTick", [], "box", "off", "ycolor", "none")
 endfor
@@ -209,7 +210,8 @@ for kNET = 1 : length(NET)
    pos = get(gca, "position") ;
    ix(j) = axes("position",[pos(1)+0.12 pos(2)+0.03 pos(3)/3 pos(4)/3]) ;
    [nn xx] = hist(deep.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
-   bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   bar(xx, nn/size(deep.prob.x,1), "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   ylim([0 0.35]) ;
    set(get(get(gca, "children"), "baseline"), "visible", "off") ;
    set(gca, "XTick", [], "YTick", [], "box", "off", "ycolor", "none")
 endfor
