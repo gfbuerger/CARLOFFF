@@ -5,22 +5,26 @@ function res = isnewer (file1, varargin)
    ## check if file1 is newer than files in varargin
 
    global BLD = false
+   global VERBOSE = false
 
    tick = 0 ;
    if BLD || ~exist(file1, "file")
+
       res = false ;
-      return ;
+
    else
+
       res = true ;
+      for i = 1:nargin-1
+	 res = res && all(birth(file1) > birth(varargin{i}) + tick)  ;
+      endfor
+
    endif
 
-##   if iscell(varargin)
-##      varargin = [varargin{:}] ;
-##   endif
-   
-   for i = 1:nargin-1
-      res = res && all(birth(file1) > birth(varargin{i}) + tick)  ;
-   endfor
+   if VERBOSE && ~res
+      ls("-l", file1, varargin{:}) ;
+      res = true ;
+   endif
 
 endfunction
 

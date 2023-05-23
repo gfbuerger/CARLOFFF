@@ -161,6 +161,8 @@ function [model, time, ensembleResults] = m5pbuild_new(Xtr, Ytr, trainParams, ..
 
 % Last update: November 6, 2020
 
+   global PARALLEL
+   
 if nargin < 2
     error('Not enough input arguments.');
 end
@@ -323,7 +325,6 @@ else
     warning('off', 'MATLAB:nearlySingularMatrix');
     warning('off', 'MATLAB:singularMatrix');
 end
-ttt = tic;
 
 % For the original binary and continuous variables beta = 1
 % For synthetic binary variables created from original categorical variables beta < 1
@@ -381,13 +382,10 @@ else
             end
         end
 
-	if 0
-	   pkg load parallel
-	   model = pararrayfun(nproc, @(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
-	else
-	   model = arrayfun(@(i) loop_tree(Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
-	endif
+	rstate = randi(1000000, 625, trainParamsEnsemble.numTrees) ;
 
+	model = parfun(@(i) loop_tree(rstate(:,i), Xtr, Ytr, model, trainParamsEnsemble, n, binCatNewNum, beta, mOriginal, keepInteriorModels, keepNodeInfo, OOBNum, OOBPred), 1 : trainParamsEnsemble.numTrees, "UniformOutput", false)' ;
+	
         if trainParamsEnsemble.getOOBError || trainParamsEnsemble.getOOBContrib
             ensembleResults.OOBNum = OOBNum;
         end
@@ -429,12 +427,10 @@ else
     
 end
 
-time = toc(ttt);
 if verbose
     if isempty(trainParamsEnsemble)
         printinfo(model);
     end
-    fprintf('Execution time: %0.2f minutes\n', time/60);
 end
 warning(origWarningState);
 end

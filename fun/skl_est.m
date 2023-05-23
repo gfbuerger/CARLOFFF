@@ -1,33 +1,45 @@
-## usage: res = skl_est (p, o, SKL)
+## usage: [skl th] = skl_est (p, o, SKL, thi = [])
 ##
 ## estimate skill
-function res = skl_est (p, o, SKL)
-
-##   addpath ~/oct/nc/MLToolbox/MeteoLab/Validation
-
-##   ot(:,1,:) = o ;
-##   pt(:,1,:) = p ;
-
-##   [rps, rpss] = validationRPS(ot, pt) ;
-##   res.rpss = rpss ;
+function [skl th] = skl_est (p, o, SKL, thi = [])
 
    np = 10 ;
    pr = linspace(min(p(:)), max(p(:)), np) ;
    dp = range(pr) / np ;
+   
+   for s = SKL
+      s = s{:} ;
 
-   for k = 1 : size(p, 2)
-      for l = 1 : k
-	 for s = SKL
-	    s = s{:} ;
-	    fval = arrayfun(@(th) -MoC(s, o(:,k), p(:,l) > th), pr) ;
-	    [~, j] = min(fval) ;
+      switch s
 
-	    [thx fval] = fminbnd(@(th) -MoC(s, o(:,k), p(:,l) > th), pr(j) - dp, pr(j) + dp) ;
+	 case "BSS"
 
-	    th.(s)(k,l) = th.(s)(l,k) = thx ;
-	    skl.(s)(k,l) = skl.(s)(l,k) = -fval ;
-	 endfor
-      endfor
+	    bs = sumsq(p - o) / size(o, 1) ;
+	    om = mean(o) ;
+	    bsr = sumsq(om - o) / size(o, 1) ;
+	    skl.(s) = 1 - bs / bsr ;
+
+	 case {"HSS" "ETS"}
+
+	    if isempty(thi)
+
+	       fval = arrayfun(@(th) -MoC(s, o, p > th), pr) ;
+	       [~, j] = min(fval) ;
+
+	       [thx fval] = fminbnd(@(th) -MoC(s, o, p > th), pr(j) - dp, pr(j) + dp) ;
+
+	       th.(s) = thx ;
+	       skl.(s) = -fval ;
+
+	    else
+
+	       th.(s) = thi.(s) ;
+	       skl.(s) = MoC(s, o, p > th.(s)) ;
+
+	    endif
+
+      endswitch
+
    endfor
 
    res.th = th ;

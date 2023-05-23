@@ -73,13 +73,15 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       phs = phs{:} ;
 
+      if strcmp(phs, "CAL")  th = [] ; endif
+
       if Lcv
 	 x = PC(ptr.(phs),:) ;
 	 y = pdd.c(pdd.(phs),:) ;
       else
 	 x = PC ;	 
       endif
-      
+
       if Lcv && strcmp(phs, "CAL")
 
 	 ## oversampling
@@ -97,11 +99,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       model = glm_multinomial(yl, xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
-	       if 0
-		  plot_penalized(fit) ;
-		  title("LASSO logistic regression") ;
-		  print("nc/LASSO_lreg.png") ;
-	       endif
 	       AIC = goodness_of_fit("aic", fit) ;
 	       BIC = goodness_of_fit("bic", fit, model) ;
 	       CV = fit.CV = cv_penalized(model, @p_lasso, "folds", 5, varargin{:}) ;
@@ -128,18 +125,23 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       Pr = [min(xx) ; max(xx)]' ;
 	       SS = [7 3 1] ; # based on some tests
-	       Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
-	       Net.trainParam.show = NaN ;
-	       Net.trainParam.goal = 0 ;
-	       Net.trainParam.epochs = 100 ;
-	       Net.trainParam.mu_max = 1e12 ;
-	       fit.par = train(Net, xx', yy') ;
-	       fit.model = @(net, x) sim(net, x')' ;
+	       Net = arrayfun(@(i) newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse"), 1:20) ;
+	       for i = 1 : length(Net)
+		  Net(i).trainParam.show = NaN ;
+		  Net(i).trainParam.goal = 0 ;
+		  if size(xx, 2) > MAXX
+		     warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
+		     Net(i).trainParam.epochs = 1 ;
+		  endif
+	       endfor
+##	       Net.trainParam.mu_max = 1e12 ;
+	       fit.par = parfun(@(net) train(net, xx', yy'), Net) ;
+	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
 	       
 	    case "tree"
 
-	       trainParamsEnsemble = m5pparamsensemble(50) ;
+	       trainParamsEnsemble = m5pparamsensemble(200) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
 	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
 	       fit.model = @(par, x) clprob(par, x, uy) ;
@@ -154,10 +156,27 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       
 	 endswitch
 	 
+	 fprintf('Execution time: %0.2f hours\n', toc/(60*60));
+
+	 if 0
+	    plot_fit (mdl, fit)
+	    hgsave(sprintf("nc/%s.%02d/%s.og", REG, NH, mdl)) ;
+	    print(sprintf("nc/%s.%02d/%s.svg", REG, NH, mdl)) ;
+   	 endif
+
       endif
 
       if Lcv
-	 prob.x(ptr.(phs),:) = feval(fit.model, fit.par, x) ;
+	 w = feval(fit.model, fit.par, x) ;
+	 prob.x(ptr.(phs),:) = [1 - w w] ;
+	 eskl.(phs) = [] ;
+	 if strcmp(mdl, "tree")
+	    w = m5ppredict_new(fit.par, x) ;
+	    u = unique(pdd.c(:))' ;
+	    J = cell2mat(arrayfun(@(j) nthargout(2, @min, abs(w(:,j) - u), [], 2), 1 : size(w, 2), "UniformOutput", false)) ;
+	    w = u(J) ;
+	    eskl.(phs) = arrayfun(@(j) MoC("ETS", pdd.c(pdd.(phs)), w(:,j)), 1 : size(w, 2)) ;
+	 endif
       else
 	 res = feval(pdd.fit.model, pdd.fit.par, x) ;
 	 return ;
@@ -167,11 +186,11 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       ce.(phs) = crossentropy(lc, prob.x(ptr.(phs),:)) ;
       wskl = skl_est(prob.x(ptr.(phs),:), lc, SKL) ;
 
-      th.(phs) = wskl.th ; skl.(phs) = wskl.skl ;
+      [skl.(phs) th] = skl_est(prob.x(ptr.(phs),end), pdd.c(pdd.(phs)), SKL, th) ;
       
    endfor
 
-   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce) ;
+   res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce, "eskl", eskl) ;
 
 endfunction
 
@@ -230,7 +249,7 @@ function init_mdl (mdl)
       case "lasso"
 	 source(tilde_expand("~/oct/nc/penalized/install_penalized.m"))
       case "nnet"
-	 pkg load nnet
+	 pkg load nnet parallel
       case "tree"
 	 addpath ~/oct/nc/M5PrimeLab ~/oct/nc/M5PrimeLab/private ;
       otherwise

@@ -4,13 +4,15 @@ set(0, "defaultfigureunits", "normalized", "defaultfigurepapertype", "A4") ;
 set(0, "defaultfigurepaperunits", "normalized", "defaultfigurepaperpositionmode", "auto") ;
 set(0, "defaultfigureposition", [0.7 0.7 0.3 0.3]) ;
 set(0, "defaultaxesgridalpha", 0.3)
-set(0, "defaultaxesfontname", "Linux Biolinum", "defaulttextfontname", "Linux Biolinum") ;
+set(0, "defaultaxesfontname", "Libertinus Sans", "defaulttextfontname", "Libertinus Sans") ;
 
 set(0, "defaultaxesfontsize", 18, "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
 
 
 addpath ~/oct/nc/maxdistcolor
 JMDL = 1 : 4 ;
+colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
+colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 ##col = col(randperm(ncol),:) ;
 
 ### plots
@@ -52,8 +54,8 @@ print(sprintf("nc/paper/loss.svg")) ;
 ### cases
 jNET = 3 ;
 net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
-load(sprintf("data/ana.%s.ob", ind)) ;
-load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname)) ;
+load(sprintf("data/ind/ind.%s.ob", GREG)) ;
+load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, IND, pdd.lname)) ;
 clf ; jVAR = 3 ;
 ## June 2013
 D = [2013, 5, 15 ; 2013, 6, 15] ; d = [2013 5 31] ;
@@ -62,7 +64,14 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 ## May 2016
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
-plot_case(ana.cape, pdd, deep.prob, D, d, jVAR, cx = 5, "svg") ;
+ds = datestr(datenum(d), "yyyy-mm") ;
+[h1 h2] = plot_case(cape, pdd, deep.prob, D, d, jVAR, cx = 5) ;
+printf("--> nc/%s.%02d/%s.svg\n", REG, NH, ds) ;
+print(h1, sprintf("nc/%s.%02d/%s.svg", REG, NH, ds)) ;
+printf("--> nc/cape.%s.svg\n", ds) ;
+hgsave(h2, sprintf("nc/cape.%s.og", ds)) ;
+print(h2, sprintf("nc/cape.%s.svg", ds)) ;
+
 
 if 0 		    # Eta for case
    clf ;
@@ -97,8 +106,6 @@ Pskl(:,:,4) = skl(:,[jSKL end]) ;
 
 Pskl = Pskl(JMDL,:,:) ;
 
-colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
-colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 figure(1, "position", [0.7 0.7 0.45 0.3]) ; sz = 70 ;
 clf ; clear ax
 ax(1) = subplot(1, 2, 1) ; hold on ;
@@ -110,10 +117,10 @@ xlabel([SKL{jSKL} " with cape"]) ; ylabel([SKL{jSKL} " without cape"]) ;
 
 ax(2) = subplot(1, 2, 2) ; hold on ;
 jPLT = 0 ;
-for jMDL = 1 : rows(Pskl)
+for jMDL = 1 : length(MDL)
    jPLT++ ;
-   hgS(jPLT) = scatter(Pskl(jMDL,1,4), Pskl(jMDL,end,4), sz, colS(jMDL,:), "filled", "s") ;
-   printf("%s:\t%7.3f\n", MDL{jMDL}, Pskl(jMDL,1,4)) ;
+   hgS(jPLT) = scatter(Pskl(jPLT,1,4), Pskl(jPLT,end,4), sz, colS(jPLT,:), "filled", "s") ;
+   printf("%s:\t%7.2f\n", MDL{jMDL}, Pskl(jPLT,1,4)) ;
 endfor
 
 ## Deep
@@ -125,7 +132,7 @@ for jNET = 1 : length(NET)
    ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
    mfile = sprintf("nc/%s.%02d/skl.%s.%s.%s.ot", REG, NH, net, ind, pdd.lname) ;
    load(mfile) ;
-   printf("<-- %s: %7.3f %7.3f\n", mfile, [mean(skl(:,jSKL)) max(skl(:,jSKL))]) ;
+   printf("<-- %s: %7.2f %7.2f\n", mfile, [mean(skl(:,jSKL)) max(skl(:,jSKL))]) ;
    hg(jNET) = hggroup() ;
    scatter(skl(:,jSKL), skl(:,end), sz/4, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
    hgD(jNET) = scatter(mean(skl(:,jSKL)), mean(skl(:,end)), sz, colD(jNET,:), "d", "filled", "parent", hg(jNET)) ;
@@ -137,60 +144,54 @@ for jNET = 1 : length(NET)
    scatter(ax(1), mean(skl(:,jSKL)), mean(w.skl(:,jSKL)), sz, colD(jNET,:), "d", "filled") ;
    axes(ax(2)) ;
 endfor
-axis tight ;
-vl = [xlim(ax(2))(1)-0.05 xlim(ax(2))(2)] ; yl = [ylim(ax(2))(1)-0.02 ylim(ax(2))(2)+0.02] ;
-plot(ax(1), vl, vl, "k--") ;
-set(ax, "xlim", vl) ; set(ax(1), "ylim", vl) ; set(ax(2), "ylim", yl) ;
-set(ax(1), "xlim", vl, "ylim", vl, "xgrid", "on", "ygrid", "on") ;
-set(ax(2), "xgrid", "on", "ygrid", "on") ;
-xlabel(SKL{jSKL}) ; ylabel("crossentropy") ;
+axis(ax(1), "tight") ;
+xl = [xlim(ax(1))(1) - 0.02 xlim(ax(1))(2) + 0.02] ;
+yl = [ylim(ax(1))(1) - 0.02 ylim(ax(1))(2) + 0.02] ;
+vn = min([xl yl](:)) ; vx = max([xl yl](:)) ;
+plot(ax(1), [vn vx], [vn vx], "k--") ;
+axis(ax(1), "tight") ;
+xl = [0.415 0.525] ; yl = [0.33 0.51] ;
+set(ax(2), "xlim", xl, "ylim", yl) ;
+set(ax, "xgrid", "on", "ygrid", "on") ;
+xlabel(ax(2), SKL{jSKL}) ; ylabel(ax(2), "crossentropy") ;
 hlS = legend(ax(1), hgE, upper(MDL(JMDL)), "box", "off", "location", "northwest") ;
 hlD = legend(ax(2), hgD, NET, "box", "off", "location", "southwest") ;
 set(findall(hlS, "type", "axes"), "xcolor", "none", "ycolor", "none") ;
 pos = get(ax(1), "position") ; pos(1) -= 0.05 ; set(ax(1), "position", pos)
 pos = get(ax(2), "position") ; pos(1) += 0.05 ; set(ax(2), "position", pos)
-set(hlS, "position", [0.43 0.69 0.10 0.24])
-set(hlD, "position", [0.43 0.12 0.10 0.5])
 set(findobj("-property", "fontsize"), "fontsize", 16) ;
+set(hlS, "position", [0.43 0.69 0.10 0.24])
+set(hlD, "position", [0.438 0.17 0.10 0.5])
 
-hgsave(sprintf("nc/paper/%s_scatter.og", SKL{jSKL})) ;
-print(sprintf("nc/paper/%s_scatter.svg", SKL{jSKL})) ;
+hgsave(sprintf("nc/paper/SI/%s_scatter.og", SKL{jSKL})) ;
+print(sprintf("nc/paper/SI/%s_scatter.svg", SKL{jSKL})) ;
 
 ## reliability curves
-jNET = 2 ;
-clf ;
-jNET++ ;
-net = NET{jNET} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{jNET}) ;
-load(sprintf("%s/Deep.%s.%s.%s.ob", sfx, net, ind, pdd.lname)) ;
-[r b] = rlb(deep.prob.x(:,2), pdd.c, 10) ;
-plot([0 1], [0 1], "k--", b, r, "color", colD(jNET,:)) ;
-axis square
-title(net)
-hgsave(sprintf("nc/paper/rlb.%s.og", net)) ;
-print(sprintf("nc/paper/rlb.%s.svg", net)) ;
-
+set(gcf, "position", get(groot, "defaultfigureposition")) ;
 clf ; j = 0 ; clear ax h r
 for kMDL = 1 : length(MDL)
    mdl = MDL{kMDL} ; sfx = sprintf("data/%s.%02d/%dx%d", REG, NH, RES{kMDL}) ;
-   if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", REG, NH, mdl, ind, pdd.lname), "file") == 2
+   if exist(pfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, IND, pdd.lname), "file") == 2
       load(pfile) ;
    else
       warning("file not found: %s", pfile) ;
    endif
    [r(:,kMDL) b] = rlb(shallow.prob.x(:,2), pdd.c, 10) ;
-   ax(++j) = subaxis(2, 2, j, "SpacingH", 0.07, "SpacingV", 0.17) ;
+##   ax(++j) = subaxis(2, 2, j, "SpacingH", 0.07, "SpacingV", 0.17) ;
+   ax(++j) = subplot(2, 2, j) ;
    plot(b, r(:,kMDL), "color", colS(kMDL,:), [0 1], [0 1], "k--") ;
-   title(mdl)
+   title(upper(mdl))
    pos = get(gca, "position") ;
-   ix(j) = axes("position",[pos(1)+0.22 pos(2)+0.01 pos(3)/3 pos(4)/3]) ;
+   ix(j) = axes("position",[pos(1)+0.21 pos(2)+0.05 pos(3)/3 pos(4)/3]) ;
    [nn xx] = hist(shallow.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
-   bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   bar(xx, nn/size(shallow.prob.x,1), "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   ylim([0 0.35]) ;
    set(get(get(gca, "children"), "baseline"), "visible", "off") ;
    set(gca, "XTick", [], "YTick", [], "box", "off", "ycolor", "none")
 endfor
-set(ax, "fontsize", 14, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
+set(ax, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
 xlabel(ax(3), "forecast prob.") ; ylabel(ax(3), "observed freq.")
-set(findobj("-property", "fontsize"), "fontsize", 12) ;
+set(findobj("-property", "fontsize"), "fontsize", 16) ;
 hgsave(sprintf("nc/paper/Shallow.rlb.og")) ;
 print(sprintf("nc/paper/Shallow.rlb.svg")) ;
 
@@ -203,19 +204,20 @@ for kNET = 1 : length(NET)
       warning("file not found: %s", pfile) ;
    endif
    [r(:,kNET) b] = rlb(deep.prob.x(:,2), pdd.c, 10) ;
-   ax(++j) = subaxis(3, 3, j, "SpacingH", 0.07, "SpacingV", 0.17) ;
+   ax(++j) = subplot(3, 3, j) ;
    plot(b, r(:,kNET), "color", colD(kNET,:), [0 1], [0 1], "k--") ;
    title(net)
    pos = get(gca, "position") ;
-   ix(j) = axes("position",[pos(1)+0.14 pos(2)+0.01 pos(3)/3 pos(4)/3]) ;
+   ix(j) = axes("position",[pos(1)+0.12 pos(2)+0.03 pos(3)/3 pos(4)/3]) ;
    [nn xx] = hist(deep.prob.x(:,2), 10, "facecolor", "k", "edgecolor", "k") ;
-   bar(xx, nn, "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   bar(xx, nn/size(deep.prob.x,1), "barwidth", 0.2, "facecolor", "k", "edgecolor", "k") ;
+   ylim([0 0.35]) ;
    set(get(get(gca, "children"), "baseline"), "visible", "off") ;
    set(gca, "XTick", [], "YTick", [], "box", "off", "ycolor", "none")
 endfor
-set(ax, "fontsize", 14, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
+set(ax, "XTick", [0.2 0.5 0.8], "YTick", [0.2 0.5 0.8]) ;
 xlabel(ax(7), "forecast prob.") ; ylabel(ax(7), "observed freq.")
-set(findobj("-property", "fontsize"), "fontsize", 12) ;
+set(findobj("-property", "fontsize"), "fontsize", 14) ;
 hgsave(sprintf("nc/paper/Deep.rlb.og")) ;
 print(sprintf("nc/paper/Deep.rlb.svg")) ;
 
@@ -234,6 +236,7 @@ Cn = union(C1n, C2n, "stable")(JM) ;
 COL = [1 1 1 ; 0.2 0.7 0.2 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
 figure(1, "position", [0.7 0.7 0.4 0.34]) ; sz = 40 ;
 [o.id o.x] = annstat(pdd.id, real(pdd.c), @nanmean) ;
+Y = [1979 2005] ;
 oC = sdate(o.id, [2001 1 1 ; 2010 1 1]) ;
 oV = sdate(o.id, [2011 1 1 ; 2020 1 1]) ;
 
@@ -252,9 +255,10 @@ for mdl = C
    scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
    scatter(s.id(sC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
    scatter(s.id(sV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
-   [B, BINT, R, RINT, STATS] = regress(s.x, [ones(rows(s.x),1) s.id(:,1)]) ;
-   yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-   h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
+   su = selper(s, Y(1), Y(2)) ;
+   [B, BINT, R, RINT, STATS] = regress(su.x, [ones(rows(su.x),1) su.id(:,1)]) ;
+   yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+   h = plot(su.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
    xlim(s.id([1 end],1)) ;
    ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
    xlabel("year") ; ylabel(sprintf("P")) ;
@@ -272,7 +276,7 @@ for mdl = C
    xlabel("OBS") ; ylabel(sprintf("%s", Cn{jMDL})) ;
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
-   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
+   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)<alpha) ;
    text(xn, xx, sprintf("{\\it\\rho = %.2f}", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14, "XTick", [0.4 0.6], "YTick", [0.4 0.6]) ;
    yl = [min(ylim(ax1)(1), ylim(ax2)(1)) max(ylim(ax1)(2), ylim(ax2)(2))] ;
@@ -285,7 +289,7 @@ figure(1, "position", [0.7 0.3 0.3 0.7]) ; sz = 20 ;
 JMa = setxor(JM, 1 : length(MDL) + length(NET)) ;
 Call = union(C1, C2, "stable")(JMa) ;
 Calln = union(C1n, C2n, "stable")(JMa) ;
-clf ; hold on ;
+clf ; hold on ; clear ax
 jPLT = jMDL = 0 ; nMDL = round(length(Call)/2) ; fs = 14 ;
 for mdl = Call
    jPLT++ ; jMDL++ ;
@@ -308,9 +312,10 @@ for mdl = Call
    scatter(s.id(~(sC|sV),1), s.x(~(sC|sV),1), sz, COL(3,:), "filled") ;
    scatter(s.id(sC,1), s.x(sC,1), sz, COL(2,:), "filled") ;
    scatter(s.id(sV,1), s.x(sV,1), sz, COL(3,:), "filled") ;
-   [B, BINT, R, RINT, STATS] = regress(s.x, [ones(rows(s.x),1) s.id(:,1)]) ;
-   yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-   h = plot(s.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
+   su = selper(s, Y(1), Y(2)) ;
+   [B, BINT, R, RINT, STATS] = regress(su.x, [ones(rows(su.x),1) su.id(:,1)]) ;
+   yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+   h = plot(su.id(:,1), yf, "color", 0*COL(1,:), "linewidth", 2) ;
    xlim(s.id([1 end],1)) ;
    ylim([0.8*ylim()(1) 1.1*ylim()(2)]) ;
    xlabel("year") ; ylabel(sprintf("P")) ;
@@ -329,7 +334,7 @@ for mdl = Call
    xlabel("OBS") ; ylabel(sprintf("%s", Calln{jMDL})) ;
 ##   xlabel("{\\itP_{CatRaRE}}, OBS") ; ylabel(sprintf("{\\itP_{CatRaRE}}, %s", mdl)) ;
    r = corr(o.x(oV,1), s.x(sV,1)) ;
-   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)) ;
+   printf("%s:\t%.2f\t%.2f\t%.2f\n", mdl, r, 100*B(2), STATS(3)<alpha) ;
    text(xn, xx, sprintf("{\\it\\rho = %.2f}", r), "color", COL(3,:)) ;
    set(gca, "fontsize", 14)
    yl = [min(ylim(ax(jPLT,1))(1), ylim(ax(jPLT,2))(1)) max(ylim(ax(jPLT,1))(2), ylim(ax(jPLT,2))(2))] ;
@@ -355,14 +360,19 @@ for mdl = C
       eval(sprintf("sim = %s ;", sim{:})) ;
       eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
-      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      if strcmp(sim.prob.name, "historical")
+	 su = selper(s, Y(1), Y(2)) ;
+      else
+	 su = s ;
+      endif
+      [B, BINT, R, RINT, STATS] = regress(su.x(:,2), [ones(rows(su.x),1) su.id(:,1)]) ;
       ct(j) = 100*B(2) ;
       stats(j,:) = STATS ;
-      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
+      yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+      h(j) = plot(su.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
       xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
-   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
+   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<alpha, ct(3), stats(3,3)<alpha) ;
    ylim([0.25 0.7]) ;
    for j = 2:rows(stats)
       if stats(j,3) < alpha
@@ -403,14 +413,19 @@ for mdl = Call
       eval(sprintf("sim = %s ;", sim{:})) ;
       eval(sprintf("[s.id s.x] = annstat(sim.prob.id, sim.prob.%s, @nanmean) ;", strrep(mdl, "-", "_"))) ;
       scatter(s.id(:,1), s.x(:,2), sz, COL(j+1,:), "filled") ; axis tight
-      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
+      if strcmp(sim.prob.name, "historical")
+	 su = selper(s, Y(1), Y(2)) ;
+      else
+	 su = s ;
+      endif
+      [B, BINT, R, RINT, STATS] = regress(su.x(:,2), [ones(rows(su.x),1) su.id(:,1)]) ;
       ct(j) = 100 * B(2) ;
       stats(j,:) = STATS ;
-      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(j) = plot(s.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
+      yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+      h(j) = plot(su.id(:,1), yf, "color", COL(j+1,:), "linewidth", 2) ;
       xlabel("year") ; ylabel(sprintf("P")) ;
    endfor
-   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<0.05, ct(3), stats(3,3)<0.05) ;
+   printf("%s:\t%.2f\t%d\t%.2f\t%d\n", mdl, ct(2), stats(2,3)<alpha, ct(3), stats(3,3)<alpha) ;
    ylim([0.25 0.7]) ;
    for j = 2:rows(stats)
       if stats(j,3) < alpha
@@ -431,41 +446,3 @@ endfor
 set(findobj("-property", "fontsize"), "fontsize", fs) ;
 hgsave(sprintf("nc/paper/GCM_RCM.2.og")) ;
 print(sprintf("nc/paper/GCM_RCM.2.svg")) ;
-
-
-
-COL = [0 0 0 ; 0.8 0.2 0.2 ; 0.2 0.8 0.2 ; 0.2 0.2 0.8]([1 4 2],:) ;
-set(0, "defaultaxesfontsize", 18) ;
-set(0, "defaulttextfontsize", 18, "defaultlinelinewidth", 2) ;
-MDL = {"Shallow.tree" "Deep.CIFAR_10"} ; 
-clf ; jMDL = 0 ;
-for iMDL = [2 1]
-   jMDL++ ;
-   ax(jMDL) = subplot(1, 2, jMDL) ; hold on ; clear h ;
-   mdl = MDL{iMDL} ;
-   h(1) = plot([1951 2100], [qEta qEta], "color", COL(1,:), "linewidth", 4, "linestyle", "--") ;
-   for jSIM = 1 : length(SIM)
-      eval(sprintf("sim = %s ;", SIM{jSIM})) ;
-      eval(sprintf("[s.id s.x] = annstat(sim.id, sim.%s.prob, @nanmean) ;", mdl)) ;
-      scatter(s.id(:,1), s.x(:,2), 6, 0.8*COL(jSIM+1,:), "filled") ; axis tight
-      [B, BINT, R, RINT, STATS] = regress(s.x(:,2), [ones(rows(s.x),1) s.id(:,1)]) ;
-      stats(jSIM,:) = STATS ;
-      yf = [ones(rows(s.x),1) s.id(:,1)] * B ;
-      h(1+jSIM) = plot(s.id(:,1), yf, "color", COL(1+jSIM,:), "linewidth", 4) ;
-      ##      h(j) = plot(s.id(:,1), smooth(s.x(:,2), 1), "color", COL(j,:), "linewidth", 5) ;
-      xlabel("year") ; ylabel(sprintf("prob (CatRaRE)")) ;
-   endfor
-   ##   set(gca, "ygrid", "on") ;
-   for jSIM = 1 : 2
-      if stats(jSIM,3) < alpha
-	 xt = mean(get(h(1+jSIM), "xdata")) ;
-	 text(xt, 0.72, {"\\it p<0.05"}, "color", COL(1+jSIM,:)) ;
-      endif
-   endfor
-   title(toupper(strrep(mdl, "_", "\\_"))) ;
-   legend(h, {"CLIM" NSIM{:}}, "box", "off", "location", "southeast") ;
-endfor
-set(ax, "ylim", [0.35 0.75]) ;
-
-hgsave(sprintf("nc/paper/Shallow.sim.og")) ;
-print(sprintf("nc/paper/Shallow.sim.svg")) ;

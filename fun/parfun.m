@@ -6,11 +6,9 @@ function varargout = parfun (varargin)
 
    dbs = dbstack ;
 
-   global PAR NCPU PARLOOP
+   global NCPU PARLOOP VERBOSE
 
    ncpu = NCPU ;
-   if isempty(ncpu) && isfield(PAR, "ncpu") ncpu = PAR.ncpu ; endif
-   PAR.dbg = isfield(PAR, "dbg") && PAR.dbg ;
 
    c = cell(1, nargout) ;
    if isnumeric(w = varargin{1})
@@ -24,11 +22,11 @@ function varargout = parfun (varargin)
       pfun = "arrayfun" ;
    endif
 
-   if isempty(ncpu) || ncpu < 2 || (isfield(PAR, "dbg") && PAR.dbg)
+   if isempty(ncpu) || ncpu < 2
       if !isempty(j = find(strcmpi(varargin, "verboselevel")))
 	 varargin = [varargin(1:j-1) varargin(j+2:end)] ;
       endif
-      if PAR.dbg
+      if VERBOSE
 	 printf("cellfun: ncpu = %d: ", ncpu) ;
 	 printf("< %s", sfun) ;
 	 arrayfun(@(a) printf("< %s", a.name), dbs) ;
@@ -55,7 +53,7 @@ function varargout = parfun (varargin)
 	    if !isempty(j = find(strcmpi(varargin, "verboselevel")))
 	       varargin = [varargin(1:j-1) varargin(j+2:end)] ;
 	    endif
-	    if PAR.dbg
+	    if VERBOSE
 	       printf("%s: ", pfun) ;
 	       printf("< %s", sfun) ;
 	       arrayfun(@(a) printf(" < %s", a.name), dbs) ;
@@ -63,19 +61,18 @@ function varargout = parfun (varargin)
 	    endif
 	    [c{:}] = feval(pfun, varargin{:}, "ErrorHandler", @errfun) ;
 	 else
-	    if PAR.dbg
+	    if min(numel(varargin{2}), nproc) > 1
+	       pkg load parallel
+	       varargin = [ncpu, varargin] ;
+	       pfun = ["par" pfun] ;
+	    endif
+	    if VERBOSE
 	       printf("%s: ", pfun) ;
 	       printf("< %s", sfun) ;
 	       arrayfun(@(a) printf(" < %s", a.name), dbs) ;
 	       printf("\n") ;
 	    endif
-	    if numel(varargin{2}) > nproc
-	       pkg load parallel
-	       [c{:}] = feval(["par" pfun], ncpu, varargin{:}, "VerboseLevel", 0, "ErrorHandler", @errfun) ;
-##	       [c{:}] = feval(["par" pfun], ncpu, varargin{:}, "VerboseLevel", 0) ;
-	    else
-	       [c{:}] = feval(pfun, varargin{:}, "ErrorHandler", @errfun) ;	       
-	    endif
+	    [c{:}] = feval(pfun, varargin{:}, "ErrorHandler", @errfun) ;
 	 endif
       endif
    endif

@@ -3,8 +3,17 @@
 ##
 function res = crossentropy (o, p)
 
-   p = p + 1e-3 ;   # numeric stability
+   eps = 1e-3 ;
 
+   c = unique(o)' ;
+   o = o == c ;
+
+   p = p + eps ;
+
+   if columns(o) == 1
+      o = [o 1-o] ;
+   endif
+   
    I = all(isfinite(log(p)), 2) ;
    
    ce = @(o, p) -(o * log(p)') ;

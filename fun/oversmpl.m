@@ -32,21 +32,14 @@ function [iout, lout] = oversmpl (i, l, IMB)
    [~, j] = min(sum(I)) ;
    I = I(:,j) ;
 
-   n = sum(~I) - sum(I) ;
-   if n == 0 return ; endif
+   if (n = floor(sum(~I) / sum(I))) > 1
+      printf("oversampling with: %s\n", IMB) ;
+   endif
 
-   ## create n new cases of I and append
-   fI = randi(sum(I), n, 1) ;
-   fI = [find(I) ; find(I)(fI)] ;
-
+   fI = repmat(find(I), n, 1) ;
+   fI = fI(randperm(length(fI))) ;
    fnI = find(~I) ;
-
-   ## concatenate cases
-   idx.type = "()" ; idx.subs = repmat({":"}, 1, ndims(i)) ;
-   idx.subs{1} = fnI ; inI = subsref(i, idx) ;
-   idx.subs{1} = fI ; iI = subsref(i, idx) ;
-   iout = [inI ; iI] ;
-   lout = [l(fnI,:) ; l(fI,:)] ;
+   fnI = fnI(randperm(length(fnI))) ;
 
    ## shuffle result
    iout = iout(randperm(size(iout, 1)),:) ;

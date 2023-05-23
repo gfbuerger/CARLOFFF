@@ -152,7 +152,7 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nls"} ;
+MDL = {"lasso" "tree" "nnet" "nls"} ;
 for PCA = {{} []}
    PCA = PCA{:} ;
    if iscell(PCA)
@@ -173,7 +173,7 @@ for PCA = {{} []}
 	    if 0
 	       strucdisp(shallow.skl) ;
 	       plot_fit(mdl, shallow.fit) ;
-	       set(findall("-property", "fontname"), "fontname", "Linux Biolinum") ;
+	       set(findall("-property", "fontname"), "fontname", "Libertinus Sans") ;
 	       set(findall("type", "axes"), "fontsize", 24) ;
 	       set(findall("type", "text"), "fontsize", 22) ;
 	    endif
@@ -182,7 +182,7 @@ for PCA = {{} []}
 	    ##	 varargin = {"lambdamax", 1e2, "lambdaminratio", 1e-2} ;
 	    shallow = Shallow(ptr, pdd, PCA, "CVE", mdl, SKL, varargin{:}) ;
 	    printf("--> %s\n", sfile) ;
-	    save("-text", sfile, "shallow") ;
+	    save(sfile, "shallow") ;
 	 endif
 	 skl(jMDL,:) = [cellfun(@(s) mean(diag(shallow.skl.VAL.(s))), SKL) shallow.crossentropy.VAL] ;
       endfor
@@ -195,11 +195,10 @@ endfor
 ## Deep
 ## divergent: CIFAR-10, SqueezeNet
 ## shape mismatch: Inception-v4
-JNET = 1 : 10 ;
-NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg" "NNet"}(JNET) ;
-RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32] [32 32]}(JNET) ;
+JNET = 1 : 9 ;
+NET = {"Simple" "ResNet" "LeNet-5" "CIFAR-10" "AlexNet" "GoogLeNet" "ALL-CNN" "DenseNet" "Logreg"}(JNET) ;
+RES = {[32 32] [32 32] [28 28] [32 32] [227 227] [224 224] [32 32] [32 32] [32 32]}(JNET) ;
 ptr.ind = ind ;
-jSKL = 2 ; 	    # ETS
 for jNET = 1 : length(NET)
 
    net = NET{jNET} ;
@@ -245,10 +244,10 @@ for jNET = 1 : length(NET)
 	    endif
 	 endif
 
-	 kfail = 0 ; wskl = 0 ;
-	 while ++kfail <= 10 && wskl < 0.3
+	 kfail = 0 ; wskl = Inf ;
+	 while ++kfail <= 50 && wskl > 0.5
 	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
-	    wskl = diag(deep.skl.VAL.(SKL{jSKL}))(2:end) ;
+	    wskl = deep.crossentropy.VAL ;
 	 endwhile
 	 if kfail > 5 warning("no convergence\n") ; endif
 
@@ -315,10 +314,9 @@ profshow ;
 profile off ;
 T = profile("info") ;
 save -text prof.ot T
-exit
 
 ### historical and future simulations
-load(ptfile = sprintf("data/%s.%02d/%s.%s.ob", PFX, NH, ind, pdd.lname)) ;
+load(ptfile) ;
 lon = ptr.lon ; lat = ptr.lat ; scale = ptr.scale ;
 JSIM = 1:3 ;
 SIM = {"ana" "historical" "rcp85"}(JSIM) ;
@@ -375,7 +373,7 @@ for jSIM = 1 : length(SIM)
    glb = union(glb, glob(sprintf("esgf/*.%s.ob", sim))) ;
    glb = union(glb, glob(sprintf("data/%s.ob", sim))) ;
 
-   if isnewer(ptfile = sprintf("data/%s.%s.%s.ob", sim, ind, pdd.lname), glb{:})
+   if isnewer(ptfile = sprintf("data/%s.%s.%s.ob", sim, ptr.ind, pdd.lname), glb{:})
 
       printf("<-- %s\n", ptfile) ;
       load(ptfile) ;
@@ -407,8 +405,7 @@ for jSIM = 1 : length(SIM)
 	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", PFX, NH, mdl, ptr.ind, pdd.lname) ;
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
-	 out = sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim) ;
-	 eval(out) ;
+	 eval(sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim)) ;
       endfor
       
       for jNET = 1 : length(NET(JNET))
@@ -416,8 +413,7 @@ for jSIM = 1 : length(SIM)
 	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, PFX, NH, net, ind, pdd.lname) ;
 	 model = sprintf("%s_deploy.prototxt", pfx) ;
 	 if exist(model, "file") ~= 2
-	    warning("model not found: %s\n", model) ;
-	    continue ;
+	    error("model not found: %s", model) ;
 	 endif
 	 siter = table_pick(sprintf("%s_solver.prototxt", pfx), "max_iter") ;
 	 weights = sprintf("%s_iter_%s.caffemodel", pfx, siter) ;
@@ -439,4 +435,6 @@ for jSIM = 1 : length(SIM)
 
 endfor
 
-source plots.m ;
+if ~isempty(graphics_toolkit) && ~strcmp(graphics_toolkit, "gnuplot")
+   source plots.m ;
+endif
