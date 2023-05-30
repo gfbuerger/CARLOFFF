@@ -3,6 +3,13 @@
 ## estimate skill
 function [skl th] = skl_est (p, o, SKL, thi = [])
 
+   if size(o, 2) > 2
+      skl = th = NaN ;
+      return ;
+   else
+      p = p(:,end) ; o = o(:,end) ;
+   endif
+
    np = 10 ;
    pr = linspace(min(p(:)), max(p(:)), np) ;
    dp = range(pr) / np ;

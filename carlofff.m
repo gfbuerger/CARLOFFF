@@ -1,7 +1,7 @@
 
 profile on
 
-global isoctave PFX REG NH MON IMB CNVDUR BLD
+global isoctave PFX REG NH MON IMB CNVDUR BLD VERBOSE PARALLEL MAXX
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
@@ -12,7 +12,7 @@ cd ~/carlofff
 [glat glon] = borders("germany") ;
 REG.name = {"NW" "NE" "SW" "SE"} ;
 REG.name = {"DE"} ;
-PFX = "1R" ; BLD = ~true ;
+PFX = "1R" ; BLD = ~true ; MAXX = 100 ;
 GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ;
 for jLON = 1 : length(GLON) - 1
    for jLAT = 1 : length(GLAT) - 1
@@ -40,7 +40,7 @@ NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = {0.99 0.995 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
 IMB = {"SIMPLE" "SMOTE" ""}{3} ;
-SKL = {"HSS" "ETS"} ;
+SKL = {"HSS" "ETS" "BSS"} ; jSKL = 2 ; # ETS
 
 ##{
 isoctave = @() exist("OCTAVE_VERSION","builtin") ~= 0 ;
@@ -167,7 +167,7 @@ for PCA = {{} []}
       clear skl ;
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", PFX, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
+	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", PFX, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
 	    printf("<-- %s\n", sfile) ;
 	    load(sfile) ;
 	    if 0

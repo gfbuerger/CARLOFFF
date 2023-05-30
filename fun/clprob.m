@@ -13,6 +13,4 @@ function res = clprob (par, x, u)
       res = cell2mat(arrayfun(@(j) mean(u(J) == u(j), 2), 1 : length(u), "UniformOutput", false)) ;
    endif
 
-   res = res(:,end) ;
-
 endfunction

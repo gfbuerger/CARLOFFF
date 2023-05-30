@@ -118,7 +118,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
       phs = phs{:} ;
 
-      if strcmp(PHS, "CAL")  th = [] ; endif # first CAL then VAL !
+      if strcmp(phs, "CAL")  th = [] ; endif # first CAL then VAL !
 
       if 0
 
@@ -134,11 +134,18 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
       else
 
+	 labels = pdd.c(pdd.(phs)) ;
 	 prb.(phs) = apply_net(ptr.scale*ptr.img, net, ptr.(phs)) ;
+         if size(prb.(phs), 2) ~= 2
+            warning("incorrect dimensions: %s, %s", proto, phs)
+            prb.(phs) = prb.(phs)' ;
+         endif
 
       endif
 
-      [skl.(PHS) th] = skl_est(prb.(PHS)(:,end), labels, SKL, th) ;
+      ce.(phs) = crossentropy(labels, prb.(phs)) ;
+
+      [skl.(phs) th] = skl_est(prb.(phs)(:,end), labels, SKL, th) ;
       
    endfor
 

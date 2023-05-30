@@ -3,7 +3,7 @@
 ## calibrate and apply Shallow models
 function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, varargin)
 
-   global PFX NH IMB
+   global PFX NH IMB MAXX
    if strcmp(class(PCA), "char") ; pkg load tisean ; endif
    init_mdl(mdl) ;	 
 
@@ -93,6 +93,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	 [yl uy] = c2l(yy) ; # make 1-hot classes
 
+	 tic ;
 	 switch mdl
 
 	    case "lasso"
@@ -125,16 +126,18 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       Pr = [min(xx) ; max(xx)]' ;
 	       SS = [7 3 1] ; # based on some tests
-	       Net = arrayfun(@(i) newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse"), 1:20) ;
+	       if size(xx, 2) > MAXX
+		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
+		  Net = newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse") ;
+		  Net.trainParam.epochs = 1 ;
+	       else
+		  Net = arrayfun(@(i) newff(Pr, SS, {"tansig","logsig","purelin"}, "trainlm", "learngdm", "mse"), 1:20) ;
+	       endif
 	       for i = 1 : length(Net)
 		  Net(i).trainParam.show = NaN ;
 		  Net(i).trainParam.goal = 0 ;
-		  if size(xx, 2) > MAXX
-		     warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
-		     Net(i).trainParam.epochs = 1 ;
-		  endif
 	       endfor
-##	       Net.trainParam.mu_max = 1e12 ;
+
 	       fit.par = parfun(@(net) train(net, xx', yy'), Net) ;
 	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
@@ -167,8 +170,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       endif
 
       if Lcv
-	 w = feval(fit.model, fit.par, x) ;
-	 prob.x(ptr.(phs),:) = [1 - w w] ;
+	 prob.x(ptr.(phs),:) = feval(fit.model, fit.par, x) ;
 	 eskl.(phs) = [] ;
 	 if strcmp(mdl, "tree")
 	    w = m5ppredict_new(fit.par, x) ;
@@ -184,10 +186,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
       lc = c2l(pdd.c(pdd.(phs),:)) ;
       ce.(phs) = crossentropy(lc, prob.x(ptr.(phs),:)) ;
-      wskl = skl_est(prob.x(ptr.(phs),:), lc, SKL) ;
+      [skl.(phs) th] = skl_est(prob.x(ptr.(phs),:), lc, SKL, th) ;
 
-      [skl.(phs) th] = skl_est(prob.x(ptr.(phs),end), pdd.c(pdd.(phs)), SKL, th) ;
-      
    endfor
 
    res = struct("fit", fit, "prob", prob, "th", th, "skl", skl, "crossentropy", ce, "eskl", eskl) ;
@@ -256,17 +256,4 @@ function init_mdl (mdl)
 	 pkg load optim	parallel
    endswitch
    
-endfunction
-
-
-## usage: prob = clprob (par, x, u)
-##
-##
-function prob = clprob (par, x, u)
-
-   w = m5ppredict(par, x)(:,end) ;
-   [~, J] = min(abs(w - u), [], 2) ;
-
-   prob = c2l(u(J)') ;
-
 endfunction
