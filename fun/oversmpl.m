@@ -3,7 +3,7 @@
 ## oversample i, l using IMB
 function [iout, lout] = oversmpl (i, l, IMB)
 
-   if isempty(IMB) || strcmpi("IMB", "NONE")
+   if isempty(IMB) || strcmpi(IMB, "NONE")
       [iout lout] = deal(i, l) ;
       return ;
    endif

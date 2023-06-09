@@ -119,7 +119,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
 	       fit.par = fit.beta(:,jLasso) ;
-	       fit.model = @(par, x) logistic_cdf(Lfun(par, x)) ;
+	       fit.model = @(par, x) logicdf(Lfun(par, x)) ;
 	       printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
 	    case "nnet"
@@ -135,11 +135,11 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 		     Net(i).trainParam.epochs = 1 ;
 		  endif
 	       endfor
-##	       Net.trainParam.mu_max = 1e12 ;
+
 	       fit.par = parfun(@(net) train(net, xx', yy'), Net) ;
-	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
+	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
-	       
+
 	    case "tree"
 
 	       trainParamsEnsemble = m5pparamsensemble(200) ;
@@ -151,19 +151,13 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(columns(xx)+1, 1) ;
+	       opt = optimset("MaxIter", 200, "TolFun", 1e-8) ;
 	       if size(xx, 2) > MAXX
 		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
-		  opt = optimset("MaxIter", 2, "debug", ~true) ;
-	       else
-		  opt = optimset("debug", ~true) ;
 	       endif
-##	       fit.par = nlinfit (xx, yy, modelfun, beta0, opt) ;
-##	       F = @(beta) sumsq(modelfun(beta,xx) - yy) ;
-##	       [fit.par resid cvg outp] = nonlin_residmin(F, beta0, opt) ;
 	       [fit.par resid cvg outp] = nonlin_curvefit(modelfun, beta0, xx, yy, opt) ;
-
 	       fit.model = @(beta, x) modelfun(beta, x) ;
-	       
+
 	 endswitch
 	 
 	 fprintf('Execution time: %0.2f hours\n', toc/(60*60));
@@ -209,7 +203,7 @@ endfunction
 ##
 function res = F (beta, X)
 
-   res = logistic_cdf(beta(1) + X * beta(2:end)) ;
+   res = logicdf(beta(1) + X * beta(2:end)) ;
 
    res = max(0, res) ;
    res = min(1, res) ;
