@@ -39,7 +39,7 @@ SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
 scale = 0.00390625 ; % MNIST
 Q0 = {0.99 0.995 0.9986}{1} ; # 2nd optimal PC for MoC(HiOS, Eta)
-IMB = {"SIMPLE" "SMOTE" ""}{3} ;
+IMB = {"SMOTE" "NONE" 0}{3} ;
 SKL = {"HSS" "ETS" "BSS"} ; jSKL = 2 ; # ETS
 
 ##{
@@ -105,7 +105,7 @@ if isnewer(ptfile = sprintf("data/%s.%02d/%s.%s.ob", PFX, NH, ind, pdd.lname), a
    load(ptfile) ;
 
 else
-   
+
    ## select predictors
    str = sprintf("%s,", VAR{JVAR}) ; str = str(1:end-1) ;
    eval(sprintf("ptr = selptr(scale, ind, ptfile, ID, FILL, %s) ;", str))
@@ -245,7 +245,7 @@ for jNET = 1 : length(NET)
 	 endif
 
 	 kfail = 0 ; wskl = Inf ;
-	 while ++kfail <= 50 && wskl > 0.5
+	 while ++kfail <= 50 && wskl > 3
 	    [deep weights] = Deep(ptr, pdd, solverstate, SKL) ;
 	    wskl = deep.crossentropy.VAL ;
 	 endwhile
@@ -402,7 +402,7 @@ for jSIM = 1 : length(SIM)
 
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
-	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ot", PFX, NH, mdl, ptr.ind, pdd.lname) ;
+	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", PFX, NH, mdl, ptr.ind, pdd.lname) ;
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
 	 eval(sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim)) ;

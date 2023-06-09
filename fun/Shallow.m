@@ -138,25 +138,28 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 		  Net(i).trainParam.goal = 0 ;
 	       endfor
 
-	       fit.par = parfun(@(net) train(net, xx', yy'), Net) ;
-	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
+	       fit.par = parfun(@(net) train(net, xx', yl(:,end)'), Net) ;
+	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
 	       
 	    case "tree"
 
 	       trainParamsEnsemble = m5pparamsensemble(200) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
-	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
-	       fit.model = @(par, x) clprob(par, x, uy) ;
+	       fit.par = m5pbuild_new(xx, yl(:,end), [], [], trainParamsEnsemble) ;
+	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
 
 	    otherwise
 
-	       model = @(beta, x) logistic_cdf(Lfun(beta, x)) ;
+	       model = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(size(xx, 2)+1, 1) ;
-	       opt = optimset("Display", "iter") ;
-	       par = cell2mat(pararrayfun(nproc, @(j) nlinfit (xx, yl(:,j), model, beta0, opt), 1 : size(yl, 2), "UniformOutput", false)) ;
+	       opt = optimset("MaxIter", 200, "TolFun", 1e-8, "debug", ~true) ;
+	       if size(xx, 2) > MAXX
+		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
+	       endif
+	       par = cell2mat(parfun(@(j) nlinfit (xx, yl(:,j), model, beta0, opt), 1 : size(yl, 2), "UniformOutput", false)) ;
 	       fit = struct("model", model, "par", par) ;
-	       
+
 	 endswitch
 	 
 	 fprintf('Execution time: %0.2f hours\n', toc/(60*60));

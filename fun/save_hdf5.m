@@ -8,7 +8,7 @@ function save_hdf5 (of, images, labels, lrnd = false)
    file = strrep(of, ".txt", ".h5") ;
    
    fid = fopen(of, "wt") ;
-   fputs(fid, file) ;
+   fdisp(fid, file) ;
    fclose(fid) ;
 
    [st msg] = unlink(file) ;

@@ -38,12 +38,14 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
    h5f = @(pddn, phs) sprintf("%s/%s.%s.%s.txt", Dd, ptr.ind, pddn, phs) ;
 
+   [yl uy] = c2l(pdd.c) ; # make 1-hot classes
+
    for phs = {"CAL" "VAL"}
       phs = phs{:} ;
       eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", phs, phs)) ;
       eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", phs, phs)) ;
       if ~isnewer(of = h5f(pdd.lname, phs), ptr.ptfile) || ~isempty(IMB)
-	 labels = pdd.c(pdd.(phs),:) - 1 ;
+	 labels = yl(pdd.(phs),end) ;
 	 images = ptr.img(ptr.(phs), :, :, :) ;
 
 	 if strcmp(phs, "CAL")
@@ -134,7 +136,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
       else
 
-	 labels = pdd.c(pdd.(phs)) ;
+	 labels = yl(pdd.(phs),end) ;
 	 prb.(phs) = apply_net(ptr.scale*ptr.img, net, ptr.(phs)) ;
          if size(prb.(phs), 2) ~= 2
             warning("incorrect dimensions: %s, %s", proto, phs)
@@ -143,9 +145,8 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
 
       endif
 
-      ce.(phs) = crossentropy(labels, prb.(phs)) ;
-
-      [skl.(phs) th] = skl_est(prb.(phs)(:,end), labels, SKL, th) ;
+      ce.(phs) = crossentropy(yl(pdd.(phs),end), prb.(phs)) ;
+      [skl.(phs) th] = skl_est(prb.(phs)(:,end), yl(pdd.(phs),end), SKL, th) ;
       
    endfor
 
