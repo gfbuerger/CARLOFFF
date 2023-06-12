@@ -74,8 +74,8 @@ function [iout, lout] = oversmpl (i, l, IMB)
       N = size(iout) ;
       Ir = randperm(N(1)) ;
       idx.subs{1} = ldx.subs{1} = Ir ;
-      iout = subref(iout, idx) ;
-      lout = subref(lout, ldx) ;
+      iout = subsref(iout, idx) ;
+      lout = subsref(lout, ldx) ;
    else
       N = size(iout) ;
       iout = reshape(iout, [N(1)/2 2 N(2:end)]) ;
