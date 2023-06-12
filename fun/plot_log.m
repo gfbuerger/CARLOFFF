@@ -1,4 +1,4 @@
-## usage: varargout = plot_log (h, lfile, loss = "loss", gap = 1, pse = 10, plog = 0, c = 100)
+## usage: varargout = plot_log (h, lfile, loss = "loss", gap = 1, pse = 10, plog = 0)
 ##
 ##
 function varargout = plot_log (h, lfile = "/tmp/caffe.INFO", loss = "loss", gap = 1, pse = 10, plog = 0)

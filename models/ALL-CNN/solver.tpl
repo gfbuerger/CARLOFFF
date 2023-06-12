@@ -13,7 +13,7 @@ weight_decay: 0.001
 lr_policy: "poly"
 power: 0.5
 # Display every 200 iterations
-display: 5
+display: 10
 # The maximum number of iterations
 max_iter: 1000
 # solver mode: CPU or GPU
