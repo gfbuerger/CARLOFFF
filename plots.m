@@ -15,6 +15,8 @@ colS = maxdistcolor(length(JMDL), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 colD = maxdistcolor(length(NET), @(m) sRGB_to_OSAUCS (m, true, true)) ;
 ##col = col(randperm(ncol),:) ;
 
+pfx = @(net) sprintf("models/%s/%s.%02d/%s.%s.%s", net, PFX, NH, net, ind, pdd.lname) ;
+
 ### plots
 alpha = 0.05 ;
 qEta = sum(any(any(pdd.x(:,jVAR,:,:) > 0, 3), 4)) / rows(pdd.x) ;
@@ -26,18 +28,18 @@ jNET = 2 ;
 clf ;
 jNET++ ;
 net = NET{jNET} ;
-lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname) ;
+lfile = sprintf("%s.log", pfx(net)) ;
 plot_log(gca, lfile, "loss", gap = 2, pse = 0, plog = 0) ;
 title(net)
 hgsave(sprintf("nc/paper/loss.%s.og", net)) ;
 print(sprintf("nc/paper/loss.%s.svg", net)) ;
 
-GAP = [1 1 1 1 1 150 1 1 1] ;
+GAP = [1 1 1 1 1 1 1 1 1] ;
 clf ; j = 0 ; clear H ;
 for net = NET((1:9) ~= jNET)
    net = net{:} ;
    ax(++j) = subplot(2, 4, j) ;
-   if exist(lfile = sprintf("models/%s/DE.24/%s.01010000010.%s.log", net, net, pdd.lname), "file") ~= 2
+   if exist(lfile = sprintf("%s.log", pfx(net)), "file") ~= 2
       warning("file not found: %s", lfile) ;
    endif
    jN = find(strcmp(NET, net)) ;

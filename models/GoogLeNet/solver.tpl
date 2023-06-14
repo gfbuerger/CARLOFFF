@@ -3,7 +3,7 @@ average_loss: 20
 debug_info: false
 test_iter: 100
 # Carry out testing every 1000 training iterations.
-test_interval: 30
+test_interval: 50
 # The base learning rate, momentum and the weight decay of the network.
 base_lr: 0.001
 momentum: 0.99
