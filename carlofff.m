@@ -11,7 +11,7 @@ addpath ~/carlofff/fun
 cd ~/carlofff
 [glat glon] = borders("germany") ;
 REG.name = {"NW" "NE" "SW" "SE"} ;
-REG.name = "DE" ;
+REG.name = {"DE"} ;
 PFX = "1R" ; BLD = ~true ; MAXX = 100 ;
 GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ;
 for jLON = 1 : length(GLON) - 1
@@ -76,7 +76,9 @@ else
    save(afile, VAR{:}, "VAR") ;
 endif
 
-PDD = {"xWEI" "cape" "cp" "regnie" "RR" "CatRaRE"}{6} ;
+jPDD = 2 ;
+PDD = {"WEI" "xWEI" "cape" "cp" "regnie" "RR" "CatRaRE"}{jPDD} ;
+jVAR = {1 2 0 0 0 0 3}{jPDD} ;
 if exist(pdfile = sprintf("data/%s.%s_%02d.ob", PFX, PDD, CNVDUR), "file") == 2
    printf("<-- %s\n", pdfile) ;
    load(pdfile) ;
@@ -88,7 +90,6 @@ else
    ## aggregate
    pdd = agg(pdd, NH, @nanmax) ;
    ## select classes
-   jVAR = 3 ; # Eta
    pdd = classes(pdd, jVAR, Q0) ;
    pdd.lname = sprintf("%s_%02d_%.2f", pdd.name, CNVDUR, 100 * Q0) ; 
    if 0 write_H(pdd.c) ; endif
