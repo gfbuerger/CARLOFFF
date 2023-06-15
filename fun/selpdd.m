@@ -25,7 +25,7 @@ function pdd = selpdd (PDD, ID, Q0, s)
 	 ##      pdd.x = pdd.x(:,5) ; # use Eta
 	 ##      pdd.x = pdd.x(:,6) ; # use RRmax
       case {"WEI" "xWEI"}
-	 pdd = read_WEI("nc/xWEI/HPEs_2001_2021_xwei_v2.csv") ;
+	 pdd = read_WEI("nc/WEI/HPEs_2001_2021_xwei_v2.csv") ;
       otherwise
 	 error("unknown predictand: %s", PDD) ;
    endswitch

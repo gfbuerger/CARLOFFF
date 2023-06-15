@@ -154,7 +154,7 @@ endif
 
 ## Shallow
 MDL = {"lasso" "tree" "nnet" "nls"} ;
-for PCA = {{} []}
+for PCA = {{} []}(2)
    PCA = PCA{:} ;
    if iscell(PCA)
       ptr.ind = ["R" ind] ;
