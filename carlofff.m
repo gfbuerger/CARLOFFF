@@ -34,6 +34,7 @@ else
 endif
 if isempty(GLOG_log_dir = getenv("GLOG_log_dir"))
    mkdir(GLOG_log_dir = sprintf("/tmp/GLOG.%d", getpid)) ;
+   setenv("GLOG_log_dir", GLOG_log_dir) ;
 endif
 SOLV = getenv("SOLV") ;
 NH = 24 ; # relevant hours
@@ -310,6 +311,7 @@ for jNET = 1 : length(NET)
    endif
 
 endfor
+exit
 
 profshow ;
 profile off ;
