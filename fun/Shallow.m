@@ -15,12 +15,12 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 eval(sprintf("ptr.%s = sdate(ptr.id, ptr.Y%s) ;", phs, phs)) ;
 	 eval(sprintf("pdd.%s = sdate(pdd.id, ptr.Y%s) ;", phs, phs)) ;
       endfor
+      prob.id = ptr.id ;
+      prob.x = nan(N(1), numel(unique(pdd.c))) ;
    endif
    
    X = ptr.x ;
    N = size(X) ;
-   prob.id = ptr.id ;
-   prob.x = nan(N(1), numel(unique(pdd.c))) ;
 
    if ndims(X) > 2
 
@@ -37,8 +37,8 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	 else
 
-	    ptfile = sprintf("data/%s.%02d/%s.%s.ob", PFX, NH, ptr.ind, pdd.lname) ;
-	    if isnewer(efile = sprintf("data/%s.%02d/eof.%s.ob", PFX, NH, ptr.vars{j}), ptfile) || ~Lcv 
+	    efile = sprintf("data/%s.%02d/eof.%s.ob", PFX, NH, ptr.vars{j}) ;
+	    if ~Lcv || isnewer(efile, ptfile = sprintf("data/%s.%02d/%s.%s.ob", PFX, NH, ptr.ind, pdd.lname))
 	       load(efile)
 	       printf("<-- %s [%d]\n", efile, columns(E)) ;
 	    else

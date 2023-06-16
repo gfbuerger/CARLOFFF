@@ -90,7 +90,7 @@ else
    ## aggregate
    pdd = agg(pdd, NH, @nanmax) ;
    ## select classes
-   pdd = classes(pdd, jVAR, Q0) ;
+   pdd.c = classes(pdd, jVAR, Q0) ;
    pdd.lname = sprintf("%s_%02d_%.2f", pdd.name, CNVDUR, 100 * Q0) ; 
    if 0 write_H(pdd.c) ; endif
 
