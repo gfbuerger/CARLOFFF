@@ -100,7 +100,7 @@ function [res weights] = Deep (ptr, pdd, solverstate=[], SKL= {"GSS" "HSS"}, rnd
       endif
    endif
    printf("training time:\t%10.5g\n", toc) ;
-   pause(10) ;
+   pause(5) ;
    caffe.reset_all() ;
    state = strtrim(ls("-1t", pat)(1,:)) ;
    
