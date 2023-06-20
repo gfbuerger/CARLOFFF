@@ -9,6 +9,9 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
    Lfun = @(beta, x) beta(1,:) + x * beta(2:end,:) ;
 
+   X = ptr.x ;
+   N = size(X) ;
+
    if Lcv = ~isfield(pdd, "fit")
       for phs = {"CAL" "VAL"}
 	 phs = phs{:} ;
@@ -19,9 +22,6 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
       prob.x = nan(N(1), numel(unique(pdd.c))) ;
    endif
    
-   X = ptr.x ;
-   N = size(X) ;
-
    if ndims(X) > 2
 
       X = reshape(X, N(1), N(2), prod(N(3:end))) ;
@@ -91,14 +91,16 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	 I = all(~isnan([xx yy]), 2) ;
 	 xx = xx(I,:) ; yy = yy(I,:) ;
 
-	 [yl uy] = c2l(yy) ; # make 1-hot classes
+	 if ~islogical(yy)
+	    yy = c2l(yy) ; # make 1-hot classes
+	 endif
 
 	 tic ;
 	 switch mdl
 
 	    case "lasso"
 
-	       model = glm_multinomial(yl, xx) ;
+	       model = glm_multinomial(yy, xx) ;
 	       fit = penalized(model, @p_lasso, varargin{:}) ;
 	       AIC = goodness_of_fit("aic", fit) ;
 	       BIC = goodness_of_fit("bic", fit, model) ;
@@ -118,7 +120,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       fit.jLasso = jLasso ;
 
 	       ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
-	       fit.par = reshape(fit.beta(:,jLasso), size(fit.beta, 1)/size(yl, 2), size(yl, 2), []) ;
+	       fit.par = reshape(fit.beta(:,jLasso), size(fit.beta, 1)/size(yy, 2), size(yy, 2), []) ;
 	       fit.model = @(par, x) logistic_cdf(Lfun(par, x)) ;
 	       printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
@@ -138,7 +140,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 		  Net(i).trainParam.goal = 0 ;
 	       endfor
 
-	       fit.par = parfun(@(net) train(net, xx', yl(:,end)'), Net) ;
+	       fit.par = parfun(@(net) train(net, xx', yy(:,end)'), Net) ;
 	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
 	       
@@ -146,7 +148,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       trainParamsEnsemble = m5pparamsensemble(200) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
-	       fit.par = m5pbuild_new(xx, yl(:,end), [], [], trainParamsEnsemble) ;
+	       fit.par = m5pbuild_new(xx, yy(:,end), [], [], trainParamsEnsemble) ;
 	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
 
 	    otherwise
@@ -157,7 +159,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       if size(xx, 2) > MAXX
 		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
 	       endif
-	       par = cell2mat(parfun(@(j) nlinfit (xx, yl(:,j), model, beta0, opt), 1 : size(yl, 2), "UniformOutput", false)) ;
+	       par = cell2mat(parfun(@(j) nlinfit (xx, yy(:,j), model, beta0, opt), 1 : size(yy, 2), "UniformOutput", false)) ;
 	       fit = struct("model", model, "par", par) ;
 
 	 endswitch

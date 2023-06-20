@@ -10,10 +10,9 @@ addpath ~/carlofff/fun
 [~, ~] = mkdir("data") ;
 cd ~/carlofff
 [glat glon] = borders("germany") ;
-REG.name = {"NW" "NE" "SW" "SE"} ;
-REG.name = {"DE"} ;
-PFX = "1R" ; BLD = ~true ; MAXX = 100 ;
-GLON = [5.75 15.25] ; GLAT = [47.25 55.25] ;
+REG.name = {"N" "S"} ;
+PFX = "2R" ; BLD = ~true ; MAXX = 100 ;
+GLON = [5.75 15.25] ; GLAT = [47.25 (47.25 + 55.25)/2 55.25] ;
 for jLON = 1 : length(GLON) - 1
    for jLAT = 1 : length(GLAT) - 1
       REG.geo{jLON,jLAT} = [GLON([jLON jLON + 1]) ; GLAT([jLAT jLAT + 1])] ;

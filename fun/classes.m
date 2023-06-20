@@ -17,14 +17,15 @@ function [c q] = classes (pdd, jVAR, Q0, cfun = @any)
       reg = REG.geo{jREG} ;
       Ilon = reg(1,1) <= pdd.lon & pdd.lon <= reg(1,2) ;
       Ilat = reg(2,1) <= pdd.lat & pdd.lat <= reg(2,2) ;
-      lc(:,jREG+1) = cfun(cfun(w(:,Ilon,Ilat) > q, 2), 3) ;
+      c(:,jREG) = cfun(cfun(w(:,Ilon,Ilat) > q, 2), 3) ;
    endfor
-   lc(:,1) = all(lc(:,2:end) == 0, 2) ;
 
-   c = l2c(lc) ;
-   
-   printf("class rates 00: %.1f %%\n", 100 * sum(lc(:,1)) / n)
+   if length(REG.geo(:)) < 2
+      c = [all(c(:,2:end) == 0, 2) c] ;
+      c = l2c(c) ;
+   endif
+
    arrayfun(@(jREG) printf("class rates %s: %.1f %%\n",
-			   REG.name{jREG}, 100 * sum(lc(:,jREG+1) > 0) / n), 1 : length(REG.geo(:))) ; 
+			   REG.name{jREG}, 100 * sum(c(:,jREG) > 0) / n), 1 : length(REG.geo(:))) ; 
    
 endfunction
