@@ -65,8 +65,9 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
 ds = datestr(datenum(d), "yyyy-mm") ;
-[h1 h2] = plot_case(cape, pdd, deep.prob, D, d, jVAR, cx = 5) ;
+[h1 h2] = plot_case(cape, pdd, deep, D, d, jVAR, SKL{jSKL}, cx = 5) ;
 printf("--> nc/%s.%02d/%s.svg\n", REG, NH, ds) ;
+hgsave(h1, sprintf("nc/%s.%02d/%s.og", REG, NH, ds)) ;
 print(h1, sprintf("nc/%s.%02d/%s.svg", REG, NH, ds)) ;
 printf("--> nc/cape.%s.svg\n", ds) ;
 hgsave(h2, sprintf("nc/cape.%s.og", ds)) ;
