@@ -119,7 +119,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	       ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
 	       fit.par = fit.beta(:,jLasso) ;
-	       fit.model = @(par, x) logicdf(Lfun(par, x)) ;
+	       fit.model = @(par, x) logicdf(Lfun(par, x), 0, 1) ;
 	       printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
 	    case "nnet"
@@ -203,7 +203,7 @@ endfunction
 ##
 function res = F (beta, X)
 
-   res = logicdf(beta(1) + X * beta(2:end)) ;
+   res = logicdf(beta(1) + X * beta(2:end), 0, 1) ;
 
    res = max(0, res) ;
    res = min(1, res) ;
