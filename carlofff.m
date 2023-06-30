@@ -171,7 +171,7 @@ for PCA = {{} []}
       printf("<-- %s\n", mfile) ;
       load(mfile) ;
    else
-      clear skl ;
+      clear skl cskl ;
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
 	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", REG, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
@@ -191,13 +191,16 @@ for PCA = {{} []}
 	    printf("--> %s\n", sfile) ;
 	    save(sfile, "shallow") ;
 	 endif
+	 cskl(jMDL,:) = [cellfun(@(s) shallow.skl.CAL.(s), SKL) shallow.crossentropy.CAL] ;
 	 skl(jMDL,:) = [cellfun(@(s) shallow.skl.VAL.(s), SKL) shallow.crossentropy.VAL] ;
       endfor
+      cskl = real(cskl) ;
       skl = real(skl) ;
       printf("--> %s\n", mfile) ;
-      save("-text", mfile, "skl") ;
+      save("-text", mfile, "cskl", "skl") ;
    endif
 endfor
+exit
 
 ## Deep
 ## divergent: CIFAR-10, SqueezeNet
@@ -239,7 +242,7 @@ for jNET = 1 : length(NET)
 	    endif
 	    solverstate = upd_solver(SOLV, ptr.ind, pdd.lname) ;
       endswitch
-      clear skl deep ; i = 1 ;
+      clear cskl skl deep ; i = 1 ;
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
 	    load(sfile) ;
@@ -264,8 +267,9 @@ for jNET = 1 : length(NET)
 	 state = strrep(weights, ".caffemodel", ".solverstate") ;
 	 rename(weights, sprintf("%s.%02d", weights, i)) ;
 	 rename(state, sprintf("%s.%02d", state, i)) ;
+	 cskl(i,:) = [cellfun(@(s) deep.skl.CAL.(s), SKL) deep.crossentropy.CAL] ;
 	 skl(i,:) = [cellfun(@(s) deep.skl.VAL.(s), SKL) deep.crossentropy.VAL] ;
-	 save("-text", sfile, "skl") ;
+	 save("-text", sfile, "cskl", "skl") ;
 	 i++ ;
 ##	 system(sprintf("nvidia-smi -f nvidia.%d.log", i)) ;
       endwhile
