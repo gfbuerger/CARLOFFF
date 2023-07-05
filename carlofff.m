@@ -18,7 +18,7 @@ LON = GLON ; LAT = GLAT ; REG = "DE" ; # whole Germany
 ##LON = [10 14] ; LAT = [47.5 51] ; REG = "SE" ; # Südost
 ##LON = [9.7 9.9] ; LAT = [49.0 49.3] ; REG = "BB" ; # Braunsbach
 ##GLON = LON ; GLAT = LAT ; GREG = REG ;
-BLD = ~true ; VERBOSE = ~true ; PARALLEL = true ; MAXX = Inf ;
+BLD = ~true ; VERBOSE = ~true ; PARALLEL = true ; MAXX = 100 ;
 ID = [2001 5 1 0 ; 2020 8 31 23] ;
 MON = 5 : 8 ;
 IND = "01010000010" ; # read these atm. indices
@@ -200,7 +200,6 @@ for PCA = {{} []}
       save("-text", mfile, "cskl", "skl") ;
    endif
 endfor
-exit
 
 ## Deep
 ## divergent: CIFAR-10, SqueezeNet
