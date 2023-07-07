@@ -137,7 +137,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       endfor
 
 	       fit.par = parfun(@(net) train(net, xx', yy'), Net) ;
-	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
+	       fit.model = @(par, x) clprob(@sim, par, x, [0 1]) ;
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
 
 	    case "tree"
@@ -146,6 +146,12 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       trainParamsEnsemble.getOOBContrib = false ;
 	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
 	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
+
+	    case "rf"
+
+	       D = prdataset(xx, double(yy)) ;
+	       fit.par = rfLearning(D, 200) ;
+	       fit.model = @(par, x) rfPredict(x, par)(:,end) ;
 
 	    otherwise
 
@@ -255,6 +261,8 @@ function init_mdl (mdl)
 	 pkg load nnet parallel
       case "tree"
 	 addpath ~/oct/nc/M5PrimeLab ~/oct/nc/M5PrimeLab/private ;
+      case "rf"
+	 addpath ~/oct/nc/prtools ~/oct/nc/bagging-boosting-random-forests/random-forests ;
       otherwise
 	 pkg load optim
    endswitch

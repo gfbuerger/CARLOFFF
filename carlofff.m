@@ -159,7 +159,7 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nnet" "nls"} ;
+MDL = {"lasso" "tree" "nnet" "nls" "rf"} ;
 for PCA = {{} []}
    PCA = PCA{:} ;
    if iscell(PCA)

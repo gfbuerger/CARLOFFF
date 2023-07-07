@@ -89,21 +89,21 @@ endif
 
 ### performance
 ## Shallow
-clear Pskl ;
+clear Pskl ; skls = "skl" ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,1) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,1) = %s(:,[jSKL end]) ;", skls)) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,2) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,2) = %s(:,[jSKL end]) ;", skls)) ;
 ## with EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,3) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,3) = %s(:,[jSKL end]) ;", skls)) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,4) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,4) = %s(:,[jSKL end]) ;", skls)) ;
 
 Pskl = Pskl(JMDL,:,:) ;
 
