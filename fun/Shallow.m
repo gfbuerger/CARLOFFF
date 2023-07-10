@@ -142,9 +142,14 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 
 	    case "tree"
 
-	       trainParamsEnsemble = m5pparamsensemble(200) ;
+	       trainParamsEnsemble = m5pparamsensemble(100) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
-	       fit.par = m5pbuild_new(xx, yy, [], [], trainParamsEnsemble) ;
+	       if 0
+		  trainParams = m5pparams(modelTree = true, minLeafSize = 2) ;
+		  [results, residuals] = m5pcv(xx, double(yy), trainParams, [], k = 5, [], [], trainParamsEnsemble, 1) ;
+		  [results1, residuals1] = m5pcv(xx, double(yy), trainParams, [], k = 5, [], 5, [], 1) ;
+	       endif
+	       fit.par = m5pbuild_new(xx, yy, trainParams, [], trainParamsEnsemble, keepNodeInfo = false) ;
 	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
 
 	    case "rf"
