@@ -3,8 +3,10 @@
 ## convert to categorical prediction
 function res = clprob (f, par, x, u)
 
+   u = u(:)' ;
+
    switch f
-      case {@m5ppredict_new, @rfPredict}
+      case {@rfPredict @m5ppredict_new}
 	 w = feval(f, par, x) ;
       otherwise
 	 w = cell2mat(parfun(@(p) feval(f, p, x')', par, "UniformOutput", false)) ;

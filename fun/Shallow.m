@@ -188,7 +188,7 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	    eskl.(phs) = arrayfun(@(j) MoC("ETS", pdd.c(pdd.(phs)), w(:,j)), 1 : size(w, 2)) ;
 	 endif
       else
-	 w = feval(pdd.fit.model, pdd.fit.par, x) ;
+	 w = feval(pdd.fit.model, pdd.fit.par, x, pdd.fit.uc) ;
 	 res = [1 - w w] ;
 	 return ;
       endif
