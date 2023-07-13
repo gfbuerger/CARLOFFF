@@ -153,8 +153,8 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nnet" "nls"} ;
-for PCA = {{} []}(2)
+MDL = {"lasso" "tree" "nnet" "nls" "rf"} ;
+for PCA = {{} []}
    PCA = PCA{:} ;
    if iscell(PCA)
       ptr.ind = ["R" ind] ;
@@ -165,7 +165,7 @@ for PCA = {{} []}(2)
       printf("<-- %s\n", mfile) ;
       load(mfile) ;
    else
-      clear skl ;
+      clear skl cskl ;
       for jMDL = 1 : length(MDL)
 	 mdl = MDL{jMDL} ;
 	 if isnewer(sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", PFX, NH, mdl, ptr.ind, pdd.lname), ptfile, pdfile)
@@ -187,9 +187,10 @@ for PCA = {{} []}(2)
 	 endif
 	 skl(jMDL,:) = [cellfun(@(s) mean(diag(shallow.skl.VAL.(s))), SKL) shallow.crossentropy.VAL] ;
       endfor
+      cskl = real(cskl) ;
       skl = real(skl) ;
       printf("--> %s\n", mfile) ;
-      save("-text", mfile, "skl") ;
+      save("-text", mfile, "cskl", "skl") ;
    endif
 endfor
 
@@ -234,7 +235,7 @@ for jNET = 1 : length(NET)
 	    endif
 	    solverstate = upd_solver(SOLV, ptr.ind, pdd.lname) ;
       endswitch
-      clear skl deep ; i = 1 ;
+      clear cskl skl deep ; i = 1 ;
       while i <= 20    ## UGLY
 	 if exist(sfile = sprintf("%s/skl.%s.%s.%s.ot", sfx, net, ind, pdd.lname)) == 2
 	    load(sfile) ;
@@ -284,10 +285,14 @@ for jNET = 1 : length(NET)
       delete(ls("-1t", sprintf("%s.*", dfile))) ;
       wfile = strtrim(ls("-1t", sprintf("%s_iter_*.caffemodel.%02d", pfx, i))(1,:)) ;
       rename(wfile, wfile(1:end-3)) ;
-      delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
+      if 1
+         delete(ls("-1t", sprintf("%s_iter_*.caffemodel.*", pfx))) ;
+      endif
       wfile = strtrim(ls("-1t", sprintf("%s_iter_*.solverstate.%02d", pfx, i))(1,:)) ;
       rename(wfile, wfile(1:end-3)) ;
-      delete(ls("-1t", sprintf("%s_iter_*.solverstate.*", pfx))) ;
+      if 1
+	 delete(ls("-1t", sprintf("%s_iter_*.solverstate.*", pfx))) ;
+      endif
       wfile = sprintf("%s.log.%02d", pfx, i) ;
       rename(wfile, wfile(1:end-3)) ;
       delete(ls("-1t", sprintf("%s.log.*", pfx))) ;
@@ -379,9 +384,6 @@ for jSIM = 1 : length(SIM)
 
       printf("<-- %s\n", ptfile) ;
       load(ptfile) ;
-##      eval(sprintf("%s.prob.Shallow.nls = %s.prob.Shallow.logr ;", sim, sim)) ;
-##      eval(sprintf("%s.prob.Shallow = rmfield(%s.prob.Shallow, \"logr\") ;", sim, sim)) ;
-##      save(ptfile, sim) ;
 
    else
 
@@ -407,9 +409,23 @@ for jSIM = 1 : length(SIM)
 	 sfile = sprintf("data/%s.%02d/Shallow.%s.%s.%s.ob", PFX, NH, mdl, ptr.ind, pdd.lname) ;
 	 printf("<-- %s\n", sfile) ;
 	 load(sfile) ;
+	 shallow.fit.uc = unique (pdd.c (:))' ;
+	 switch mdl
+	    case "lasso"
+	       Lfun = @(beta, x) beta(1) + x * beta(2:end) ;
+	       shallow.fit.model = @(par, x, u) logicdf (Lfun (par, x), 0, 1) ;
+	    case "tree"
+	       shallow.fit.model = @(par, x, u) clprob (@m5ppredict_new, par, x, u) ;
+	    case "nnet"
+	       shallow.fit.model = @(par, x, u) clprob (@sim, par, x, u) ;
+	    case "nls"
+	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
+	       shallow.fit.model = @(par, x, u) modelfun (par, x) ;
+	 endswitch
+	 fmod(sfile, shallow) ;
 	 eval(sprintf("%s.prob.Shallow.%s = Shallow(%s.prob, shallow, PCA, [], mdl) ;", sim, mdl, sim)) ;
       endfor
-      
+
       for jNET = 1 : length(NET(JNET))
 	 net = NET(JNET){jNET} ; res = RES(JNET){jNET} ;
 	 pfx = sprintf("models/%s/%s.%02d/%s.%s.%s", net, PFX, NH, net, ind, pdd.lname) ;
@@ -418,7 +434,11 @@ for jSIM = 1 : length(SIM)
 	    error("model not found: %s", model) ;
 	 endif
 	 siter = table_pick(sprintf("%s_solver.prototxt", pfx), "max_iter") ;
-	 weights = sprintf("%s_iter_%s.caffemodel", pfx, siter) ;
+	 if 1
+	    weights = sprintf("%s_iter_%s.caffemodel", pfx, siter) ;
+	 else
+	    weights = sprintf("%s_iter_%s.caffemodel.17", pfx, siter) ;
+	 endif
 	 if exist(weights, "file") ~= 2
 	    warning("weights not found: %s\n", weights) ;
 	    continue ;

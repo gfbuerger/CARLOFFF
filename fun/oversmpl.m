@@ -3,9 +3,14 @@
 ## oversample i, l using IMB
 function [iout, lout] = oversmpl (i, l, IMB)
 
+<<<<<<< HEAD
    [iout lout] = deal(i, l) ;
 
    if isempty(IMB) || isequal(IMB, "NONE") || isequal(IMB, 0)
+=======
+   if isempty(IMB) || strcmpi(IMB, "NONE")
+      [iout lout] = deal(i, l) ;
+>>>>>>> carlofff1
       return ;
    endif
 

@@ -67,8 +67,9 @@ D = [2014 7 15 ; 2014 8 15] ; d = [2014 7 28] ;
 D = [2016, 5, 15 ; 2016, 6, 15] ; d = [2016 5 29] ;
 
 ds = datestr(datenum(d), "yyyy-mm") ;
-[h1 h2] = plot_case(cape, pdd, deep.prob, D, d, jVAR, cx = 5) ;
+[h1 h2] = plot_case(cape, pdd, deep, D, d, jVAR, SKL{jSKL}, cx = 5) ;
 printf("--> nc/%s.%02d/%s.svg\n", REG, NH, ds) ;
+hgsave(h1, sprintf("nc/%s.%02d/%s.og", REG, NH, ds)) ;
 print(h1, sprintf("nc/%s.%02d/%s.svg", REG, NH, ds)) ;
 printf("--> nc/cape.%s.svg\n", ds) ;
 hgsave(h2, sprintf("nc/cape.%s.og", ds)) ;
@@ -90,21 +91,21 @@ endif
 
 ### performance
 ## Shallow
-clear Pskl ;
+clear Pskl ; skls = "cskl" ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,1) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,1) = %s(:,[jSKL end]) ;", skls)) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,2) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,2) = %s(:,[jSKL end]) ;", skls)) ;
 ## with EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,3) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,3) = %s(:,[jSKL end]) ;", skls)) ;
 JVAR = [2 4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.%s.%s.ot", REG, NH, ind, pdd.lname))
-Pskl(:,:,4) = skl(:,[jSKL end]) ;
+eval(sprintf("Pskl(:,:,4) = %s(:,[jSKL end]) ;", skls)) ;
 
 Pskl = Pskl(JMDL,:,:) ;
 
@@ -448,3 +449,43 @@ endfor
 set(findobj("-property", "fontsize"), "fontsize", fs) ;
 hgsave(sprintf("nc/paper/GCM_RCM.2.og")) ;
 print(sprintf("nc/paper/GCM_RCM.2.svg")) ;
+
+## ptr trends
+COL = [0 0 0 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
+yl = [-0.8 0.6 ; -0.2 0.2 ; -0.8 0.8] ;
+hloc = {"northwest" "southeast" "southeast"} ;
+figure(1, "position", [0.7 0.3 0.3 0.7]) ; sz = 12 ; fs = 20 ;
+nVAR = length(JVAR) ;
+clf ;
+for jVAR = 1 : nVAR
+   ax(jVAR) = subplot(nVAR, 1, jVAR) ; hold on
+   for jSIM = 1 : length(SIM)
+      sim = SIM(jSIM) ;
+      eval(sprintf("sim = %s ;", sim{:})) ;
+
+      [s.id s.x] = annstat(sim.prob.id, mean(mean(sim.prob.x, 3), 4), @nanmean) ;
+
+      hs(jSIM,jVAR) = scatter(s.id(:,1), s.x(:,jVAR), sz, COL(jSIM,:), "filled") ; axis tight
+      if ismember(sim.prob.name, {"ana" "historical"}) && 0
+	 su = selper(s, Y(1), Y(2)) ;
+      else
+	 su = s ;
+      endif
+      [B, BINT, R, RINT, STATS] = regress(su.x(:,jVAR), [ones(rows(su.x),1) su.id(:,1)]) ;
+      ct(jSIM) = 100*B(2) ;
+      yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+      if STATS(3) < alpha
+	 h(jSIM, jVAR) = plot(su.id(:,1), yf, "color", COL(jSIM,:), "linestyle", "-", "linewidth", 3) ;
+      else
+	 h(jSIM, jVAR) = plot(su.id(:,1), yf, "color", COL(jSIM,:), "linestyle", "--", "linewidth", 2) ;
+      endif
+      title(ana.prob.vars{jVAR}) ;
+   endfor
+##   ylim(yl(jVAR,:)) ;
+   xlabel("year") ; ylabel("normal anomalies") ;
+   hl(jVAR) = legend(hs(:,jVAR), {"ERA5" NSIM{2:end}}, "location", hloc{jVAR}, "box", "off") ;
+endfor
+set(findobj("-property", "fontsize"), "fontsize", fs) ;
+set(findobj(hl, "type", "scatter"), "sizedata", 38) ;
+hgsave(sprintf("nc/paper/ptr_trends.og")) ;
+print(sprintf("nc/paper/ptr_trends.svg")) ;

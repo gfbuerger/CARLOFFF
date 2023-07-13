@@ -1,13 +1,18 @@
-## usage: [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, cx = 1)
+## usage: [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, skl, cx = 1)
 ##
 ## plot pattern and probs for D, d
-function [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, cx = 1)
+function [h1, h2] = plot_case (ptr, pdd, s, D, d, jVAR = 1, skl, cx = 1)
 
    global PFX NH
 
    h1 = figure(1) ;
+<<<<<<< HEAD
    clf ; pause(2) ;
    plot_prob(s, pdd, D, d) ;
+=======
+   clf ;
+   plot_prob(s, skl, pdd, D, d) ;
+>>>>>>> carlofff1
    set(findall("-property", "fontname"), "fontname", "Libertinus Sans", "fontsize", 24) ;
 
    h2 = figure(2, "position", [0.7 0.4 0.3 0.6]) ;

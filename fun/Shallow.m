@@ -120,7 +120,11 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       fit.jLasso = jLasso ;
 
 	       ILasso = fit.beta(2:end,jLasso) ~= 0 ; # check where sum(beta ~= 0, 1) gets saturated
+<<<<<<< HEAD
 	       fit.par = reshape(fit.beta(:,jLasso), size(fit.beta, 1)/size(yy, 2), size(yy, 2), []) ;
+=======
+	       fit.par = fit.beta(:,jLasso) ;
+>>>>>>> carlofff1
 	       fit.model = @(par, x) logicdf(Lfun(par, x), 0, 1) ;
 	       printf("Lasso: using %d predictors\n", sum(ILasso)) ;
 
@@ -140,19 +144,41 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 		  Net(i).trainParam.goal = 0 ;
 	       endfor
 
+<<<<<<< HEAD
 	       fit.par = parfun(@(net) train(net, xx', yy(:,end)'), Net) ;
 	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
+=======
+	       fit.par = parfun(@(net) train(net, xx', yy'), Net) ;
+	       fit.model = @(par, x) clprob(@sim, par, x, [0 1]) ;
+>>>>>>> carlofff1
 	       printf("NNET: using %d predictors\n", columns(xx)) ;
-	       
+
 	    case "tree"
 
-	       trainParamsEnsemble = m5pparamsensemble(200) ;
+	       trainParamsEnsemble = m5pparamsensemble(100) ;
 	       trainParamsEnsemble.getOOBContrib = false ;
+<<<<<<< HEAD
 	       fit.par = m5pbuild_new(xx, yy(:,end), [], [], trainParamsEnsemble) ;
 	       fit.model = @(par, x) clprob(par, x, [0 1]) ;
+=======
+	       if 0
+		  trainParams = m5pparams(modelTree = true, minLeafSize = 2) ;
+		  [results, residuals] = m5pcv(xx, double(yy), trainParams, [], k = 5, [], [], trainParamsEnsemble, 1) ;
+		  [results1, residuals1] = m5pcv(xx, double(yy), trainParams, [], k = 5, [], 5, [], 1) ;
+	       endif
+	       fit.par = m5pbuild_new(xx, yy, trainParams, [], trainParamsEnsemble, keepNodeInfo = false) ;
+	       fit.model = @(par, x) clprob(par, x, unique(pdd.c(:))') ;
+>>>>>>> carlofff1
+
+	    case "rf"
+
+	       D = prdataset(xx, double(yy)) ;
+	       fit.par = rfLearning(D, 200) ;
+	       fit.model = @(par, x) rfPredict(x, par)(:,end) ;
 
 	    otherwise
 
+<<<<<<< HEAD
 	       model = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
 	       beta0 = zeros(size(xx, 2)+1, 1) ;
 	       opt = optimset("MaxIter", 200, "TolFun", 1e-8, "debug", ~true) ;
@@ -161,6 +187,16 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	       endif
 	       par = cell2mat(parfun(@(j) nlinfit (xx, yy(:,j), model, beta0, opt), 1 : size(yy, 2), "UniformOutput", false)) ;
 	       fit = struct("model", model, "par", par) ;
+=======
+	       modelfun = @(beta, x) 1 ./ (1 + exp(-Lfun(beta, x))) ;
+	       beta0 = zeros(columns(xx)+1, 1) ;
+	       opt = optimset("MaxIter", 200, "TolFun", 1e-8) ;
+	       if size(xx, 2) > MAXX
+		  warning("trivial solution for xx(:,2) = %d\n", size(xx, 2)) ;
+	       endif
+	       [fit.par resid cvg outp] = nonlin_curvefit(modelfun, beta0, xx, yy, opt) ;
+	       fit.model = @(beta, x) modelfun(beta, x) ;
+>>>>>>> carlofff1
 
 	 endswitch
 	 
@@ -185,7 +221,12 @@ function res = Shallow (ptr, pdd, PCA, TRC="CVE", mdl, SKL={"GSS" "HSS"}, vararg
 	    eskl.(phs) = arrayfun(@(j) MoC("ETS", pdd.c(pdd.(phs)), w(:,j)), 1 : size(w, 2)) ;
 	 endif
       else
+<<<<<<< HEAD
 	 res = feval(pdd.fit.model, pdd.fit.par, x) ;
+=======
+	 w = feval(pdd.fit.model, pdd.fit.par, x, pdd.fit.uc) ;
+	 res = [1 - w w] ;
+>>>>>>> carlofff1
 	 return ;
       endif
 
@@ -257,6 +298,8 @@ function init_mdl (mdl)
 	 pkg load nnet parallel
       case "tree"
 	 addpath ~/oct/nc/M5PrimeLab ~/oct/nc/M5PrimeLab/private ;
+      case "rf"
+	 addpath ~/oct/nc/prtools ~/oct/nc/bagging-boosting-random-forests/random-forests ;
       otherwise
 	 pkg load optim	parallel
    endswitch
