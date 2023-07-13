@@ -33,3 +33,6 @@ IND = "01010000010" ; # default atm. indices (cape, tcw, cp)
 CNVDUR = 9 ; # maximum duration
 
 It is expected that Caffe is installed under /opt/caffe.
+
+
+[![DOI](https://zenodo.org/badge/666121348.svg)](https://zenodo.org/badge/latestdoi/666121348)
