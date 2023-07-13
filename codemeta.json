@@ -1,0 +1,53 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type": "SoftwareSourceCode",
+    "license": "https://spdx.org/licenses/MIT",
+    "codeRepository": "https://gitlab.dkrz.de/b324017/carlofff",
+    "dateCreated": "2020-12-08",
+    "datePublished": "2020-12-08",
+    "dateModified": "2023-07-10",
+    "downloadUrl": "https://gitlab.dkrz.de/b324017/carlofff",
+    "name": "CARLOFFF",
+    "version": "1.0",
+    "description": "Convective Atmospheres: Linking Radar-based Event Descriptors and Losses From Flash Floods (CARLOFFF)",
+    "applicationCategory": "Climate research",
+    "funding": "ClimXtreme 01LP1903B",
+    "developmentStatus": "active",
+    "isPartOf": "https://climxtreme.net",
+    "referencePublication": "https://doi.org/10.5194/egusphere-2022-1159",
+    "readme": "https://gitlab.dkrz.de/b324017/carlofff/-/blob/master/README.md",
+    "softwareVersion": "1.0",
+    "funder": {
+        "@type": "Organization",
+        "name": "German Ministry of Education and Research"
+    },
+    "keywords": [
+        "convective atmospheres",
+        "classification",
+        "machine learning",
+        "extreme rainfall"
+    ],
+    "programmingLanguage": [
+        "Octave"
+    ],
+    "operatingSystem": [
+        "Linux"
+    ],
+    "softwareRequirements": [
+        "Caffe",
+        "https://caffe.berkeleyvision.org"
+    ],
+    "maintainer": [
+        {
+            "@type": "Person",
+            "@id": "http://orcid.org/0000-0003-3539-2975",
+            "givenName": "Gerd",
+            "familyName": "Bürger",
+            "email": "gbuerger@uni-potsdam.de",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Institut für Umweltwissenschaften und Geographie, Universität Potsdam"
+            }
+        }
+    ]
+}
