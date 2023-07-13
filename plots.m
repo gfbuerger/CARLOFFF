@@ -89,7 +89,7 @@ endif
 
 ### performance
 ## Shallow
-clear Pskl ; skls = "skl" ;
+clear Pskl ; skls = "cskl" ;
 ## without EOFs
 JVAR = [4 10] ; ind = sprintf("%d", ind2log(JVAR, numel(VAR))) ;
 load(sprintf("nc/%s.%02d/skl.Shallow.R%s.%s.ot", REG, NH, ind, pdd.lname))
@@ -447,3 +447,43 @@ endfor
 set(findobj("-property", "fontsize"), "fontsize", fs) ;
 hgsave(sprintf("nc/paper/GCM_RCM.2.og")) ;
 print(sprintf("nc/paper/GCM_RCM.2.svg")) ;
+
+## ptr trends
+COL = [0 0 0 ; 0.2 0.2 0.7 ; 0.7 0.2 0.2] ;
+yl = [-0.8 0.6 ; -0.2 0.2 ; -0.8 0.8] ;
+hloc = {"northwest" "southeast" "southeast"} ;
+figure(1, "position", [0.7 0.3 0.3 0.7]) ; sz = 12 ; fs = 20 ;
+nVAR = length(JVAR) ;
+clf ;
+for jVAR = 1 : nVAR
+   ax(jVAR) = subplot(nVAR, 1, jVAR) ; hold on
+   for jSIM = 1 : length(SIM)
+      sim = SIM(jSIM) ;
+      eval(sprintf("sim = %s ;", sim{:})) ;
+
+      [s.id s.x] = annstat(sim.prob.id, mean(mean(sim.prob.x, 3), 4), @nanmean) ;
+
+      hs(jSIM,jVAR) = scatter(s.id(:,1), s.x(:,jVAR), sz, COL(jSIM,:), "filled") ; axis tight
+      if ismember(sim.prob.name, {"ana" "historical"}) && 0
+	 su = selper(s, Y(1), Y(2)) ;
+      else
+	 su = s ;
+      endif
+      [B, BINT, R, RINT, STATS] = regress(su.x(:,jVAR), [ones(rows(su.x),1) su.id(:,1)]) ;
+      ct(jSIM) = 100*B(2) ;
+      yf = [ones(rows(su.x),1) su.id(:,1)] * B ;
+      if STATS(3) < alpha
+	 h(jSIM, jVAR) = plot(su.id(:,1), yf, "color", COL(jSIM,:), "linestyle", "-", "linewidth", 3) ;
+      else
+	 h(jSIM, jVAR) = plot(su.id(:,1), yf, "color", COL(jSIM,:), "linestyle", "--", "linewidth", 2) ;
+      endif
+      title(ana.prob.vars{jVAR}) ;
+   endfor
+##   ylim(yl(jVAR,:)) ;
+   xlabel("year") ; ylabel("normal anomalies") ;
+   hl(jVAR) = legend(hs(:,jVAR), {"ERA5" NSIM{2:end}}, "location", hloc{jVAR}, "box", "off") ;
+endfor
+set(findobj("-property", "fontsize"), "fontsize", fs) ;
+set(findobj(hl, "type", "scatter"), "sizedata", 38) ;
+hgsave(sprintf("nc/paper/ptr_trends.og")) ;
+print(sprintf("nc/paper/ptr_trends.svg")) ;

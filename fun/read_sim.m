@@ -7,7 +7,7 @@ function s = read_sim (d, svar, sim, lon, lat)
    pkg load netcdf
 
    s.id = s.x = [] ;
-   for ncf = glob(sprintf("%s/%s*%s*.nc", d, svar, sim))'
+   for ncf = glob(sprintf("data/%s/nc/%s*%s*.nc", d, svar, sim))'
 
       printf("<-- %s\n", ncf = ncf{:}) ;
 

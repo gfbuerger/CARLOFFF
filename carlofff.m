@@ -5,7 +5,7 @@ global isoctave LON LAT GREG REG NH MON IMB CNVDUR BLD VERBOSE PARALLEL MAXX
 
 set(0, "defaultaxesfontsize", 26, "defaulttextfontsize", 30) ;
 
-addpath ~/carlofff/fun ~/carlofff/util
+addpath ~/carlofff/fun
 [~, ~] = mkdir("data") ;
 cd ~/carlofff
 [glat glon] = borders("germany") ;
@@ -159,7 +159,7 @@ if 0
 endif
 
 ## Shallow
-MDL = {"lasso" "tree" "nnet" "nls"} ;
+MDL = {"lasso" "tree" "nnet" "nls" "rf"} ;
 for PCA = {{} []}
    PCA = PCA{:} ;
    if iscell(PCA)
